@@ -1,0 +1,26 @@
+{
+  "name": "tire-crm-frontend-",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/horoshi10v/tire-crm-frontend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/horoshi10v/tire-crm-frontend/issues"
+  },
+  "homepage": "https://github.com/horoshi10v/tire-crm-frontend#readme",
+  "private": "true",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # Storefront Application for Buyers
+  client-tma:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Passes the workspace name to the Dockerfile
+        APP_NAME: client-tma
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    # environment:
+    #   - VITE_API_BASE_URL=https://api.yourdomain.com/v1
+
+  # CRM and WMS Application for Staff
+  staff-tma:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Passes the workspace name to the Dockerfile
+        APP_NAME: staff-tma
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    # environment:
+    #   - VITE_API_BASE_URL=https://api.yourdomain.com/v1
