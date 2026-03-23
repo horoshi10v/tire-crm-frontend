@@ -1,16 +1,28 @@
 // apps/staff-tma/src/types/lot.ts
 
 export type LotCondition = 'NEW' | 'USED';
-export type LotType = 'TIRE' | 'RIM';
+export type LotType = 'TIRE' | 'RIM' | 'ACCESSORY';
 export type LotSeason = 'SUMMER' | 'WINTER' | 'ALL_SEASON';
+export type AccessoryCategory = 'FASTENERS' | 'HUB_RINGS' | 'SPACERS' | 'TIRE_BAGS';
+export type FastenerType = 'NUT' | 'BOLT';
+export type SpacerType = 'ADAPTER' | 'EXTENDER';
 
 export interface LotParams {
     anti_puncture?: boolean;
+    accessory_category?: AccessoryCategory;
     diameter?: number;
+    fastener_type?: FastenerType;
     is_run_flat?: boolean;
     is_spiked?: boolean;
+    package_quantity?: number;
     profile?: number;
+    ring_inner_diameter?: number;
+    ring_outer_diameter?: number;
+    seat_type?: string;
     season?: LotSeason;
+    spacer_thickness?: number;
+    spacer_type?: SpacerType;
+    thread_size?: string;
     width?: number;
 }
 
@@ -62,6 +74,15 @@ export interface StaffLotFilters {
     is_spiked: boolean;
     anti_puncture: boolean;
     warehouse_id: string;
+    accessory_category: '' | AccessoryCategory;
+    fastener_type: '' | FastenerType;
+    thread_size: string;
+    seat_type: string;
+    ring_inner_diameter: number | '';
+    ring_outer_diameter: number | '';
+    spacer_type: '' | SpacerType;
+    spacer_thickness: number | '';
+    package_quantity: number | '';
 }
 
 export const defaultStaffLotFilters: StaffLotFilters = {
@@ -76,4 +97,13 @@ export const defaultStaffLotFilters: StaffLotFilters = {
     is_spiked: false,
     anti_puncture: false,
     warehouse_id: '',
+    accessory_category: '',
+    fastener_type: '',
+    thread_size: '',
+    seat_type: '',
+    ring_inner_diameter: '',
+    ring_outer_diameter: '',
+    spacer_type: '',
+    spacer_thickness: '',
+    package_quantity: '',
 };

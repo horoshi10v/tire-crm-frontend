@@ -8,6 +8,7 @@ interface FiltersDrawerProps {
 
 export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
     const { filters, setFilter, resetFilters } = useFilterStore();
+    const isAccessory = filters.type === 'ACCESSORY';
 
     return (
         // Загальний контейнер (Фон).
@@ -52,6 +53,7 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                                     <option value="">Всі</option>
                                     <option value="TIRE">Шини</option>
                                     <option value="RIM">Диски</option>
+                                    <option value="ACCESSORY">Супутні товари</option>
                                 </select>
                                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-300 md:hidden">
                                     ▾
@@ -77,67 +79,125 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                         </div>
                     </div>
 
-                    {/* Сезон */}
-                    <div>
-                        <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Сезон</label>
-                        {/* relative і z-0 створюють новий контекст для позиціонування */}
-                        <div className="relative flex bg-gray-800 rounded-xl p-1 z-0">
-
-                            {/* Анімований "плаваючий" фон (рідке скло/пружний м'ячик) */}
-                            <div className="absolute top-1 bottom-1 left-1 right-1 -z-10 pointer-events-none">
-                                <div
-                                    className="h-full w-1/4 rounded-lg bg-[#10AD0B] shadow-md"
-                                    style={{
-                                        // Зсуваємо на 0%, 100%, 200% або 300% від власної ширини
-                                        transform: `translateX(${['', 'SUMMER', 'WINTER', 'ALL_SEASON'].indexOf(filters.season) * 100}%)`,
-                                        // Кастомна крива для ефекту відскоку (spring effect)
-                                        transition: 'transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1)'
-                                    }}
-                                ></div>
+                    {isAccessory ? (
+                        <>
+                            <div className="grid grid-cols-1 gap-3">
+                                <div>
+                                    <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Категорія</label>
+                                    <select
+                                        value={filters.accessory_category}
+                                        onChange={(e) => setFilter('accessory_category', e.target.value)}
+                                        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B]"
+                                    >
+                                        <option value="">Усі</option>
+                                        <option value="FASTENERS">Кріплення</option>
+                                        <option value="HUB_RINGS">Проставочні кільця</option>
+                                        <option value="SPACERS">Проставки</option>
+                                        <option value="TIRE_BAGS">Пакети для шин</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            {/* Самі кнопки поверх фону (фон у них прозорий) */}
-                            {['', 'SUMMER', 'WINTER', 'ALL_SEASON'].map((s) => (
-                                <button
-                                    key={s}
-                                    onClick={() => setFilter('season', s)}
-                                    className={`flex-1 text-xs py-2.5 rounded-lg font-medium transition-colors duration-300 ${
-                                        filters.season === s
-                                            ? 'text-white'
-                                            : 'text-gray-400 hover:text-gray-200'
-                                    }`}
-                                >
-                                    {s === '' ? 'Всі' : s === 'SUMMER' ? 'Літо' : s === 'WINTER' ? 'Зима' : 'Всесезон'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                            {filters.accessory_category === 'FASTENERS' ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <select
+                                        value={filters.fastener_type}
+                                        onChange={(e) => setFilter('fastener_type', e.target.value)}
+                                        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]"
+                                    >
+                                        <option value="">Гайки і болти</option>
+                                        <option value="NUT">Гайки</option>
+                                        <option value="BOLT">Болти</option>
+                                    </select>
+                                    <input type="text" placeholder="Різьба, напр. M12x1.5" value={filters.thread_size} onChange={(e) => setFilter('thread_size', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="text" placeholder="Тип посадки" value={filters.seat_type} onChange={(e) => setFilter('seat_type', e.target.value)} className="col-span-2 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                </div>
+                            ) : null}
 
-                    {/* Розміри */}
-                    <div>
-                        <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Параметри (Шир / Проф / Радіус)</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            <input type="number" placeholder="Ширина" value={filters.width} onChange={(e) => setFilter('width', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
-                            <input type="number" placeholder="Профіль" value={filters.profile} onChange={(e) => setFilter('profile', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
-                            <input type="number" placeholder="Радіус" value={filters.diameter} onChange={(e) => setFilter('diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
-                        </div>
-                    </div>
+                            {filters.accessory_category === 'HUB_RINGS' ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input type="number" placeholder="Внутр. діаметр" value={filters.ring_inner_diameter} onChange={(e) => setFilter('ring_inner_diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="number" placeholder="Зовн. діаметр" value={filters.ring_outer_diameter} onChange={(e) => setFilter('ring_outer_diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                </div>
+                            ) : null}
 
-                    {/* Додатково (Чекбокси) */}
-                    <div className="flex flex-col gap-4 mt-2 bg-gray-800/50 p-4 rounded-xl border border-gray-800">
-                        <label className="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" checked={filters.is_run_flat} onChange={(e) => setFilter('is_run_flat', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
-                            <span className="text-sm font-medium text-gray-200">Run Flat (Посилена боковина)</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" checked={filters.is_spiked} onChange={(e) => setFilter('is_spiked', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
-                            <span className="text-sm font-medium text-gray-200">Шиповані</span>
-                        </label>
-                        <label className="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" checked={filters.anti_puncture} onChange={(e) => setFilter('anti_puncture', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
-                            <span className="text-sm font-medium text-gray-200">Антипрокол (Seal)</span>
-                        </label>
-                    </div>
+                            {filters.accessory_category === 'SPACERS' ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <select
+                                        value={filters.spacer_type}
+                                        onChange={(e) => setFilter('spacer_type', e.target.value)}
+                                        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]"
+                                    >
+                                        <option value="">Усі проставки</option>
+                                        <option value="ADAPTER">Адаптери</option>
+                                        <option value="EXTENDER">Розширювальні</option>
+                                    </select>
+                                    <input type="number" placeholder="Товщина, мм" value={filters.spacer_thickness} onChange={(e) => setFilter('spacer_thickness', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                </div>
+                            ) : null}
+
+                            {filters.accessory_category === 'TIRE_BAGS' ? (
+                                <div className="grid grid-cols-1 gap-2">
+                                    <input type="number" placeholder="Кількість у комплекті" value={filters.package_quantity} onChange={(e) => setFilter('package_quantity', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                </div>
+                            ) : null}
+                        </>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Сезон</label>
+                                <div className="relative flex bg-gray-800 rounded-xl p-1 z-0">
+                                    <div className="absolute top-1 bottom-1 left-1 right-1 -z-10 pointer-events-none">
+                                        <div
+                                            className="h-full w-1/4 rounded-lg bg-[#10AD0B] shadow-md"
+                                            style={{
+                                                transform: `translateX(${['', 'SUMMER', 'WINTER', 'ALL_SEASON'].indexOf(filters.season) * 100}%)`,
+                                                transition: 'transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1)'
+                                            }}
+                                        ></div>
+                                    </div>
+
+                                    {['', 'SUMMER', 'WINTER', 'ALL_SEASON'].map((s) => (
+                                        <button
+                                            key={s}
+                                            onClick={() => setFilter('season', s)}
+                                            className={`flex-1 text-xs py-2.5 rounded-lg font-medium transition-colors duration-300 ${
+                                                filters.season === s
+                                                    ? 'text-white'
+                                                    : 'text-gray-400 hover:text-gray-200'
+                                            }`}
+                                        >
+                                            {s === '' ? 'Всі' : s === 'SUMMER' ? 'Літо' : s === 'WINTER' ? 'Зима' : 'Всесезон'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Параметри (Шир / Проф / Радіус)</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <input type="number" placeholder="Ширина" value={filters.width} onChange={(e) => setFilter('width', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                    <input type="number" placeholder="Профіль" value={filters.profile} onChange={(e) => setFilter('profile', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                    <input type="number" placeholder="Радіус" value={filters.diameter} onChange={(e) => setFilter('diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-4 mt-2 bg-gray-800/50 p-4 rounded-xl border border-gray-800">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" checked={filters.is_run_flat} onChange={(e) => setFilter('is_run_flat', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                                    <span className="text-sm font-medium text-gray-200">Run Flat (Посилена боковина)</span>
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" checked={filters.is_spiked} onChange={(e) => setFilter('is_spiked', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                                    <span className="text-sm font-medium text-gray-200">Шиповані</span>
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" checked={filters.anti_puncture} onChange={(e) => setFilter('anti_puncture', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                                    <span className="text-sm font-medium text-gray-200">Антипрокол (Seal)</span>
+                                </label>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Кнопки */}

@@ -65,6 +65,23 @@ export function useStaffLots(
             if (normalizedFilters.is_spiked) params.is_spiked = 'true';
             if (normalizedFilters.anti_puncture) params.anti_puncture = 'true';
             if (normalizedFilters.warehouse_id?.trim()) params.warehouse_id = normalizedFilters.warehouse_id.trim();
+            if (normalizedFilters.accessory_category) params.accessory_category = normalizedFilters.accessory_category;
+            if (normalizedFilters.fastener_type) params.fastener_type = normalizedFilters.fastener_type;
+            if (normalizedFilters.thread_size?.trim()) params.thread_size = normalizedFilters.thread_size.trim();
+            if (normalizedFilters.seat_type?.trim()) params.seat_type = normalizedFilters.seat_type.trim();
+            if (normalizedFilters.ring_inner_diameter !== '' && normalizedFilters.ring_inner_diameter !== undefined) {
+                params.ring_inner_diameter = normalizedFilters.ring_inner_diameter;
+            }
+            if (normalizedFilters.ring_outer_diameter !== '' && normalizedFilters.ring_outer_diameter !== undefined) {
+                params.ring_outer_diameter = normalizedFilters.ring_outer_diameter;
+            }
+            if (normalizedFilters.spacer_type) params.spacer_type = normalizedFilters.spacer_type;
+            if (normalizedFilters.spacer_thickness !== '' && normalizedFilters.spacer_thickness !== undefined) {
+                params.spacer_thickness = normalizedFilters.spacer_thickness;
+            }
+            if (normalizedFilters.package_quantity !== '' && normalizedFilters.package_quantity !== undefined) {
+                params.package_quantity = normalizedFilters.package_quantity;
+            }
 
             const { data } = await apiClient.get<LotInternalResponse[]>('/staff/lots', { params });
             return data || [];

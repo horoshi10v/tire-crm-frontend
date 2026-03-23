@@ -2,35 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStaffLots } from '../api/staffLots';
 import { useStaffWarehouses } from '../api/staffWarehouses';
 import InventoryFiltersDrawer from '../components/InventoryFiltersDrawer';
-import type { LotCondition, LotInternalResponse, LotSeason, LotType } from '../types/lot';
-
-type StaffLotFilters = {
-  search: string;
-  type: '' | LotType;
-  season: '' | LotSeason;
-  condition: '' | LotCondition;
-  width: number | '';
-  profile: number | '';
-  diameter: number | '';
-  is_run_flat: boolean;
-  is_spiked: boolean;
-  anti_puncture: boolean;
-  warehouse_id: string;
-};
-
-const defaultStaffLotFilters: StaffLotFilters = {
-  search: '',
-  type: '',
-  season: '',
-  condition: '',
-  width: '',
-  profile: '',
-  diameter: '',
-  is_run_flat: false,
-  is_spiked: false,
-  anti_puncture: false,
-  warehouse_id: '',
-};
+import type { LotInternalResponse, StaffLotFilters } from '../types/lot';
+import { defaultStaffLotFilters } from '../types/lot';
 
 type InventoryViewProps = {
   onCreateLot?: () => void;
@@ -95,13 +68,36 @@ const getConditionLabel = (condition: string): string => {
 };
 
 const getTypeLabel = (type: string): string => {
-  return type === 'TIRE' ? 'Шина' : type === 'RIM' ? 'Диск' : type;
+  if (type === 'TIRE') return 'Шина';
+  if (type === 'RIM') return 'Диск';
+  if (type === 'ACCESSORY') return 'Супутній';
+  return type;
 };
 
 const getSeasonLabel = (season?: string): string => {
   if (season === 'SUMMER') return 'Літо';
   if (season === 'WINTER') return 'Зима';
   if (season === 'ALL_SEASON') return 'Всесезон';
+  return '';
+};
+
+const getAccessoryCategoryLabel = (value?: string): string => {
+  if (value === 'FASTENERS') return 'Кріплення';
+  if (value === 'HUB_RINGS') return 'Кільця';
+  if (value === 'SPACERS') return 'Проставки';
+  if (value === 'TIRE_BAGS') return 'Пакети';
+  return '';
+};
+
+const getFastenerTypeLabel = (value?: string): string => {
+  if (value === 'NUT') return 'Гайки';
+  if (value === 'BOLT') return 'Болти';
+  return '';
+};
+
+const getSpacerTypeLabel = (value?: string): string => {
+  if (value === 'ADAPTER') return 'Адаптер';
+  if (value === 'EXTENDER') return 'Розшир.';
   return '';
 };
 
@@ -121,6 +117,15 @@ const activeFiltersCount = (filters: StaffLotFilters): number => {
     filters.is_spiked,
     filters.anti_puncture,
     filters.warehouse_id !== '',
+    filters.accessory_category !== '',
+    filters.fastener_type !== '',
+    filters.thread_size.trim() !== '',
+    filters.seat_type.trim() !== '',
+    filters.ring_inner_diameter !== '',
+    filters.ring_outer_diameter !== '',
+    filters.spacer_type !== '',
+    filters.spacer_thickness !== '',
+    filters.package_quantity !== '',
   ].filter(Boolean).length;
 };
 
@@ -160,6 +165,33 @@ const lotMatchesFilters = (lot: LotInternalResponse, search: string, filters: St
     return false;
   }
   if (filters.anti_puncture && !lot.params?.anti_puncture) {
+    return false;
+  }
+  if (filters.accessory_category && lot.params?.accessory_category !== filters.accessory_category) {
+    return false;
+  }
+  if (filters.fastener_type && lot.params?.fastener_type !== filters.fastener_type) {
+    return false;
+  }
+  if (filters.thread_size && !(lot.params?.thread_size ?? '').toLowerCase().includes(filters.thread_size.toLowerCase())) {
+    return false;
+  }
+  if (filters.seat_type && !(lot.params?.seat_type ?? '').toLowerCase().includes(filters.seat_type.toLowerCase())) {
+    return false;
+  }
+  if (filters.ring_inner_diameter !== '' && lot.params?.ring_inner_diameter !== filters.ring_inner_diameter) {
+    return false;
+  }
+  if (filters.ring_outer_diameter !== '' && lot.params?.ring_outer_diameter !== filters.ring_outer_diameter) {
+    return false;
+  }
+  if (filters.spacer_type && lot.params?.spacer_type !== filters.spacer_type) {
+    return false;
+  }
+  if (filters.spacer_thickness !== '' && lot.params?.spacer_thickness !== filters.spacer_thickness) {
+    return false;
+  }
+  if (filters.package_quantity !== '' && lot.params?.package_quantity !== filters.package_quantity) {
     return false;
   }
 
@@ -464,9 +496,39 @@ export default function InventoryView({
                         {getSeasonLabel(lot.params?.season)}
                       </span>
                     ) : null}
+                    {hasValue(getAccessoryCategoryLabel(lot.params?.accessory_category)) ? (
+                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
+                        {getAccessoryCategoryLabel(lot.params?.accessory_category)}
+                      </span>
+                    ) : null}
+                    {hasValue(getFastenerTypeLabel(lot.params?.fastener_type)) ? (
+                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
+                        {getFastenerTypeLabel(lot.params?.fastener_type)}
+                      </span>
+                    ) : null}
+                    {hasValue(getSpacerTypeLabel(lot.params?.spacer_type)) ? (
+                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
+                        {getSpacerTypeLabel(lot.params?.spacer_type)}
+                      </span>
+                    ) : null}
                     {lot.params?.width && lot.params?.profile && lot.params?.diameter ? (
                       <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
                         {lot.params.width}/{lot.params.profile} R{lot.params.diameter}
+                      </span>
+                    ) : null}
+                    {lot.params?.ring_inner_diameter && lot.params?.ring_outer_diameter ? (
+                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
+                        {lot.params.ring_inner_diameter}/{lot.params.ring_outer_diameter} мм
+                      </span>
+                    ) : null}
+                    {lot.params?.spacer_thickness ? (
+                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
+                        {lot.params.spacer_thickness} мм
+                      </span>
+                    ) : null}
+                    {lot.params?.package_quantity ? (
+                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
+                        Комплект {lot.params.package_quantity} шт.
                       </span>
                     ) : null}
                   </div>

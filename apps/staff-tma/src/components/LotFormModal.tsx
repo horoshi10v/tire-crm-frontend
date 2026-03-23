@@ -3,15 +3,18 @@ import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@tire-crm/shared';
 import { useStaffWarehouses } from '../api/staffWarehouses';
 import type {
+  AccessoryCategory,
   CreateLotDTO,
+  FastenerType,
   LotInternalResponse,
   LotParams,
+  LotSeason,
+  LotType,
+  SpacerType,
   UpdateLotDTO,
 } from '../types/lot';
 
 type LotCondition = 'NEW' | 'USED';
-type LotType = 'TIRE' | 'RIM';
-type LotSeason = 'SUMMER' | 'WINTER' | 'ALL_SEASON';
 
 type UploadPhotoResponse = Record<string, string>;
 
@@ -53,6 +56,15 @@ type LotFormState = {
     is_run_flat: boolean;
     is_spiked: boolean;
     anti_puncture: boolean;
+    accessory_category: '' | AccessoryCategory;
+    fastener_type: '' | FastenerType;
+    thread_size: string;
+    seat_type: string;
+    ring_inner_diameter: string;
+    ring_outer_diameter: string;
+    spacer_type: '' | SpacerType;
+    spacer_thickness: string;
+    package_quantity: string;
   };
 };
 
@@ -64,12 +76,30 @@ const conditionOptions: Array<{ label: string; value: LotCondition }> = [
 const typeOptions: Array<{ label: string; value: LotType }> = [
   { value: 'TIRE', label: 'Шина' },
   { value: 'RIM', label: 'Диск' },
+  { value: 'ACCESSORY', label: 'Супутній товар' },
 ];
 
 const seasonOptions: Array<{ label: string; value: LotSeason }> = [
   { value: 'SUMMER', label: 'Літній' },
   { value: 'WINTER', label: 'Зимовий' },
   { value: 'ALL_SEASON', label: 'Всесезонний' },
+];
+
+const accessoryCategoryOptions: Array<{ label: string; value: AccessoryCategory }> = [
+  { value: 'FASTENERS', label: 'Кріплення' },
+  { value: 'HUB_RINGS', label: 'Проставочні кільця' },
+  { value: 'SPACERS', label: 'Проставки' },
+  { value: 'TIRE_BAGS', label: 'Пакети для шин' },
+];
+
+const fastenerTypeOptions: Array<{ label: string; value: FastenerType }> = [
+  { value: 'NUT', label: 'Гайки' },
+  { value: 'BOLT', label: 'Болти' },
+];
+
+const spacerTypeOptions: Array<{ label: string; value: SpacerType }> = [
+  { value: 'ADAPTER', label: 'Адаптер' },
+  { value: 'EXTENDER', label: 'Розширювальна' },
 ];
 
 const extractPhotoUrl = (payload: UploadPhotoResponse): string => {
@@ -93,11 +123,35 @@ const normalizeCondition = (value: string | undefined): LotCondition => {
 };
 
 const normalizeType = (value: string | undefined): LotType => {
-  return value === 'RIM' ? 'RIM' : 'TIRE';
+  if (value === 'RIM' || value === 'ACCESSORY') {
+    return value;
+  }
+  return 'TIRE';
 };
 
 const normalizeSeason = (value: string | undefined): '' | LotSeason => {
   if (value === 'SUMMER' || value === 'WINTER' || value === 'ALL_SEASON') {
+    return value;
+  }
+  return '';
+};
+
+const normalizeAccessoryCategory = (value: string | undefined): '' | AccessoryCategory => {
+  if (value === 'FASTENERS' || value === 'HUB_RINGS' || value === 'SPACERS' || value === 'TIRE_BAGS') {
+    return value;
+  }
+  return '';
+};
+
+const normalizeFastenerType = (value: string | undefined): '' | FastenerType => {
+  if (value === 'NUT' || value === 'BOLT') {
+    return value;
+  }
+  return '';
+};
+
+const normalizeSpacerType = (value: string | undefined): '' | SpacerType => {
+  if (value === 'ADAPTER' || value === 'EXTENDER') {
     return value;
   }
   return '';
@@ -129,6 +183,15 @@ const createInitialState = (lot: LotInternalResponse | null): LotFormState => ({
     is_run_flat: Boolean(lot?.params?.is_run_flat),
     is_spiked: Boolean(lot?.params?.is_spiked),
     anti_puncture: Boolean(lot?.params?.anti_puncture),
+    accessory_category: normalizeAccessoryCategory(lot?.params?.accessory_category),
+    fastener_type: normalizeFastenerType(lot?.params?.fastener_type),
+    thread_size: lot?.params?.thread_size ?? '',
+    seat_type: lot?.params?.seat_type ?? '',
+    ring_inner_diameter: toInputNumber(lot?.params?.ring_inner_diameter),
+    ring_outer_diameter: toInputNumber(lot?.params?.ring_outer_diameter),
+    spacer_type: normalizeSpacerType(lot?.params?.spacer_type),
+    spacer_thickness: toInputNumber(lot?.params?.spacer_thickness),
+    package_quantity: toInputNumber(lot?.params?.package_quantity),
   },
 });
 
@@ -140,7 +203,16 @@ const hasMeaningfulParams = (params: LotFormState['params']): boolean => {
       params.season ||
       params.is_run_flat ||
       params.is_spiked ||
-      params.anti_puncture,
+      params.anti_puncture ||
+      params.accessory_category ||
+      params.fastener_type ||
+      params.thread_size.trim() ||
+      params.seat_type.trim() ||
+      params.ring_inner_diameter.trim() ||
+      params.ring_outer_diameter.trim() ||
+      params.spacer_type ||
+      params.spacer_thickness.trim() ||
+      params.package_quantity.trim(),
   );
 };
 
@@ -165,6 +237,15 @@ const buildParamsPayload = (params: LotFormState['params']): LotParams => {
   if (params.profile.trim()) payload.profile = toInteger(params.profile);
   if (params.diameter.trim()) payload.diameter = toInteger(params.diameter);
   if (params.season) payload.season = params.season;
+  if (params.accessory_category) payload.accessory_category = params.accessory_category;
+  if (params.fastener_type) payload.fastener_type = params.fastener_type;
+  if (params.thread_size.trim()) payload.thread_size = params.thread_size.trim();
+  if (params.seat_type.trim()) payload.seat_type = params.seat_type.trim();
+  if (params.ring_inner_diameter.trim()) payload.ring_inner_diameter = toInteger(params.ring_inner_diameter);
+  if (params.ring_outer_diameter.trim()) payload.ring_outer_diameter = toInteger(params.ring_outer_diameter);
+  if (params.spacer_type) payload.spacer_type = params.spacer_type;
+  if (params.spacer_thickness.trim()) payload.spacer_thickness = toInteger(params.spacer_thickness);
+  if (params.package_quantity.trim()) payload.package_quantity = toInteger(params.package_quantity);
 
   return payload;
 };
@@ -195,6 +276,7 @@ export default function LotFormModal(props: LotFormModalProps) {
     }
     return hasMeaningfulParams(form.params);
   }, [editLot, form.params, props.mode]);
+  const isAccessory = form.type === 'ACCESSORY';
 
   const warehouseOptions = useMemo(() => {
     const mapped = warehouses.map((warehouse) => ({
@@ -471,126 +553,309 @@ export default function LotFormModal(props: LotFormModalProps) {
           <section className="space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400">Параметри</h3>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-              <label className="space-y-1">
-                <span className="text-sm text-gray-300">Ширина</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={form.params.width}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      params: { ...prev.params, width: event.target.value },
-                    }))
-                  }
-                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                />
-              </label>
+            {isAccessory ? (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-300">Категорія супутнього товару</span>
+                    <select
+                      value={form.params.accessory_category}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, accessory_category: event.target.value as '' | AccessoryCategory },
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                    >
+                      <option value="">Оберіть категорію</option>
+                      {accessoryCategoryOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
 
-              <label className="space-y-1">
-                <span className="text-sm text-gray-300">Профіль</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={form.params.profile}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      params: { ...prev.params, profile: event.target.value },
-                    }))
-                  }
-                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                />
-              </label>
+                {form.params.accessory_category === 'FASTENERS' ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Тип кріплення</span>
+                      <select
+                        value={form.params.fastener_type}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, fastener_type: event.target.value as '' | FastenerType },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      >
+                        <option value="">Оберіть тип</option>
+                        {fastenerTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
 
-              <label className="space-y-1">
-                <span className="text-sm text-gray-300">Діаметр</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={form.params.diameter}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      params: { ...prev.params, diameter: event.target.value },
-                    }))
-                  }
-                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                />
-              </label>
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Розмір різьби</span>
+                      <input
+                        type="text"
+                        value={form.params.thread_size}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, thread_size: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
 
-              <label className="space-y-1">
-                <span className="text-sm text-gray-300">Сезон</span>
-                <select
-                  value={form.params.season}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      params: {
-                        ...prev.params,
-                        season: event.target.value as '' | LotSeason,
-                      },
-                    }))
-                  }
-                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                >
-                  <option value="">Не вказано</option>
-                  {seasonOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Тип посадки</span>
+                      <input
+                        type="text"
+                        value={form.params.seat_type}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, seat_type: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+                  </div>
+                ) : null}
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
-                <input
-                  type="checkbox"
-                  checked={form.params.is_run_flat}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      params: { ...prev.params, is_run_flat: event.target.checked },
-                    }))
-                  }
-                />
-                Run Flat
-              </label>
+                {form.params.accessory_category === 'HUB_RINGS' ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Внутрішній діаметр, мм</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={form.params.ring_inner_diameter}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, ring_inner_diameter: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Зовнішній діаметр, мм</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={form.params.ring_outer_diameter}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, ring_outer_diameter: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+                  </div>
+                ) : null}
 
-              <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
-                <input
-                  type="checkbox"
-                  checked={form.params.is_spiked}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      params: { ...prev.params, is_spiked: event.target.checked },
-                    }))
-                  }
-                />
-                Шипована
-              </label>
+                {form.params.accessory_category === 'SPACERS' ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Тип проставки</span>
+                      <select
+                        value={form.params.spacer_type}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, spacer_type: event.target.value as '' | SpacerType },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      >
+                        <option value="">Оберіть тип</option>
+                        {spacerTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Товщина, мм</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={form.params.spacer_thickness}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, spacer_thickness: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+                  </div>
+                ) : null}
 
-              <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
-                <input
-                  type="checkbox"
-                  checked={form.params.anti_puncture}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      params: { ...prev.params, anti_puncture: event.target.checked },
-                    }))
-                  }
-                />
-                Антипрокол
-              </label>
-            </div>
+                {form.params.accessory_category === 'TIRE_BAGS' ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Кількість у комплекті</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={form.params.package_quantity}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, package_quantity: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-300">Ширина</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={form.params.width}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, width: event.target.value },
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                    />
+                  </label>
+
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-300">Профіль</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={form.params.profile}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, profile: event.target.value },
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                    />
+                  </label>
+
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-300">Діаметр</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={form.params.diameter}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, diameter: event.target.value },
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                    />
+                  </label>
+
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-300">Сезон</span>
+                    <select
+                      value={form.params.season}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: {
+                            ...prev.params,
+                            season: event.target.value as '' | LotSeason,
+                          },
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                    >
+                      <option value="">Не вказано</option>
+                      {seasonOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
+                    <input
+                      type="checkbox"
+                      checked={form.params.is_run_flat}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, is_run_flat: event.target.checked },
+                        }))
+                      }
+                    />
+                    Run Flat
+                  </label>
+
+                  <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
+                    <input
+                      type="checkbox"
+                      checked={form.params.is_spiked}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, is_spiked: event.target.checked },
+                        }))
+                      }
+                    />
+                    Шипована
+                  </label>
+
+                  <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
+                    <input
+                      type="checkbox"
+                      checked={form.params.anti_puncture}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, anti_puncture: event.target.checked },
+                        }))
+                      }
+                    />
+                    Антипрокол
+                  </label>
+                </div>
+              </>
+            )}
           </section>
 
           <section className="space-y-3">

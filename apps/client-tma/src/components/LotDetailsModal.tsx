@@ -18,11 +18,31 @@ const translateCondition = (c?: string) => {
 };
 const translateType = (t?: string) => {
     const upper = t?.toUpperCase();
-    return upper === 'TIRE' ? 'Шина' : upper === 'RIM' ? 'Диск' : t;
+    return upper === 'TIRE' ? 'Шина' : upper === 'RIM' ? 'Диск' : upper === 'ACCESSORY' ? 'Супутній товар' : t;
 };
 const translateSeason = (s?: string) => {
     const upper = s?.toUpperCase();
     return upper === 'SUMMER' ? '☀️ Літо' : upper === 'WINTER' ? '❄️ Зима' : upper === 'ALL_SEASON' ? '🌤 Всесезонна' : '';
+};
+const translateAccessoryCategory = (value?: string) => {
+    const upper = value?.toUpperCase();
+    if (upper === 'FASTENERS') return 'Кріплення';
+    if (upper === 'HUB_RINGS') return 'Проставочні кільця';
+    if (upper === 'SPACERS') return 'Проставки';
+    if (upper === 'TIRE_BAGS') return 'Пакети для шин';
+    return '';
+};
+const translateFastenerType = (value?: string) => {
+    const upper = value?.toUpperCase();
+    if (upper === 'NUT') return 'Гайки';
+    if (upper === 'BOLT') return 'Болти';
+    return '';
+};
+const translateSpacerType = (value?: string) => {
+    const upper = value?.toUpperCase();
+    if (upper === 'ADAPTER') return 'Адаптер';
+    if (upper === 'EXTENDER') return 'Розширювальна';
+    return '';
 };
 
 export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached }: LotDetailsModalProps) => {
@@ -137,6 +157,11 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                     {translateSeason(currentLot.params.season)}
                                 </span>
                             )}
+                            {currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category) !== '' && (
+                                <span className="bg-gray-800 border border-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium">
+                                    {translateAccessoryCategory(currentLot.params.accessory_category)}
+                                </span>
+                            )}
                         </div>
 
                         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 mt-2">
@@ -165,6 +190,50 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                     <div className="col-span-2 flex justify-between">
                                         <span className="text-gray-400">Антипрокол</span><span className="font-bold text-[#10AD0B]">Так</span>
                                     </div>
+                                )}
+                                {currentLot.params?.fastener_type && (
+                                    <>
+                                        <div className="text-gray-400">Тип кріплення</div>
+                                        <div className="text-white font-medium text-right">{translateFastenerType(currentLot.params.fastener_type)}</div>
+                                    </>
+                                )}
+                                {currentLot.params?.thread_size && (
+                                    <>
+                                        <div className="text-gray-400">Різьба</div>
+                                        <div className="text-white font-medium text-right">{currentLot.params.thread_size}</div>
+                                    </>
+                                )}
+                                {currentLot.params?.seat_type && (
+                                    <>
+                                        <div className="text-gray-400">Посадка</div>
+                                        <div className="text-white font-medium text-right">{currentLot.params.seat_type}</div>
+                                    </>
+                                )}
+                                {currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter && (
+                                    <>
+                                        <div className="text-gray-400">Розмір кільця</div>
+                                        <div className="text-white font-medium text-right">
+                                            {currentLot.params.ring_inner_diameter}/{currentLot.params.ring_outer_diameter} мм
+                                        </div>
+                                    </>
+                                )}
+                                {currentLot.params?.spacer_type && (
+                                    <>
+                                        <div className="text-gray-400">Тип проставки</div>
+                                        <div className="text-white font-medium text-right">{translateSpacerType(currentLot.params.spacer_type)}</div>
+                                    </>
+                                )}
+                                {currentLot.params?.spacer_thickness && (
+                                    <>
+                                        <div className="text-gray-400">Товщина</div>
+                                        <div className="text-white font-medium text-right">{currentLot.params.spacer_thickness} мм</div>
+                                    </>
+                                )}
+                                {currentLot.params?.package_quantity && (
+                                    <>
+                                        <div className="text-gray-400">У комплекті</div>
+                                        <div className="text-white font-medium text-right">{currentLot.params.package_quantity} шт.</div>
+                                    </>
                                 )}
                             </div>
                         </div>

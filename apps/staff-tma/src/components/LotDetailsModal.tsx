@@ -24,6 +24,21 @@ const formatMoney = (value: number): string => {
   }).format(value);
 };
 
+const getTypeLabel = (type: string) => {
+  if (type === 'TIRE') return 'Шина';
+  if (type === 'RIM') return 'Диск';
+  if (type === 'ACCESSORY') return 'Супутній товар';
+  return type;
+};
+
+const getAccessoryCategoryLabel = (value?: string) => {
+  if (value === 'FASTENERS') return 'Кріплення';
+  if (value === 'HUB_RINGS') return 'Проставочні кільця';
+  if (value === 'SPACERS') return 'Проставки';
+  if (value === 'TIRE_BAGS') return 'Пакети для шин';
+  return '—';
+};
+
 export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, onOpenPriceTag }: LotDetailsModalProps) {
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
 
@@ -93,7 +108,7 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
               Кількість: <span className="font-semibold text-white">{lot.current_quantity}</span>
             </p>
             <p>
-              Тип: <span className="font-semibold text-white">{lot.type === 'TIRE' ? 'Шина' : 'Диск'}</span>
+              Тип: <span className="font-semibold text-white">{getTypeLabel(lot.type)}</span>
             </p>
             <p>
               Стан: <span className="font-semibold text-white">{lot.condition === 'NEW' ? 'Новий' : 'Вживаний'}</span>
@@ -126,6 +141,14 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
                 <p>Run Flat: {lot.params.is_run_flat ? 'Так' : 'Ні'}</p>
                 <p>Шипована: {lot.params.is_spiked ? 'Так' : 'Ні'}</p>
                 <p>Антипрокол: {lot.params.anti_puncture ? 'Так' : 'Ні'}</p>
+                <p>Категорія: {getAccessoryCategoryLabel(lot.params.accessory_category)}</p>
+                <p>Тип кріплення: {lot.params.fastener_type === 'NUT' ? 'Гайки' : lot.params.fastener_type === 'BOLT' ? 'Болти' : '—'}</p>
+                <p>Різьба: {lot.params.thread_size ?? '—'}</p>
+                <p>Посадка: {lot.params.seat_type ?? '—'}</p>
+                <p>Кільце внутр./зовн.: {lot.params.ring_inner_diameter && lot.params.ring_outer_diameter ? `${lot.params.ring_inner_diameter}/${lot.params.ring_outer_diameter} мм` : '—'}</p>
+                <p>Тип проставки: {lot.params.spacer_type === 'ADAPTER' ? 'Адаптер' : lot.params.spacer_type === 'EXTENDER' ? 'Розширювальна' : '—'}</p>
+                <p>Товщина проставки: {lot.params.spacer_thickness ? `${lot.params.spacer_thickness} мм` : '—'}</p>
+                <p>Кількість у комплекті: {lot.params.package_quantity ?? '—'}</p>
               </div>
             </div>
           ) : null}

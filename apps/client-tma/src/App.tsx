@@ -114,6 +114,28 @@ function App() {
                 </button>
             </div>
 
+            <div className="hide-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
+                {[
+                    { value: '', label: 'Усе' },
+                    { value: 'TIRE', label: 'Шини' },
+                    { value: 'RIM', label: 'Диски' },
+                    { value: 'ACCESSORY', label: 'Супутні товари' },
+                ].map((option) => (
+                    <button
+                        key={option.value || 'all'}
+                        type="button"
+                        onClick={() => setFilter('type', option.value)}
+                        className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                            filters.type === option.value
+                                ? 'border-[#10AD0B]/30 bg-[#10AD0B]/15 text-[#8ff38b]'
+                                : 'border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800'
+                        }`}
+                    >
+                        {option.label}
+                    </button>
+                ))}
+            </div>
+
             <button
                 type="button"
                 onClick={() => setIsServiceInfoOpen(true)}
