@@ -1,0 +1,155 @@
+// apps/client-tma/src/components/FiltersDrawer.tsx
+import { useFilterStore } from '../store/useFilterStore';
+
+interface FiltersDrawerProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
+    const { filters, setFilter, resetFilters } = useFilterStore();
+
+    return (
+        // Загальний контейнер (Фон).
+        // pointer-events-none вимикає кліки, коли шторка закрита, щоб не блокувати UI.
+        <div
+            className={`fixed inset-0 z-50 flex flex-col justify-end transition-opacity duration-300 ${
+                isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
+        >
+            {/* Затемнений фон (60% чорного) */}
+            <div
+                className="absolute inset-0 bg-black/60"
+                onClick={onClose}
+                aria-hidden="true"
+            ></div>
+
+            {/* Сама шторка з анімацією виїзду знизу */}
+            <div
+                className={`relative bg-gray-900 w-full rounded-t-2xl p-4 border-t border-gray-800 flex flex-col max-h-[85vh] transition-transform duration-300 ease-in-out ${
+                    isOpen ? 'translate-y-0' : 'translate-y-full'
+                }`}
+            >
+                {/* Шапка шторки */}
+                <div className="flex justify-between items-center mb-5">
+                    <h2 className="text-xl font-bold text-white">Фільтри</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
+                </div>
+
+                {/* Контент фільтрів */}
+                <div className="overflow-y-auto flex-grow flex flex-col gap-5 pb-4">
+
+                    {/* Тип та Стан */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Тип</label>
+                            <div className="relative">
+                                <select
+                                    value={filters.type}
+                                    onChange={(e) => setFilter('type', e.target.value)}
+                                    className="w-full appearance-none rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 pr-11 text-sm text-white outline-none transition-colors focus:border-[#10AD0B] md:appearance-auto md:pr-3"
+                                >
+                                    <option value="">Всі</option>
+                                    <option value="TIRE">Шини</option>
+                                    <option value="RIM">Диски</option>
+                                </select>
+                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-300 md:hidden">
+                                    ▾
+                                </span>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Стан</label>
+                            <div className="relative">
+                                <select
+                                    value={filters.condition}
+                                    onChange={(e) => setFilter('condition', e.target.value)}
+                                    className="w-full appearance-none rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 pr-11 text-sm text-white outline-none transition-colors focus:border-[#10AD0B] md:appearance-auto md:pr-3"
+                                >
+                                    <option value="">Будь-який</option>
+                                    <option value="NEW">Нові</option>
+                                    <option value="USED">Вживані</option>
+                                </select>
+                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-300 md:hidden">
+                                    ▾
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Сезон */}
+                    <div>
+                        <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Сезон</label>
+                        {/* relative і z-0 створюють новий контекст для позиціонування */}
+                        <div className="relative flex bg-gray-800 rounded-xl p-1 z-0">
+
+                            {/* Анімований "плаваючий" фон (рідке скло/пружний м'ячик) */}
+                            <div className="absolute top-1 bottom-1 left-1 right-1 -z-10 pointer-events-none">
+                                <div
+                                    className="h-full w-1/4 rounded-lg bg-[#10AD0B] shadow-md"
+                                    style={{
+                                        // Зсуваємо на 0%, 100%, 200% або 300% від власної ширини
+                                        transform: `translateX(${['', 'SUMMER', 'WINTER', 'ALL_SEASON'].indexOf(filters.season) * 100}%)`,
+                                        // Кастомна крива для ефекту відскоку (spring effect)
+                                        transition: 'transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1)'
+                                    }}
+                                ></div>
+                            </div>
+
+                            {/* Самі кнопки поверх фону (фон у них прозорий) */}
+                            {['', 'SUMMER', 'WINTER', 'ALL_SEASON'].map((s) => (
+                                <button
+                                    key={s}
+                                    onClick={() => setFilter('season', s)}
+                                    className={`flex-1 text-xs py-2.5 rounded-lg font-medium transition-colors duration-300 ${
+                                        filters.season === s
+                                            ? 'text-white'
+                                            : 'text-gray-400 hover:text-gray-200'
+                                    }`}
+                                >
+                                    {s === '' ? 'Всі' : s === 'SUMMER' ? 'Літо' : s === 'WINTER' ? 'Зима' : 'Всесезон'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Розміри */}
+                    <div>
+                        <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Параметри (Шир / Проф / Радіус)</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <input type="number" placeholder="Ширина" value={filters.width} onChange={(e) => setFilter('width', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                            <input type="number" placeholder="Профіль" value={filters.profile} onChange={(e) => setFilter('profile', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                            <input type="number" placeholder="Радіус" value={filters.diameter} onChange={(e) => setFilter('diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                        </div>
+                    </div>
+
+                    {/* Додатково (Чекбокси) */}
+                    <div className="flex flex-col gap-4 mt-2 bg-gray-800/50 p-4 rounded-xl border border-gray-800">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" checked={filters.is_run_flat} onChange={(e) => setFilter('is_run_flat', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                            <span className="text-sm font-medium text-gray-200">Run Flat (Посилена боковина)</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" checked={filters.is_spiked} onChange={(e) => setFilter('is_spiked', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                            <span className="text-sm font-medium text-gray-200">Шиповані</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" checked={filters.anti_puncture} onChange={(e) => setFilter('anti_puncture', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                            <span className="text-sm font-medium text-gray-200">Антипрокол (Seal)</span>
+                        </label>
+                    </div>
+                </div>
+
+                {/* Кнопки */}
+                <div className="pt-4 border-t border-gray-800 flex gap-3 mt-auto">
+                    <button onClick={() => { resetFilters(); onClose(); }} className="flex-1 py-3.5 bg-gray-800 text-gray-300 rounded-xl font-medium hover:bg-gray-700 hover:text-white transition-colors">
+                        Скинути
+                    </button>
+                    <button onClick={onClose} className="flex-[2] rounded-xl bg-[#10AD0B] py-3.5 font-bold text-white shadow-lg shadow-[#10AD0B]/20 transition-all active:scale-[0.98] hover:bg-[#0d9309]">
+                        Застосувати
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
