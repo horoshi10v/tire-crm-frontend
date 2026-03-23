@@ -13,6 +13,7 @@ import TransfersView from './views/TransfersView';
 import AdminReportsView from './views/AdminReportsView';
 import AdminUsersView from './views/AdminUsersView';
 import AdminAuditLogView from './views/AdminAuditLogView';
+import AdminNotificationsView from './views/AdminNotificationsView';
 import type { CreateLotDTO, LotInternalResponse, UpdateLotDTO } from './types/lot';
 
 type LotFormState =
@@ -25,7 +26,7 @@ type LotDetailsState = {
   warehouseLabel: string;
 } | null;
 
-type StaffTab = 'inventory' | 'orders' | 'warehouses' | 'transfers' | 'admin' | 'admin-users' | 'audit-log';
+type StaffTab = 'inventory' | 'orders' | 'warehouses' | 'transfers' | 'admin' | 'admin-users' | 'audit-log' | 'notifications';
 
 function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -192,6 +193,8 @@ function App() {
               ? 'Персонал'
               : activeTab === 'audit-log'
                 ? 'Журнал дій'
+                : activeTab === 'notifications'
+                  ? 'Сповіщення'
               : 'Адмін-звіти';
   const headerUserName = user.firstName || user.username || 'Користувач';
   const navigationItems: Array<{ key: StaffTab; label: string; icon: string }> = [
@@ -201,6 +204,7 @@ function App() {
     { key: 'transfers', label: 'Трансфери', icon: '🔁' },
   ];
   if (isAdmin) {
+    navigationItems.push({ key: 'notifications', label: 'Сповіщення', icon: '🔔' });
     navigationItems.push({ key: 'admin', label: 'Звіти', icon: '📊' });
     navigationItems.push({ key: 'admin-users', label: 'Персонал', icon: '👥' });
     navigationItems.push({ key: 'audit-log', label: 'Журнал дій', icon: '🧾' });
@@ -250,6 +254,8 @@ function App() {
               <TransfersView />
             ) : activeTab === 'admin-users' && isAdmin ? (
               <AdminUsersView />
+            ) : activeTab === 'notifications' && isAdmin ? (
+              <AdminNotificationsView />
             ) : activeTab === 'audit-log' && isAdmin ? (
               <AdminAuditLogView />
             ) : activeTab === 'admin' && isAdmin ? (
