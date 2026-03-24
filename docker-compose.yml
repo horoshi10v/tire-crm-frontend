@@ -12,6 +12,8 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
+    networks:
+      - edge
     # environment:
     #   - VITE_API_BASE_URL=https://api.yourdomain.com/v1
 
@@ -26,5 +28,11 @@ services:
     ports:
       - "8081:80"
     restart: unless-stopped
+    networks:
+      - edge
     # environment:
     #   - VITE_API_BASE_URL=https://api.yourdomain.com/v1
+
+networks:
+  edge:
+    external: true

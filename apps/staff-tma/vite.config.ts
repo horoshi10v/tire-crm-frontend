@@ -1,18 +1,20 @@
-// apps/client-tma/vite.config.ts
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { defineConfig, loadEnv } from 'vite'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    allowedHosts: true,
-    proxy: {
-      // Intercept all requests starting with /api and forward them to the Go backend
-      '/api': {
-        target: 'http://localhost:8083',
-        changeOrigin: true,
-      }
-    }
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const devProxyTarget = env.DEV_PROXY_TARGET || 'http://localhost:8083'
+
+  return {
+    plugins: [react()],
+    server: {
+      allowedHosts: true,
+      proxy: {
+        '/api': {
+          target: devProxyTarget,
+          changeOrigin: true,
+        },
+      },
+    },
+  }
 })
