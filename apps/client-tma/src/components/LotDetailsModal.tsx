@@ -9,6 +9,7 @@ interface LotDetailsModalProps {
     onClose: () => void;
     onAddedToCart?: (lot: LotPublicResponse) => void;
     onAddToCartLimitReached?: (lot: LotPublicResponse, result: AddItemResult) => void;
+    onCopyLink?: (lot: LotPublicResponse) => void | Promise<void>;
 }
 
 // Хелпери для перекладу (стійкі до регістру)
@@ -45,7 +46,7 @@ const translateSpacerType = (value?: string) => {
     return '';
 };
 
-export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached }: LotDetailsModalProps) => {
+export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached, onCopyLink }: LotDetailsModalProps) => {
     const addItem = useCartStore((state) => state.addItem);
     const [isOpen, setIsOpen] = useState(false);
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
@@ -317,14 +318,23 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                     </div>
                 </div>
 
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gray-950 border-t border-gray-900 pb-8">
-                    <button
-                        onClick={handleAddToCart}
-                        disabled={isOutOfStock}
-                        className="w-full rounded-xl bg-[#10AD0B] py-4 font-bold text-white shadow-lg shadow-[#10AD0B]/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
-                    >
-                        {isOutOfStock ? 'Немає в наявності' : `Додати в кошик • ${formattedSellPrice}`}
-                    </button>
+                <div className="absolute bottom-0 left-0 right-0 border-t border-gray-900 bg-gray-950 p-4 pb-8">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[220px,minmax(0,1fr)]">
+                        <button
+                            type="button"
+                            onClick={() => onCopyLink?.(currentLot)}
+                            className="rounded-xl border border-gray-700 bg-gray-900 py-4 font-semibold text-white transition hover:bg-gray-800 active:scale-[0.98]"
+                        >
+                            Скопіювати посилання
+                        </button>
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={isOutOfStock}
+                            className="w-full rounded-xl bg-[#10AD0B] py-4 font-bold text-white shadow-lg shadow-[#10AD0B]/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+                        >
+                            {isOutOfStock ? 'Немає в наявності' : `Додати в кошик • ${formattedSellPrice}`}
+                        </button>
+                    </div>
                 </div>
             </div>
             </div>

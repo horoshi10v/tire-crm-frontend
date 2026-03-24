@@ -9,9 +9,10 @@ interface LotCardProps {
     onClick: () => void;
     onAddedToCart?: (lot: LotPublicResponse) => void;
     onAddToCartLimitReached?: (lot: LotPublicResponse, result: AddItemResult) => void;
+    onCopyLink?: (lot: LotPublicResponse) => void | Promise<void>;
 }
 
-export const LotCard = ({ lot, onClick, onAddedToCart, onAddToCartLimitReached }: LotCardProps) => {
+export const LotCard = ({ lot, onClick, onAddedToCart, onAddToCartLimitReached, onCopyLink }: LotCardProps) => {
     const addItem = useCartStore((state) => state.addItem);
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
     const isFavorite = useFavoritesStore((state) => state.isFavorite(lot.id));
@@ -41,6 +42,17 @@ export const LotCard = ({ lot, onClick, onAddedToCart, onAddToCartLimitReached }
             className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col cursor-pointer active:scale-[0.98] transition-transform"
         >
             <div className="relative h-32 bg-gray-800 flex items-center justify-center">
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onCopyLink?.(lot);
+                    }}
+                    className="absolute left-2 top-2 z-10 flex h-9 min-w-9 items-center justify-center rounded-full border border-white/10 bg-black/55 px-2 text-sm text-white backdrop-blur transition"
+                    aria-label="Скопіювати посилання на товар"
+                >
+                    ⧉
+                </button>
                 <button
                     type="button"
                     onClick={(e) => {

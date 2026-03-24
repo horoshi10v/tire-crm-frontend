@@ -5,6 +5,7 @@ import { useLots } from './api/useLots';
 import { useFilterStore } from './store/useFilterStore';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { useDebounce } from './hooks/useDebounce';
+import { copyLotShareLink } from './utils/shareLotLink';
 import type { LotPublicResponse } from './types/lot';
 
 import { Header } from './components/Header';
@@ -34,6 +35,10 @@ function App() {
     const [checkoutResult, setCheckoutResult] = useState<any | null>(null);
     const [profileSelectedOrderId, setProfileSelectedOrderId] = useState<string | null>(null);
     const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+    const [sharedLotId, setSharedLotId] = useState<string | null>(() => {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('lot');
+    });
 
     // Стейт для выбранного товара (для открытия на весь экран)
     const [selectedLot, setSelectedLot] = useState<LotPublicResponse | null>(null);
@@ -93,171 +98,235 @@ function App() {
         syncFavoriteLots(lots ?? []);
     }, [lots, syncFavoriteLots]);
 
+    useEffect(() => {
+        const syncSharedLotFromUrl = () => {
+            const params = new URLSearchParams(window.location.search);
+            setSharedLotId(params.get('lot'));
+        };
+
+        window.addEventListener('popstate', syncSharedLotFromUrl);
+        return () => {
+            window.removeEventListener('popstate', syncSharedLotFromUrl);
+        };
+    }, []);
+
+    useEffect(() => {
+        const url = new URL(window.location.href);
+
+        if (selectedLot) {
+            url.searchParams.set('lot', selectedLot.id);
+        } else {
+            url.searchParams.delete('lot');
+        }
+
+        window.history.replaceState({}, '', url);
+        setSharedLotId(selectedLot?.id ?? null);
+    }, [selectedLot]);
+
+    useEffect(() => {
+        if (!sharedLotId || selectedLot?.id === sharedLotId) {
+            return;
+        }
+
+        const sharedLot = [...(lots ?? []), ...favoriteLots].find((lot) => lot.id === sharedLotId);
+
+        if (sharedLot) {
+            setSelectedLot(sharedLot);
+        }
+    }, [favoriteLots, lots, selectedLot?.id, sharedLotId]);
+
+    const handleCopyLotLink = async (lot: LotPublicResponse) => {
+        try {
+            await copyLotShareLink(lot);
+            setToast({
+                title: 'Посилання скопійовано',
+                description: `${lot.brand} ${lot.model}`.trim(),
+                variant: 'success',
+            });
+        } catch {
+            setToast({
+                title: 'Не вдалося скопіювати посилання',
+                description: 'Спробуйте ще раз',
+                variant: 'error',
+            });
+        }
+    };
+
     if (isAuthLoading) {
         return <BrandLoader fullscreen message="Авторизація через Telegram..." />;
     }
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(16,173,11,0.14),_transparent_42%),linear-gradient(180deg,_#070707_0%,_#050505_45%,_#020202_100%)] p-4 pb-24">
+        <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(16,173,11,0.14),_transparent_42%),linear-gradient(180deg,_#070707_0%,_#050505_45%,_#020202_100%)] px-4 pb-24 pt-4">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-[linear-gradient(180deg,rgba(16,173,11,0.1),transparent)]" />
-            <Header
-                onOpenCart={() => setIsCartOpen(true)}
-                onOpenProfile={() => setIsProfileOpen(true)}
-                onOpenBrandInfo={() => setIsServiceInfoOpen(true)}
-            />
+            <div className="mx-auto w-full max-w-[1560px]">
+                <Header
+                    onOpenCart={() => setIsCartOpen(true)}
+                    onOpenProfile={() => setIsProfileOpen(true)}
+                    onOpenBrandInfo={() => setIsServiceInfoOpen(true)}
+                />
 
-            {/* Головний пошук та кнопка фільтрів */}
-            <div className="mb-6 flex gap-2">
-                <div className="relative flex-grow">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                    <input
-                        type="text"
-                        placeholder="Пошук за брендом чи моделлю..."
-                        value={filters.search}
-                        onChange={(e) => setFilter('search', e.target.value)}
-                        className="w-full rounded-xl border border-gray-800 bg-gray-900 py-3 pl-10 pr-4 text-white transition-colors focus:border-[#10AD0B] focus:outline-none"
-                    />
-                </div>
-                <button
-                    onClick={() => setIsFiltersOpen(true)}
-                    className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white hover:bg-gray-800 transition flex items-center justify-center"
-                >
-                    Фільтри
-                </button>
-            </div>
-
-            <div className="hide-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
-                {[
-                    { value: '', label: 'Усе' },
-                    { value: 'TIRE', label: 'Шини' },
-                    { value: 'RIM', label: 'Диски' },
-                    { value: 'ACCESSORY', label: 'Супутні товари' },
-                ].map((option) => (
-                    <button
-                        key={option.value || 'all'}
-                        type="button"
-                        onClick={() => setFilter('type', option.value)}
-                        className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition ${
-                            filters.type === option.value
-                                ? 'border-[#10AD0B]/30 bg-[#10AD0B]/15 text-[#8ff38b]'
-                                : 'border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800'
-                        }`}
-                    >
-                        {option.label}
-                    </button>
-                ))}
-                <button
-                    type="button"
-                    onClick={() => setShowFavoritesOnly((prev) => !prev)}
-                    className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition ${
-                        showFavoritesOnly
-                            ? 'border-[#10AD0B]/30 bg-[#10AD0B]/15 text-[#8ff38b]'
-                            : 'border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800'
-                    }`}
-                >
-                    Тільки обране
-                </button>
-            </div>
-
-            <button
-                type="button"
-                onClick={() => setIsServiceInfoOpen(true)}
-                className="mb-6 flex w-full items-center justify-between rounded-2xl border border-[#10AD0B]/20 bg-black/50 px-4 py-3 text-left transition hover:border-[#10AD0B]/40 hover:bg-black/65"
-            >
-                <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#10AD0B]">
-                        Контакти та сервіс
-                    </p>
-                    <p className="mt-1 truncate text-sm font-medium text-white">
-                        Телефон, маршрут та зв&apos;язок у Telegram
-                    </p>
-                </div>
-                <span className="ml-4 text-xl text-white">↗</span>
-            </button>
-
-            {favoriteLots.length > 0 && (
-                <section className="mb-6">
-                    <div className="mb-3 flex items-end justify-between gap-3">
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#10AD0B]">
-                                Обране
-                            </p>
-                            <p className="mt-1 text-sm text-gray-400">
-                                Збережено локально на цьому пристрої
-                            </p>
-                        </div>
-                        <span className="rounded-full border border-[#10AD0B]/20 bg-[#10AD0B]/10 px-3 py-1 text-xs font-medium text-[#8ff38b]">
-                            {favoriteLots.length}
-                        </span>
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={clearFavorites}
-                        className="mb-3 rounded-full border border-gray-800 bg-gray-900 px-3 py-2 text-xs font-medium text-gray-300 transition hover:bg-gray-800"
-                    >
-                        Очистити обране
-                    </button>
-
-                    <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-2">
-                        {favoriteLots.map((lot) => (
-                            <div key={`favorite-${lot.id}`} className="w-[172px] shrink-0">
-                                <LotCard
-                                    lot={lot}
-                                    onClick={() => setSelectedLot(lot)}
-                                    onAddedToCart={(addedLot) => {
-                                        setToast({
-                                            title: 'Товар додано в кошик',
-                                            description: `${addedLot.brand} ${addedLot.model}`.trim(),
-                                            variant: 'success',
-                                        });
-                                    }}
-                                    onAddToCartLimitReached={(lot) => {
-                                        setToast({
-                                            title: 'Недостатньо товару на складі',
-                                            description: `Для "${lot.brand} ${lot.model}" доступно лише ${lot.current_quantity} шт.`,
-                                            variant: 'error',
-                                        });
-                                    }}
-                                />
+                <div className="xl:grid xl:grid-cols-[320px,minmax(0,1fr)] xl:gap-6">
+                    <aside className="xl:sticky xl:top-4 xl:self-start">
+                        <div className="mb-6 rounded-[28px] border border-white/10 bg-black/45 p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] backdrop-blur-sm">
+                            <div className="mb-4 flex gap-2">
+                                <div className="relative flex-grow">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                                    <input
+                                        type="text"
+                                        placeholder="Пошук за брендом чи моделлю..."
+                                        value={filters.search}
+                                        onChange={(e) => setFilter('search', e.target.value)}
+                                        className="w-full rounded-xl border border-gray-800 bg-gray-900 py-3 pl-10 pr-4 text-white transition-colors focus:border-[#10AD0B] focus:outline-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => setIsFiltersOpen(true)}
+                                    className="flex items-center justify-center rounded-xl border border-gray-800 bg-gray-900 px-4 py-3 text-white transition hover:bg-gray-800"
+                                >
+                                    Фільтри
+                                </button>
                             </div>
-                        ))}
-                    </div>
-                </section>
-            )}
 
-            {/* Каталог */}
-            {isCatalogLoading ? (
-                <BrandLoader message="Оновлюємо для вас актуальний каталог..." />
-            ) : isError ? (
-                <div className="text-center text-red-500 py-10">Помилка завантаження.</div>
-            ) : !visibleLots || visibleLots.length === 0 ? (
-                <div className="text-center text-gray-500 py-10">Товарів за вашим запитом не знайдено.</div>
-            ) : (
-                <div className="grid grid-cols-2 gap-4">
-                    {visibleLots.map((lot) => (
-                        <LotCard
-                            key={lot.id}
-                            lot={lot}
-                            onClick={() => setSelectedLot(lot)}
-                            onAddedToCart={(addedLot) => {
-                                setToast({
-                                    title: 'Товар додано в кошик',
-                                    description: `${addedLot.brand} ${addedLot.model}`.trim(),
-                                    variant: 'success',
-                                });
-                            }}
-                            onAddToCartLimitReached={(lot) => {
-                                setToast({
-                                    title: 'Недостатньо товару на складі',
-                                    description: `Для "${lot.brand} ${lot.model}" доступно лише ${lot.current_quantity} шт.`,
-                                    variant: 'error',
-                                });
-                            }}
-                        />
-                    ))}
+                            <div className="hide-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1 xl:flex-wrap xl:overflow-visible">
+                                {[
+                                    { value: '', label: 'Усе' },
+                                    { value: 'TIRE', label: 'Шини' },
+                                    { value: 'RIM', label: 'Диски' },
+                                    { value: 'ACCESSORY', label: 'Супутні товари' },
+                                ].map((option) => (
+                                    <button
+                                        key={option.value || 'all'}
+                                        type="button"
+                                        onClick={() => setFilter('type', option.value)}
+                                        className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                                            filters.type === option.value
+                                                ? 'border-[#10AD0B]/30 bg-[#10AD0B]/15 text-[#8ff38b]'
+                                                : 'border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800'
+                                        }`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFavoritesOnly((prev) => !prev)}
+                                    className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                                        showFavoritesOnly
+                                            ? 'border-[#10AD0B]/30 bg-[#10AD0B]/15 text-[#8ff38b]'
+                                            : 'border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800'
+                                    }`}
+                                >
+                                    Тільки обране
+                                </button>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsServiceInfoOpen(true)}
+                                className="flex w-full items-center justify-between rounded-2xl border border-[#10AD0B]/20 bg-black/50 px-4 py-3 text-left transition hover:border-[#10AD0B]/40 hover:bg-black/65"
+                            >
+                                <div className="min-w-0">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#10AD0B]">
+                                        Контакти та сервіс
+                                    </p>
+                                    <p className="mt-1 truncate text-sm font-medium text-white">
+                                        Телефон, маршрут та зв&apos;язок у Telegram
+                                    </p>
+                                </div>
+                                <span className="ml-4 text-xl text-white">↗</span>
+                            </button>
+                        </div>
+
+                        {favoriteLots.length > 0 && (
+                            <section className="mb-6 rounded-[28px] border border-white/10 bg-black/45 p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] backdrop-blur-sm">
+                                <div className="mb-3 flex items-end justify-between gap-3">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#10AD0B]">
+                                            Обране
+                                        </p>
+                                        <p className="mt-1 text-sm text-gray-400">
+                                            Збережено локально на цьому пристрої
+                                        </p>
+                                    </div>
+                                    <span className="rounded-full border border-[#10AD0B]/20 bg-[#10AD0B]/10 px-3 py-1 text-xs font-medium text-[#8ff38b]">
+                                        {favoriteLots.length}
+                                    </span>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={clearFavorites}
+                                    className="mb-3 rounded-full border border-gray-800 bg-gray-900 px-3 py-2 text-xs font-medium text-gray-300 transition hover:bg-gray-800"
+                                >
+                                    Очистити обране
+                                </button>
+
+                                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-2 xl:grid xl:grid-cols-1 xl:overflow-visible">
+                                    {favoriteLots.map((lot) => (
+                                        <div key={`favorite-${lot.id}`} className="w-[172px] shrink-0 xl:w-full">
+                                            <LotCard
+                                                lot={lot}
+                                                onClick={() => setSelectedLot(lot)}
+                                                onCopyLink={handleCopyLotLink}
+                                                onAddedToCart={(addedLot) => {
+                                                    setToast({
+                                                        title: 'Товар додано в кошик',
+                                                        description: `${addedLot.brand} ${addedLot.model}`.trim(),
+                                                        variant: 'success',
+                                                    });
+                                                }}
+                                                onAddToCartLimitReached={(lot) => {
+                                                    setToast({
+                                                        title: 'Недостатньо товару на складі',
+                                                        description: `Для "${lot.brand} ${lot.model}" доступно лише ${lot.current_quantity} шт.`,
+                                                        variant: 'error',
+                                                    });
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+                    </aside>
+
+                    <main>
+                        {isCatalogLoading ? (
+                            <BrandLoader message="Оновлюємо для вас актуальний каталог..." />
+                        ) : isError ? (
+                            <div className="py-10 text-center text-red-500">Помилка завантаження.</div>
+                        ) : !visibleLots || visibleLots.length === 0 ? (
+                            <div className="py-10 text-center text-gray-500">Товарів за вашим запитом не знайдено.</div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
+                                {visibleLots.map((lot) => (
+                                    <LotCard
+                                        key={lot.id}
+                                        lot={lot}
+                                        onClick={() => setSelectedLot(lot)}
+                                        onCopyLink={handleCopyLotLink}
+                                        onAddedToCart={(addedLot) => {
+                                            setToast({
+                                                title: 'Товар додано в кошик',
+                                                description: `${addedLot.brand} ${addedLot.model}`.trim(),
+                                                variant: 'success',
+                                            });
+                                        }}
+                                        onAddToCartLimitReached={(lot) => {
+                                            setToast({
+                                                title: 'Недостатньо товару на складі',
+                                                description: `Для "${lot.brand} ${lot.model}" доступно лише ${lot.current_quantity} шт.`,
+                                                variant: 'error',
+                                            });
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </main>
                 </div>
-            )}
+            </div>
 
             {/* Модалки / Шторки (Рендеряться поверх всього) */}
             {isCartOpen && (
@@ -299,6 +368,7 @@ function App() {
             <LotDetailsModal
                 lot={selectedLot}
                 onClose={() => setSelectedLot(null)}
+                onCopyLink={handleCopyLotLink}
                 onAddedToCart={(lot) => {
                     setToast({
                         title: 'Товар додано в кошик',
