@@ -48,6 +48,7 @@ const translateSpacerType = (value?: string) => {
 export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached }: LotDetailsModalProps) => {
     const addItem = useCartStore((state) => state.addItem);
     const [isOpen, setIsOpen] = useState(false);
+    const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
     // Стейт для повноекранного фото
     const [fullScreenPhoto, setFullScreenPhoto] = useState<string | null>(null);
@@ -55,16 +56,21 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
     useEffect(() => {
         if (lot) {
             const timer = setTimeout(() => setIsOpen(true), 10);
+            setActivePhotoIndex(0);
             return () => clearTimeout(timer);
         } else {
             setIsOpen(false);
             setFullScreenPhoto(null);
+            setActivePhotoIndex(0);
         }
     }, [lot]);
 
     if (!lot && !isOpen) return null;
 
     const currentLot = lot || ({} as LotPublicResponse);
+    const photos = currentLot.photos ?? [];
+    const hasPhotos = photos.length > 0;
+    const activePhoto = hasPhotos ? photos[Math.min(activePhotoIndex, photos.length - 1)] : null;
     const isOutOfStock = currentLot.current_quantity === 0;
     const formattedSellPrice = `${new Intl.NumberFormat('uk-UA', {
         minimumFractionDigits: 0,
@@ -86,14 +92,35 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
         handleClose();
     };
 
+    const handlePrevPhoto = () => {
+        if (!hasPhotos) {
+            return;
+        }
+
+        setActivePhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+    };
+
+    const handleNextPhoto = () => {
+        if (!hasPhotos) {
+            return;
+        }
+
+        setActivePhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+    };
+
     return (
         <>
             {/* Головна модалка товару */}
             <div
-                className={`fixed inset-0 z-[60] flex flex-col bg-gray-950 transition-transform duration-300 ease-in-out ${
-                    isOpen ? 'translate-y-0' : 'translate-y-full'
+                className={`fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${
+                    isOpen ? 'opacity-100' : 'opacity-0'
                 }`}
             >
+                <div
+                    className={`relative mx-auto flex h-full w-full max-w-4xl flex-col bg-gray-950 transition-transform duration-300 ease-in-out lg:border-x lg:border-gray-800 ${
+                        isOpen ? 'translate-y-0' : 'translate-y-full'
+                    }`}
+                >
                 {/* Sticky Header - вирівнювання по правому краю (justify-end) */}
                 <div className="absolute top-0 left-0 right-0 z-10 flex justify-end items-center p-4 bg-gradient-to-b from-gray-950/80 to-transparent">
                     <button
@@ -105,23 +132,66 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                 </div>
 
                 <div className="flex-grow overflow-y-auto pb-28 hide-scrollbar">
-                    {/* Карусель фото */}
-                    <div className="w-full aspect-square bg-gray-900 flex overflow-x-auto snap-x snap-mandatory hide-scrollbar border-b border-gray-800">
-                        {currentLot.photos && currentLot.photos.length > 0 ? (
-                            currentLot.photos.map((photo, idx) => (
+                    <div className="border-b border-gray-800 bg-gray-900">
+                        <div className="relative w-full aspect-square overflow-hidden">
+                            {activePhoto ? (
                                 <img
-                                    key={idx}
-                                    src={photo}
+                                    src={activePhoto}
                                     alt={`${currentLot.brand} ${currentLot.model}`}
-                                    onClick={() => setFullScreenPhoto(photo)} // Відкриваємо на весь екран
-                                    className="w-full h-full object-cover flex-shrink-0 snap-center cursor-zoom-in active:opacity-80 transition-opacity"
+                                    onClick={() => setFullScreenPhoto(activePhoto)}
+                                    className="h-full w-full cursor-zoom-in object-contain active:opacity-80 transition-opacity"
                                 />
-                            ))
-                        ) : (
-                            <div className="flex h-full w-full shrink-0 snap-center items-center justify-center text-center text-gray-600">
-                                Немає фото
+                            ) : (
+                                <div className="flex h-full w-full shrink-0 snap-center items-center justify-center text-center text-gray-600">
+                                    Немає фото
+                                </div>
+                            )}
+
+                            {photos.length > 1 ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={handlePrevPhoto}
+                                        className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-700 bg-gray-950/75 text-xl text-white backdrop-blur transition active:scale-95"
+                                    >
+                                        ‹
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleNextPhoto}
+                                        className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-700 bg-gray-950/75 text-xl text-white backdrop-blur transition active:scale-95"
+                                    >
+                                        ›
+                                    </button>
+                                    <div className="absolute bottom-3 right-3 rounded-full border border-gray-700 bg-gray-950/80 px-3 py-1 text-xs font-medium text-gray-100 backdrop-blur">
+                                        {activePhotoIndex + 1} / {photos.length}
+                                    </div>
+                                </>
+                            ) : null}
+                        </div>
+
+                        {photos.length > 1 ? (
+                            <div className="flex gap-2 overflow-x-auto px-4 py-3 hide-scrollbar">
+                                {photos.map((photo, idx) => (
+                                    <button
+                                        key={photo}
+                                        type="button"
+                                        onClick={() => setActivePhotoIndex(idx)}
+                                        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border transition ${
+                                            idx === activePhotoIndex
+                                                ? 'border-[#10AD0B] ring-2 ring-[#10AD0B]/30'
+                                                : 'border-gray-700'
+                                        }`}
+                                    >
+                                        <img
+                                            src={photo}
+                                            alt={`${currentLot.brand} ${currentLot.model} ${idx + 1}`}
+                                            className="h-full w-full object-cover"
+                                        />
+                                    </button>
+                                ))}
                             </div>
-                        )}
+                        ) : null}
                     </div>
 
                     <div className="p-5 flex flex-col gap-4">
@@ -256,6 +326,7 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                         {isOutOfStock ? 'Немає в наявності' : `Додати в кошик • ${formattedSellPrice}`}
                     </button>
                 </div>
+            </div>
             </div>
 
             {/* Просмотрщик фото на весь екран (Lightbox) */}
