@@ -1,5 +1,6 @@
 // apps/client-tma/src/components/Header.tsx
 import { useCartStore } from '../store/useCartStore';
+import { useFavoritesStore } from '../store/useFavoritesStore';
 
 interface HeaderProps {
     onOpenCart: () => void;
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 export const Header = ({ onOpenCart, onOpenProfile, onOpenBrandInfo }: HeaderProps) => {
     const cartItems = useCartStore((state) => state.items);
+    const totalFavorites = useFavoritesStore((state) => state.items.length);
     const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
     return (
@@ -28,6 +30,14 @@ export const Header = ({ onOpenCart, onOpenProfile, onOpenBrandInfo }: HeaderPro
                 </div>
             </button>
             <div className="flex gap-3">
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 p-2 text-xl">
+                    <span aria-hidden="true">♥</span>
+                    {totalFavorites > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-gray-950 bg-[#10AD0B] px-1 text-[10px] font-bold text-white">
+                            {totalFavorites}
+                        </span>
+                    )}
+                </div>
                 <button
                     onClick={onOpenProfile}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 p-2 text-xl transition hover:bg-gray-700"

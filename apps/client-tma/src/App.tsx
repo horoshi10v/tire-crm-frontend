@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { authenticateTelegramUser, useAuthStore } from '@tire-crm/shared';
 import { useLots } from './api/useLots';
 import { useFilterStore } from './store/useFilterStore';
+import { useFavoritesStore } from './store/useFavoritesStore';
 import { useDebounce } from './hooks/useDebounce';
 import type { LotPublicResponse } from './types/lot';
 
@@ -32,6 +33,7 @@ function App() {
     const [toast, setToast] = useState<FeedbackState | null>(null);
     const [checkoutResult, setCheckoutResult] = useState<any | null>(null);
     const [profileSelectedOrderId, setProfileSelectedOrderId] = useState<string | null>(null);
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
     // Стейт для выбранного товара (для открытия на весь экран)
     const [selectedLot, setSelectedLot] = useState<LotPublicResponse | null>(null);
@@ -39,6 +41,9 @@ function App() {
     // Стейт авторизации
     const [isAuthLoading, setIsAuthLoading] = useState(true);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const favoriteLots = useFavoritesStore((state) => state.items);
+    const clearFavorites = useFavoritesStore((state) => state.clearFavorites);
+    const syncFavoriteLots = useFavoritesStore((state) => state.syncLots);
 
     // Достаем фильтры
     const { filters, setFilter } = useFilterStore();
@@ -51,6 +56,9 @@ function App() {
         ...filters,
         search: debouncedSearch
     });
+    const visibleLots = showFavoritesOnly
+        ? (lots ?? []).filter((lot) => favoriteLots.some((favoriteLot) => favoriteLot.id === lot.id))
+        : lots;
 
     useEffect(() => {
         const initApp = async () => {
@@ -80,6 +88,10 @@ function App() {
             window.clearTimeout(timeoutId);
         };
     }, [toast]);
+
+    useEffect(() => {
+        syncFavoriteLots(lots ?? []);
+    }, [lots, syncFavoriteLots]);
 
     if (isAuthLoading) {
         return <BrandLoader fullscreen message="Авторизація через Telegram..." />;
@@ -134,6 +146,17 @@ function App() {
                         {option.label}
                     </button>
                 ))}
+                <button
+                    type="button"
+                    onClick={() => setShowFavoritesOnly((prev) => !prev)}
+                    className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition ${
+                        showFavoritesOnly
+                            ? 'border-[#10AD0B]/30 bg-[#10AD0B]/15 text-[#8ff38b]'
+                            : 'border-gray-800 bg-gray-900 text-gray-300 hover:bg-gray-800'
+                    }`}
+                >
+                    Тільки обране
+                </button>
             </div>
 
             <button
@@ -152,16 +175,67 @@ function App() {
                 <span className="ml-4 text-xl text-white">↗</span>
             </button>
 
+            {favoriteLots.length > 0 && (
+                <section className="mb-6">
+                    <div className="mb-3 flex items-end justify-between gap-3">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#10AD0B]">
+                                Обране
+                            </p>
+                            <p className="mt-1 text-sm text-gray-400">
+                                Збережено локально на цьому пристрої
+                            </p>
+                        </div>
+                        <span className="rounded-full border border-[#10AD0B]/20 bg-[#10AD0B]/10 px-3 py-1 text-xs font-medium text-[#8ff38b]">
+                            {favoriteLots.length}
+                        </span>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={clearFavorites}
+                        className="mb-3 rounded-full border border-gray-800 bg-gray-900 px-3 py-2 text-xs font-medium text-gray-300 transition hover:bg-gray-800"
+                    >
+                        Очистити обране
+                    </button>
+
+                    <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-2">
+                        {favoriteLots.map((lot) => (
+                            <div key={`favorite-${lot.id}`} className="w-[172px] shrink-0">
+                                <LotCard
+                                    lot={lot}
+                                    onClick={() => setSelectedLot(lot)}
+                                    onAddedToCart={(addedLot) => {
+                                        setToast({
+                                            title: 'Товар додано в кошик',
+                                            description: `${addedLot.brand} ${addedLot.model}`.trim(),
+                                            variant: 'success',
+                                        });
+                                    }}
+                                    onAddToCartLimitReached={(lot) => {
+                                        setToast({
+                                            title: 'Недостатньо товару на складі',
+                                            description: `Для "${lot.brand} ${lot.model}" доступно лише ${lot.current_quantity} шт.`,
+                                            variant: 'error',
+                                        });
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
             {/* Каталог */}
             {isCatalogLoading ? (
                 <BrandLoader message="Оновлюємо для вас актуальний каталог..." />
             ) : isError ? (
                 <div className="text-center text-red-500 py-10">Помилка завантаження.</div>
-            ) : !lots || lots.length === 0 ? (
+            ) : !visibleLots || visibleLots.length === 0 ? (
                 <div className="text-center text-gray-500 py-10">Товарів за вашим запитом не знайдено.</div>
             ) : (
                 <div className="grid grid-cols-2 gap-4">
-                    {lots.map((lot) => (
+                    {visibleLots.map((lot) => (
                         <LotCard
                             key={lot.id}
                             lot={lot}

@@ -2,6 +2,7 @@
 import type { AddItemResult } from '../store/useCartStore';
 import type { LotPublicResponse } from '../types/lot';
 import { useCartStore } from '../store/useCartStore';
+import { useFavoritesStore } from '../store/useFavoritesStore';
 
 interface LotCardProps {
     lot: LotPublicResponse;
@@ -12,6 +13,8 @@ interface LotCardProps {
 
 export const LotCard = ({ lot, onClick, onAddedToCart, onAddToCartLimitReached }: LotCardProps) => {
     const addItem = useCartStore((state) => state.addItem);
+    const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+    const isFavorite = useFavoritesStore((state) => state.isFavorite(lot.id));
     const isOutOfStock = lot.current_quantity === 0;
     const formattedPrice = `${new Intl.NumberFormat('uk-UA', {
         minimumFractionDigits: 0,
@@ -37,7 +40,22 @@ export const LotCard = ({ lot, onClick, onAddedToCart, onAddToCartLimitReached }
             onClick={onClick}
             className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col cursor-pointer active:scale-[0.98] transition-transform"
         >
-            <div className="h-32 bg-gray-800 flex items-center justify-center">
+            <div className="relative h-32 bg-gray-800 flex items-center justify-center">
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(lot);
+                    }}
+                    className={`absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border text-lg backdrop-blur transition ${
+                        isFavorite
+                            ? 'border-[#10AD0B]/50 bg-[#10AD0B]/20 text-[#8ff38b]'
+                            : 'border-white/10 bg-black/55 text-white'
+                    }`}
+                    aria-label={isFavorite ? 'Прибрати з обраного' : 'Додати в обране'}
+                >
+                    {isFavorite ? '♥' : '♡'}
+                </button>
                 {lot.photos && lot.photos.length > 0 ? (
                     <img src={lot.photos[0]} alt={lot.model} className="h-full w-full object-cover" />
                 ) : (
