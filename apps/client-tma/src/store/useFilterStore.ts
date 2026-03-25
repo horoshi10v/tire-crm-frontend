@@ -32,6 +32,7 @@ export interface LotFilters {
 interface FilterState {
     filters: LotFilters;
     setFilter: (key: keyof LotFilters, value: any) => void;
+    setTypeFilter: (type: LotFilters['type']) => void;
     resetFilters: () => void;
 }
 
@@ -63,9 +64,41 @@ const defaultFilters: LotFilters = {
     package_quantity: '',
 };
 
+const buildFiltersForType = (prev: LotFilters, type: LotFilters['type']): LotFilters => {
+    const nextFilters: LotFilters = {
+        ...defaultFilters,
+        search: prev.search,
+        type,
+    };
+
+    if (type === 'TIRE') {
+        return nextFilters;
+    }
+
+    if (type === 'RIM') {
+        return nextFilters;
+    }
+
+    if (type === 'ACCESSORY') {
+        return nextFilters;
+    }
+
+    return nextFilters;
+};
+
 export const useFilterStore = create<FilterState>((set) => ({
     filters: defaultFilters,
     setFilter: (key, value) =>
-        set((state) => ({ filters: { ...state.filters, [key]: value } })),
+        set((state) => {
+            if (key === 'type') {
+                return { filters: buildFiltersForType(state.filters, value as LotFilters['type']) };
+            }
+
+            return { filters: { ...state.filters, [key]: value } };
+        }),
+    setTypeFilter: (type) =>
+        set((state) => ({
+            filters: buildFiltersForType(state.filters, type),
+        })),
     resetFilters: () => set({ filters: defaultFilters }),
 }));

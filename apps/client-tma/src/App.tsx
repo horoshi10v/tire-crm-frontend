@@ -87,7 +87,7 @@ function App() {
     const syncFavoriteLots = useFavoritesStore((state) => state.syncLots);
 
     // Достаем фильтры
-    const { filters, setFilter } = useFilterStore();
+    const { filters, setFilter, setTypeFilter } = useFilterStore();
 
     // Debounce только для текстового поиска (500мс)
     const debouncedSearch = useDebounce(filters.search, 500);
@@ -436,7 +436,7 @@ function App() {
                                     <button
                                         key={option.value || 'all'}
                                         type="button"
-                                        onClick={() => setFilter('type', option.value)}
+                                        onClick={() => setTypeFilter(option.value)}
                                         className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition ${
                                             filters.type === option.value
                                                 ? 'border-[#10AD0B]/30 bg-[#10AD0B]/15 text-[#8ff38b]'

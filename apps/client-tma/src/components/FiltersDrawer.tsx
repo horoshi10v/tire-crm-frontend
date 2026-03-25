@@ -9,7 +9,7 @@ interface FiltersDrawerProps {
 }
 
 export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
-    const { filters, setFilter, resetFilters } = useFilterStore();
+    const { filters, setFilter, setTypeFilter, resetFilters } = useFilterStore();
     const isAccessory = filters.type === 'ACCESSORY';
     const isRim = filters.type === 'RIM';
     const isTire = filters.type === 'TIRE';
@@ -81,7 +81,7 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Тип</label>
-                            <ResponsiveSelect value={filters.type} onChange={(value) => setFilter('type', value)} options={typeOptions} />
+                            <ResponsiveSelect value={filters.type} onChange={(value) => setTypeFilter(value)} options={typeOptions} />
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Стан</label>
