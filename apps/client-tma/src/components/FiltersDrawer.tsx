@@ -15,7 +15,7 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
         // Загальний контейнер (Фон).
         // pointer-events-none вимикає кліки, коли шторка закрита, щоб не блокувати UI.
         <div
-            className={`fixed inset-0 z-50 flex flex-col justify-end transition-opacity duration-300 ${
+            className={`fixed inset-0 z-50 flex flex-col justify-end xl:flex-row xl:justify-end transition-opacity duration-300 ${
                 isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
         >
@@ -28,8 +28,8 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
 
             {/* Сама шторка з анімацією виїзду знизу */}
             <div
-                className={`relative bg-gray-900 w-full rounded-t-2xl p-4 border-t border-gray-800 flex flex-col max-h-[85vh] transition-transform duration-300 ease-in-out ${
-                    isOpen ? 'translate-y-0' : 'translate-y-full'
+                className={`relative bg-gray-900 w-full xl:w-[450px] rounded-t-2xl xl:rounded-none xl:rounded-l-2xl p-4 border-t xl:border-t-0 xl:border-l border-gray-800 flex flex-col max-h-[85vh] xl:max-h-full xl:h-full transition-transform duration-300 ease-in-out ${
+                    isOpen ? 'translate-y-0 xl:translate-x-0' : 'translate-y-full xl:translate-y-0 xl:translate-x-full'
                 }`}
             >
                 {/* Шапка шторки */}
