@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shina.pp.ua/sitemap.xml
