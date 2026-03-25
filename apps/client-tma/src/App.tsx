@@ -487,7 +487,7 @@ function App() {
                             <div className="py-10 text-center text-gray-500">Товарів за вашим запитом не знайдено.</div>
                         ) : (
                             <>
-                                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
+                                <div className="grid grid-cols-2 justify-items-center gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-3">
                                     {lots.map((lot) => (
                                         <LotCard
                                             key={lot.id}

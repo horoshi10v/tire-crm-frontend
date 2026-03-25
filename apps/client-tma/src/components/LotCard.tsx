@@ -78,11 +78,11 @@ export const LotCard = ({
         <div
             onClick={onClick}
             style={{ ['--card-delay' as string]: `${animationDelayMs}ms` }}
-            className={`animate-card-enter bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col cursor-pointer transition-transform active:scale-[0.98] ${
+            className={`animate-card-enter mx-auto flex h-full w-full max-w-[22rem] cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-800 bg-gray-900 transition-transform active:scale-[0.98] ${
                 isRemoving ? 'animate-favorite-card-out pointer-events-none' : ''
             }`}
         >
-            <div className="relative h-32 bg-gray-800 flex items-center justify-center">
+            <div className="relative aspect-[4/5] min-h-[12.5rem] bg-gray-800 md:min-h-[15rem] xl:min-h-[17rem] flex items-center justify-center">
                 <button
                     type="button"
                     onClick={async (e) => {
@@ -108,7 +108,7 @@ export const LotCard = ({
                     {isFavorite ? '♥' : '♡'}
                 </button>
                 {lot.photos && lot.photos.length > 0 ? (
-                    <img src={lot.photos[0]} alt={lot.model} className="h-full w-full object-cover" />
+                    <img src={lot.photos[0]} alt={lot.model} className="h-full w-full object-cover object-center" />
                 ) : (
                     <span className="text-gray-600 text-sm text-center">Немає фото</span>
                 )}
