@@ -1,6 +1,6 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { apiClient } from '@tire-crm/shared';
+import { apiClient, CountrySearchSelect } from '@tire-crm/shared';
 import { useStaffWarehouses } from '../api/staffWarehouses';
 import type {
   AccessoryCategory,
@@ -52,6 +52,8 @@ type LotFormState = {
     width: string;
     profile: string;
     diameter: string;
+    production_year: string;
+    country_of_origin: string;
     season: '' | LotSeason;
     is_run_flat: boolean;
     is_spiked: boolean;
@@ -179,6 +181,8 @@ const createInitialState = (lot: LotInternalResponse | null): LotFormState => ({
     width: toInputNumber(lot?.params?.width),
     profile: toInputNumber(lot?.params?.profile),
     diameter: toInputNumber(lot?.params?.diameter),
+    production_year: toInputNumber(lot?.params?.production_year),
+    country_of_origin: lot?.params?.country_of_origin ?? '',
     season: normalizeSeason(lot?.params?.season),
     is_run_flat: Boolean(lot?.params?.is_run_flat),
     is_spiked: Boolean(lot?.params?.is_spiked),
@@ -200,6 +204,8 @@ const hasMeaningfulParams = (params: LotFormState['params']): boolean => {
     params.width.trim() ||
       params.profile.trim() ||
       params.diameter.trim() ||
+      params.production_year.trim() ||
+      params.country_of_origin.trim() ||
       params.season ||
       params.is_run_flat ||
       params.is_spiked ||
@@ -236,6 +242,8 @@ const buildParamsPayload = (params: LotFormState['params']): LotParams => {
   if (params.width.trim()) payload.width = toInteger(params.width);
   if (params.profile.trim()) payload.profile = toInteger(params.profile);
   if (params.diameter.trim()) payload.diameter = toInteger(params.diameter);
+  if (params.production_year.trim()) payload.production_year = toInteger(params.production_year);
+  if (params.country_of_origin.trim()) payload.country_of_origin = params.country_of_origin.trim();
   if (params.season) payload.season = params.season;
   if (params.accessory_category) payload.accessory_category = params.accessory_category;
   if (params.fastener_type) payload.fastener_type = params.fastener_type;
@@ -809,6 +817,41 @@ export default function LotFormModal(props: LotFormModalProps) {
                       ))}
                     </select>
                   </label>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="space-y-1">
+                    <span className="text-sm text-gray-300">Рік випуску</span>
+                    <input
+                      type="number"
+                      min={1900}
+                      max={2100}
+                      step={1}
+                      value={form.params.production_year}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, production_year: event.target.value },
+                        }))
+                      }
+                      className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                    />
+                  </label>
+
+                  <div className="space-y-1">
+                    <span className="text-sm text-gray-300">Країна виробник</span>
+                    <CountrySearchSelect
+                      value={form.params.country_of_origin}
+                      onChange={(value) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          params: { ...prev.params, country_of_origin: value },
+                        }))
+                      }
+                      emptyLabel="Не вибрано"
+                      placeholder="Країна виробник"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

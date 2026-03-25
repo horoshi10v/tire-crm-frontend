@@ -12,12 +12,14 @@ export type SpacerType = 'ADAPTER' | 'EXTENDER';
 export interface LotParams {
     anti_puncture?: boolean;
     accessory_category?: AccessoryCategory;
+    country_of_origin?: string;
     diameter?: number;
     fastener_type?: FastenerType;
     is_run_flat?: boolean;
     is_spiked?: boolean;
     package_quantity?: number;
     profile?: number;
+    production_year?: number;
     ring_inner_diameter?: number;
     ring_outer_diameter?: number;
     seat_type?: string;
@@ -74,6 +76,8 @@ export interface StaffLotFilters {
     width: number | '';
     profile: number | '';
     diameter: number | '';
+    production_year: number | '';
+    country_of_origin: string;
     is_run_flat: boolean;
     is_spiked: boolean;
     anti_puncture: boolean;
@@ -99,6 +103,8 @@ export const defaultStaffLotFilters: StaffLotFilters = {
     width: '',
     profile: '',
     diameter: '',
+    production_year: '',
+    country_of_origin: '',
     is_run_flat: false,
     is_spiked: false,
     anti_puncture: false,

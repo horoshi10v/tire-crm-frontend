@@ -1,4 +1,5 @@
 // apps/client-tma/src/components/FiltersDrawer.tsx
+import { CountrySearchSelect } from '@tire-crm/shared';
 import { useFilterStore } from '../store/useFilterStore';
 
 interface FiltersDrawerProps {
@@ -180,6 +181,16 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                                     <input type="number" placeholder="Профіль" value={filters.profile} onChange={(e) => setFilter('profile', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
                                     <input type="number" placeholder="Радіус" value={filters.diameter} onChange={(e) => setFilter('diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <input type="number" placeholder="Рік випуску" value={filters.production_year} onChange={(e) => setFilter('production_year', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                <CountrySearchSelect
+                                    value={filters.country_of_origin}
+                                    onChange={(value) => setFilter('country_of_origin', value)}
+                                    emptyLabel="Усі країни"
+                                    placeholder="Країна виробник"
+                                />
                             </div>
 
                             <div className="flex flex-col gap-4 mt-2 bg-gray-800/50 p-4 rounded-xl border border-gray-800">

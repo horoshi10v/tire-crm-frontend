@@ -1,3 +1,4 @@
+import { CountrySearchSelect } from '@tire-crm/shared';
 import type { StaffLotFilters } from '../types/lot';
 import type { Warehouse } from '../types/warehouse';
 
@@ -256,6 +257,22 @@ export default function InventoryFiltersDrawer({
                     className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-blue-500"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  placeholder="Рік випуску"
+                  value={filters.production_year}
+                  onChange={(event) => onSetFilter('production_year', event.target.value ? Number(event.target.value) : '')}
+                  className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                />
+                <CountrySearchSelect
+                  value={filters.country_of_origin}
+                  onChange={(value) => onSetFilter('country_of_origin', value)}
+                  emptyLabel="Усі країни"
+                  placeholder="Країна виробник"
+                />
               </div>
 
               <div className="mt-2 flex flex-col gap-4 rounded-xl border border-gray-800 bg-gray-800/50 p-4">

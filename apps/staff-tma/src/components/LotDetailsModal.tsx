@@ -128,6 +128,8 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
                 <p>Ширина: {lot.params.width ?? '—'}</p>
                 <p>Профіль: {lot.params.profile ?? '—'}</p>
                 <p>Діаметр: {lot.params.diameter ?? '—'}</p>
+                <p>Рік випуску: {lot.params.production_year ?? '—'}</p>
+                <p>Країна виробник: {lot.params.country_of_origin ?? '—'}</p>
                 <p>
                   Сезон:{' '}
                   {lot.params.season === 'SUMMER'

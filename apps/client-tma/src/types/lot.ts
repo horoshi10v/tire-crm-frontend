@@ -10,12 +10,14 @@ export type SpacerType = 'ADAPTER' | 'EXTENDER';
 export interface LotParams {
     anti_puncture?: boolean;
     accessory_category?: AccessoryCategory;
+    country_of_origin?: string;
     diameter?: number;
     fastener_type?: FastenerType;
     is_run_flat?: boolean;
     is_spiked?: boolean;
     package_quantity?: number;
     profile?: number;
+    production_year?: number;
     ring_inner_diameter?: number;
     ring_outer_diameter?: number;
     seat_type?: string;

@@ -17,7 +17,7 @@ import AdminUsersView from './views/AdminUsersView';
 import AdminAuditLogView from './views/AdminAuditLogView';
 import AdminNotificationsView from './views/AdminNotificationsView';
 import type { CreateLotDTO, LotInternalResponse, UpdateLotDTO } from './types/lot';
-import { encodePriceTagBatch, formatSellPrice, openPriceTagPrintUrl } from './utils/priceTagPrint';
+import { buildPriceTagDetails, encodePriceTagBatch, formatSellPrice, openPriceTagPrintUrl } from './utils/priceTagPrint';
 
 type LotFormState =
   | { mode: 'create' }
@@ -187,12 +187,14 @@ function App() {
               title: `${lot.brand} ${lot.model ?? ''}`.trim(),
               price: formatSellPrice(lot.sell_price),
               qr: qrData.dataUrl,
+              ...buildPriceTagDetails(lot),
             };
           } catch {
             return {
               title: `${lot.brand} ${lot.model ?? ''}`.trim(),
               price: formatSellPrice(lot.sell_price),
               qr: '',
+              ...buildPriceTagDetails(lot),
             };
           }
         }),

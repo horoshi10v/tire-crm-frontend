@@ -9,6 +9,8 @@ export interface LotFilters {
     width: number | '';
     profile: number | '';
     diameter: number | '';
+    production_year: number | '';
+    country_of_origin: string;
     is_run_flat: boolean;
     is_spiked: boolean;
     anti_puncture: boolean;
@@ -37,6 +39,8 @@ const defaultFilters: LotFilters = {
     width: '',
     profile: '',
     diameter: '',
+    production_year: '',
+    country_of_origin: '',
     is_run_flat: false,
     is_spiked: false,
     anti_puncture: false,

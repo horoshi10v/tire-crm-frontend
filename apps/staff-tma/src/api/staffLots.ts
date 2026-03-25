@@ -63,6 +63,10 @@ export function useStaffLots(
             if (normalizedFilters.width !== '' && normalizedFilters.width !== undefined) params.width = normalizedFilters.width;
             if (normalizedFilters.profile !== '' && normalizedFilters.profile !== undefined) params.profile = normalizedFilters.profile;
             if (normalizedFilters.diameter !== '' && normalizedFilters.diameter !== undefined) params.diameter = normalizedFilters.diameter;
+            if (normalizedFilters.production_year !== '' && normalizedFilters.production_year !== undefined) {
+                params.production_year = normalizedFilters.production_year;
+            }
+            if (normalizedFilters.country_of_origin?.trim()) params.country_of_origin = normalizedFilters.country_of_origin.trim();
             if (normalizedFilters.is_run_flat) params.is_run_flat = 'true';
             if (normalizedFilters.is_spiked) params.is_spiked = 'true';
             if (normalizedFilters.anti_puncture) params.anti_puncture = 'true';

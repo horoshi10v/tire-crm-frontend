@@ -254,6 +254,16 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                     {translateSeason(currentLot.params.season)}
                                 </span>
                             )}
+                            {currentLot.params?.production_year ? (
+                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
+                                    {currentLot.params.production_year} рік
+                                </span>
+                            ) : null}
+                            {currentLot.params?.country_of_origin ? (
+                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
+                                    {currentLot.params.country_of_origin}
+                                </span>
+                            ) : null}
                             {currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category) !== '' && (
                                 <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
                                     {translateAccessoryCategory(currentLot.params.accessory_category)}

@@ -117,6 +117,8 @@ const activeFiltersCount = (filters: StaffLotFilters): number => {
     filters.width !== '',
     filters.profile !== '',
     filters.diameter !== '',
+    filters.production_year !== '',
+    filters.country_of_origin.trim() !== '',
     filters.is_run_flat,
     filters.is_spiked,
     filters.anti_puncture,
@@ -159,6 +161,15 @@ const lotMatchesFilters = (lot: LotInternalResponse, search: string, filters: St
     return false;
   }
   if (filters.diameter !== '' && lot.params?.diameter !== filters.diameter) {
+    return false;
+  }
+  if (filters.production_year !== '' && lot.params?.production_year !== filters.production_year) {
+    return false;
+  }
+  if (
+    filters.country_of_origin &&
+    !(lot.params?.country_of_origin ?? '').toLowerCase().includes(filters.country_of_origin.toLowerCase())
+  ) {
     return false;
   }
 

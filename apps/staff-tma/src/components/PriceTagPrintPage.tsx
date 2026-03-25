@@ -13,6 +13,19 @@ const decodeParam = (value: string | null, fallback = ''): string => {
   }
 };
 
+const decodeStringArray = (value: string | null): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(decodeParam(value));
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string' && item.length > 0) : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function PriceTagPrintPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const hashParams = useMemo(() => new URLSearchParams(window.location.hash.replace(/^#/, '')), []);
@@ -31,6 +44,8 @@ export default function PriceTagPrintPage() {
         title: decodeParam(params.get('title'), 'Цінник'),
         price: decodeParam(params.get('price'), '0 грн'),
         qr: params.get('qr') ?? '',
+        subtitle: decodeParam(params.get('subtitle')),
+        meta: decodeStringArray(params.get('meta')),
       },
     ];
   }, [params, payload]);
@@ -95,12 +110,20 @@ export default function PriceTagPrintPage() {
                   className="flex min-h-[66mm] break-inside-avoid flex-col rounded-lg border-2 border-black bg-white p-3"
                 >
                   <p className="text-center text-lg font-extrabold leading-tight tracking-tight">{item.title}</p>
+                  {item.subtitle ? (
+                    <p className="mt-1 text-center text-base font-semibold leading-tight">{item.subtitle}</p>
+                  ) : null}
+                  {item.meta && item.meta.length > 0 ? (
+                    <p className="mt-2 text-center text-[11px] font-medium leading-snug text-gray-700">
+                      {item.meta.join(' · ')}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-center text-3xl font-black leading-none">{item.price}</p>
                   <div className="mt-3 flex flex-1 items-center justify-center">
                     {item.qr ? (
-                      <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-32 w-32 object-contain" />
+                      <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-36 w-36 object-contain" />
                     ) : (
-                      <div className="flex h-32 w-32 items-center justify-center border border-black text-center text-[11px]">
+                      <div className="flex h-36 w-36 items-center justify-center border border-black text-center text-[11px]">
                         QR недоступний
                       </div>
                     )}

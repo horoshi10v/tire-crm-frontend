@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useLotQR } from '../api/staffLots';
 import type { LotInternalResponse } from '../types/lot';
-import { formatSellPrice, openPriceTagPrintUrl } from '../utils/priceTagPrint';
+import { buildPriceTagDetails, formatSellPrice, openPriceTagPrintUrl } from '../utils/priceTagPrint';
 
 type PriceTagModalProps = {
   lot: LotInternalResponse | null;
@@ -23,11 +23,18 @@ export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
       return;
     }
 
+    const details = buildPriceTagDetails(lot);
     const printUrl = new URL('/print/price-tag', window.location.origin);
     printUrl.searchParams.set('title', lotTitle);
     printUrl.searchParams.set('price', formatSellPrice(lot.sell_price));
     if (qrData?.dataUrl) {
       printUrl.searchParams.set('qr', qrData.dataUrl);
+    }
+    if (details.subtitle) {
+      printUrl.searchParams.set('subtitle', details.subtitle);
+    }
+    if (details.meta && details.meta.length > 0) {
+      printUrl.searchParams.set('meta', JSON.stringify(details.meta));
     }
     openPriceTagPrintUrl(printUrl.toString());
   };
