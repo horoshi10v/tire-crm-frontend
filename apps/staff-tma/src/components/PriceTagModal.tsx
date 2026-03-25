@@ -16,7 +16,8 @@ const formatSellPrice = (value: number): string => {
 
 export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
   const lotId = lot?.id ?? null;
-  const { data: qrUrl, isLoading, isError } = useLotQR(lotId);
+  const { data: qrData, isLoading, isError } = useLotQR(lotId);
+  const qrUrl = qrData?.objectUrl ?? null;
 
   const lotTitle = useMemo(() => {
     if (!lot) return '';
@@ -29,10 +30,10 @@ export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
     }
 
     const printUrl = new URL('/print/price-tag', window.location.origin);
-    printUrl.searchParams.set('title', encodeURIComponent(lotTitle));
-    printUrl.searchParams.set('price', encodeURIComponent(formatSellPrice(lot.sell_price)));
-    if (qrUrl) {
-      printUrl.searchParams.set('qr', qrUrl);
+    printUrl.searchParams.set('title', lotTitle);
+    printUrl.searchParams.set('price', formatSellPrice(lot.sell_price));
+    if (qrData?.dataUrl) {
+      printUrl.searchParams.set('qr', qrData.dataUrl);
     }
 
     const tg = (window as Window & {

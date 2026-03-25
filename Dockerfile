@@ -34,6 +34,9 @@ ARG APP_NAME
 # Remove default Nginx static assets
 RUN rm -rf /usr/share/nginx/html/*
 
+# Replace default Nginx config with SPA fallback routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Copy the build output from the builder stage to Nginx directory
 COPY --from=builder /app/apps/${APP_NAME}/dist /usr/share/nginx/html
 

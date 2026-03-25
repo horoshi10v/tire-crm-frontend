@@ -133,6 +133,29 @@ export const useDeleteLot = () => {
 };
 
 // 5. ГЕНЕРАЦИЯ QR-КОДА (GET /staff/lots/{id}/qr)
+type LotQRData = {
+    objectUrl: string;
+    dataUrl: string;
+};
+
+const blobToDataUrl = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                resolve(reader.result);
+                return;
+            }
+
+            reject(new Error('Не вдалося перетворити QR у data URL'));
+        };
+        reader.onerror = () => {
+            reject(reader.error ?? new Error('Не вдалося прочитати QR blob'));
+        };
+        reader.readAsDataURL(blob);
+    });
+};
+
 export const useLotQR = (id: string | null) => {
     return useQuery({
         queryKey: ['lot-qr', id],
@@ -142,8 +165,10 @@ export const useLotQR = (id: string | null) => {
             const { data } = await apiClient.get(`/staff/lots/${id}/qr`, {
                 responseType: 'blob',
             });
-            // Превращаем бинарные данные в локальный URL для тега <img>
-            return URL.createObjectURL(data);
+            return {
+                objectUrl: URL.createObjectURL(data),
+                dataUrl: await blobToDataUrl(data),
+            } satisfies LotQRData;
         },
         enabled: !!id, // Запрос улетит только если передали ID
     });
