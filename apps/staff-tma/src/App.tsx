@@ -6,6 +6,7 @@ import { useCreateLot, useDeleteLot, useFindStaffLotById, useUpdateLot } from '.
 import { useStaffWarehouses } from './api/staffWarehouses';
 import InventoryView from './views/InventoryView';
 import PriceTagModal from './components/PriceTagModal';
+import PriceTagPrintPage from './components/PriceTagPrintPage';
 import LotFormModal from './components/LotFormModal';
 import LotDetailsModal from './components/LotDetailsModal';
 import OrdersView from './views/OrdersView';
@@ -30,6 +31,7 @@ type LotDetailsState = {
 type StaffTab = 'inventory' | 'orders' | 'warehouses' | 'transfers' | 'admin' | 'admin-users' | 'audit-log' | 'notifications';
 
 function App() {
+  const isPrintRoute = window.location.pathname === '/print/price-tag';
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<StaffTab>('inventory');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -166,6 +168,10 @@ function App() {
       alert(`Не вдалося видалити ${failedCount} з ${lots.length} товарів.`);
     }
   };
+
+  if (isPrintRoute) {
+    return <PriceTagPrintPage />;
+  }
 
   // Екран завантаження
   if (isAuthLoading) {

@@ -14,15 +14,6 @@ const formatSellPrice = (value: number): string => {
   }).format(value)} грн`;
 };
 
-const escapeHtml = (value: string): string => {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-};
-
 export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
   const lotId = lot?.id ?? null;
   const { data: qrUrl, isLoading, isError } = useLotQR(lotId);
@@ -37,103 +28,30 @@ export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
       return;
     }
 
-    const safeLotTitle = escapeHtml(lotTitle);
-    const safePrice = escapeHtml(formatSellPrice(lot.sell_price));
+    const printUrl = new URL('/print/price-tag', window.location.origin);
+    printUrl.searchParams.set('title', encodeURIComponent(lotTitle));
+    printUrl.searchParams.set('price', encodeURIComponent(formatSellPrice(lot.sell_price)));
+    if (qrUrl) {
+      printUrl.searchParams.set('qr', qrUrl);
+    }
 
-    const qrMarkup = qrUrl
-      ? `<img src="${qrUrl}" alt="QR-код для ${safeLotTitle}" style="width:176px;height:176px;object-fit:contain;" />`
-      : '<div style="display:flex;height:176px;width:176px;align-items:center;justify-content:center;border:1px solid #111;font-size:14px;">QR недоступний</div>';
+    const tg = (window as Window & {
+      Telegram?: {
+        WebApp?: {
+          openLink?: (url: string, options?: { try_instant_view?: boolean }) => void;
+        };
+      };
+    }).Telegram?.WebApp;
 
-    const printHtml = `
-      <!DOCTYPE html>
-      <html lang="uk">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Цінник - ${lotTitle}</title>
-          <style>
-            * { box-sizing: border-box; }
-            html, body {
-              margin: 0;
-              padding: 0;
-              background: #ffffff;
-              font-family: Arial, sans-serif;
-            }
-            body {
-              min-height: 100vh;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              padding: 16px;
-            }
-            .tag {
-              width: 88mm;
-              border: 2px solid #111;
-              border-radius: 12px;
-              padding: 16px;
-              color: #111;
-              background: #fff;
-            }
-            .title {
-              text-align: center;
-              font-size: 28px;
-              font-weight: 800;
-              line-height: 1.1;
-            }
-            .price {
-              margin-top: 8px;
-              text-align: center;
-              font-size: 48px;
-              font-weight: 900;
-              line-height: 1;
-            }
-            .qr {
-              margin-top: 18px;
-              display: flex;
-              justify-content: center;
-            }
-            @media print {
-              body { padding: 0; }
-              .tag { border-color: #000; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="tag">
-            <div class="title">${safeLotTitle}</div>
-            <div class="price">${safePrice}</div>
-            <div class="qr">${qrMarkup}</div>
-          </div>
-        </body>
-      </html>
-    `;
+    if (tg?.openLink) {
+      tg.openLink(printUrl.toString(), { try_instant_view: false });
+      return;
+    }
 
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('aria-hidden', 'true');
-    iframe.className = 'pointer-events-none fixed bottom-0 right-0 h-0 w-0 border-0 opacity-0';
-
-    const cleanup = () => {
-      window.setTimeout(() => {
-        iframe.remove();
-      }, 500);
-    };
-
-    iframe.onload = () => {
-      const printFrameWindow = iframe.contentWindow;
-      if (!printFrameWindow) {
-        cleanup();
-        return;
-      }
-
-      window.setTimeout(() => {
-        printFrameWindow.focus();
-        printFrameWindow.print();
-        cleanup();
-      }, 250);
-    };
-
-    document.body.appendChild(iframe);
-    iframe.srcdoc = printHtml;
+    const printWindow = window.open(printUrl.toString(), '_blank');
+    if (!printWindow) {
+      window.location.href = printUrl.toString();
+    }
   };
 
   if (!lot) {
