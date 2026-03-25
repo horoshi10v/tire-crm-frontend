@@ -1,9 +1,10 @@
 // apps/client-tma/src/components/Profile.tsx
-import { useEffect, useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useAuthStore } from '@tire-crm/shared';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { useOrders, type OrderResponse } from '../api/useOrders';
+import type { PaginatedLotsResponse } from '../api/useLots';
 import type { LotPublicResponse } from '../types/lot';
 
 interface ProfileProps {
@@ -30,50 +31,36 @@ export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps
     const user = useAuthStore((state) => state.user);
     const { data: orders, isLoading } = useOrders();
     const queryClient = useQueryClient();
-    const [isVisible, setIsVisible] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
+    const [isClosing, setIsClosing] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState<string | null>(initialSelectedOrderId);
     const formatMoney = (value: number) =>
         `${new Intl.NumberFormat('uk-UA', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 2,
         }).format(value)} грн`;
 
-    useEffect(() => {
-        const frameId = window.requestAnimationFrame(() => {
-            setIsVisible(true);
-        });
-
-        return () => {
-            window.cancelAnimationFrame(frameId);
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!orders?.length || !initialSelectedOrderId) {
-            return;
-        }
-
-        const nextOrder = orders.find((order) => order.id === initialSelectedOrderId);
-        if (nextOrder) {
-            setSelectedOrder(nextOrder);
-        }
-    }, [initialSelectedOrderId, orders]);
+    const selectedOrder = useMemo<OrderResponse | null>(
+        () => orders?.find((order) => order.id === selectedOrderId) ?? null,
+        [orders, selectedOrderId]
+    );
 
     const lotLookup = useMemo(() => {
-        const cachedLots = queryClient.getQueriesData<LotPublicResponse[]>({ queryKey: ['lots'] });
+        const cachedLots = queryClient.getQueriesData<InfiniteData<PaginatedLotsResponse>>({ queryKey: ['lots'] });
         const nextLookup: Record<string, LotPublicResponse> = {};
 
-        cachedLots.forEach(([, lots]) => {
-            lots?.forEach((lot) => {
-                nextLookup[lot.id] = lot;
+        cachedLots.forEach(([, lotsData]) => {
+            lotsData?.pages?.forEach((page) => {
+                page.items?.forEach((lot) => {
+                    nextLookup[lot.id] = lot;
+                });
             });
         });
 
         return nextLookup;
-    }, [queryClient, orders]);
+    }, [queryClient]);
 
     const handleClose = () => {
-        setIsVisible(false);
+        setIsClosing(true);
         window.setTimeout(onClose, 320);
     };
 
@@ -81,15 +68,15 @@ export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps
         <div
             className="fixed inset-0 z-40 bg-gray-950 transition-[background-color,opacity] duration-300 ease-out"
             style={{
-                opacity: isVisible ? 1 : 0,
-                backgroundColor: isVisible ? 'rgba(3, 3, 3, 0.98)' : 'rgba(3, 3, 3, 0)',
+                opacity: isClosing ? 0 : 1,
+                backgroundColor: isClosing ? 'rgba(3, 3, 3, 0)' : 'rgba(3, 3, 3, 0.98)',
             }}
         >
             <div
                 className="flex h-full flex-col p-4 transition-transform duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
                 style={{
-                    transform: isVisible ? 'translateY(0)' : 'translateY(40px)',
-                    opacity: isVisible ? 1 : 0.92,
+                    transform: isClosing ? 'translateY(40px)' : 'translateY(0)',
+                    opacity: isClosing ? 0.92 : 1,
                 }}
             >
             <div className="flex justify-between items-center mb-6">
@@ -120,7 +107,7 @@ export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps
                         <button
                             type="button"
                             key={order.id}
-                            onClick={() => setSelectedOrder(order)}
+                            onClick={() => setSelectedOrderId(order.id)}
                             className="bg-gray-900 p-4 rounded-xl border border-gray-800 text-left transition hover:border-[#10AD0B]/20 hover:bg-gray-900/80"
                         >
                             <div className="flex justify-between items-center border-b border-gray-800 pb-2">
@@ -149,7 +136,7 @@ export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps
             )}
             </div>
 
-            <OrderDetailsModal order={selectedOrder} lotLookup={lotLookup} onClose={() => setSelectedOrder(null)} />
+            <OrderDetailsModal order={selectedOrder} lotLookup={lotLookup} onClose={() => setSelectedOrderId(null)} />
         </div>
     );
 };
