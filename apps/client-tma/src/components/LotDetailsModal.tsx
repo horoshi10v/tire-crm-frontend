@@ -60,6 +60,19 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
     // Стейт для повноекранного фото
     const [fullScreenPhoto, setFullScreenPhoto] = useState<string | null>(null);
 
+    // Блокування скролу на body
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            // Якщо на iOS, то може знадобитись додатковий фікс, але overflow: hidden зазвичай працює
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     useEffect(() => {
         if (lot) {
             const timer = setTimeout(() => setIsOpen(true), 10);
@@ -139,251 +152,257 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                 className={`fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${
                     isOpen ? 'opacity-100' : 'opacity-0'
                 }`}
+                onClick={handleClose}
             >
                 <div
-                    className={`flex h-full w-full items-end justify-center overflow-y-auto p-0 sm:p-4 lg:p-6 ${
+                    className={`flex h-full w-full items-end justify-center overflow-hidden lg:items-center lg:p-10 ${
                         isOpen ? 'pointer-events-auto' : 'pointer-events-none'
                     }`}
                 >
                     <div
-                        className={`relative flex h-full w-full flex-col bg-gray-950 transition-transform duration-300 ease-in-out sm:h-auto sm:max-h-[min(92vh,980px)] sm:max-w-3xl sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-gray-800 sm:shadow-[0_28px_80px_rgba(0,0,0,0.5)] xl:max-w-4xl ${
-                            isOpen ? 'translate-y-0 sm:scale-100' : 'translate-y-full sm:translate-y-8 sm:scale-[0.985]'
+                        onClick={(e) => e.stopPropagation()}
+                        className={`relative flex h-full w-full flex-col bg-gray-950 transition-transform duration-300 ease-in-out overflow-y-auto sm:h-auto sm:max-h-[min(92vh,980px)] sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-gray-800 sm:shadow-[0_28px_80px_rgba(0,0,0,0.5)] lg:overflow-hidden xl:max-w-6xl lg:flex-row lg:rounded-[28px] lg:border lg:border-gray-800 lg:shadow-[0_28px_80px_rgba(0,0,0,0.5)] ${
+                            isOpen ? 'translate-y-0 lg:scale-100' : 'translate-y-full sm:translate-y-8 lg:translate-y-0 lg:scale-95'
                         }`}
                     >
-                {/* Sticky Header - вирівнювання по правому краю (justify-end) */}
-                <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-end bg-gradient-to-b from-gray-950/80 to-transparent p-4">
-                    <button
-                        onClick={handleClose}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-700 bg-gray-900/80 text-xl text-white shadow-lg backdrop-blur transition-transform active:scale-90"
-                    >
-                        ✕
-                    </button>
-                </div>
+                        {/* Кнопка закриття (Desktop absolute) */}
+                        <button
+                            onClick={handleClose}
+                            className="fixed top-4 right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-gray-700 bg-gray-900/80 text-xl text-white shadow-lg backdrop-blur transition-transform hover:bg-gray-800 active:scale-90 sm:absolute sm:right-4 sm:top-4"
+                        >
+                            ✕
+                        </button>
 
-                <div className="min-h-0 flex-1 overflow-y-auto pb-44 sm:pb-48">
-                    <div className="border-b border-gray-800 bg-gray-900">
-                        <div className="relative w-full aspect-square overflow-hidden sm:aspect-[4/3]">
-                            {activePhoto ? (
-                                <img
-                                    src={activePhoto}
-                                    alt={`${currentLot.brand} ${currentLot.model}`}
-                                    onClick={() => setFullScreenPhoto(activePhoto)}
-                                    className="h-full w-full cursor-zoom-in object-contain active:opacity-80 transition-opacity"
-                                />
-                            ) : (
-                                <div className="flex h-full w-full shrink-0 snap-center items-center justify-center text-center text-gray-600">
-                                    Немає фото
-                                </div>
-                            )}
-
-                            {photos.length > 1 ? (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={handlePrevPhoto}
-                                        className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-700 bg-gray-950/75 text-xl text-white backdrop-blur transition active:scale-95"
-                                    >
-                                        ‹
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleNextPhoto}
-                                        className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-700 bg-gray-950/75 text-xl text-white backdrop-blur transition active:scale-95"
-                                    >
-                                        ›
-                                    </button>
-                                    <div className="absolute bottom-3 right-3 rounded-full border border-gray-700 bg-gray-950/80 px-3 py-1 text-xs font-medium text-gray-100 backdrop-blur">
-                                        {activePhotoIndex + 1} / {photos.length}
-                                    </div>
-                                </>
-                            ) : null}
-                        </div>
-
-                        {photos.length > 1 ? (
-                            <div className="hide-scrollbar flex gap-2 overflow-x-auto px-4 py-3">
-                                {photos.map((photo, idx) => (
-                                    <button
-                                        key={photo}
-                                        type="button"
-                                        onClick={() => setActivePhotoIndex(idx)}
-                                        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border transition ${
-                                            idx === activePhotoIndex
-                                                ? 'border-[#10AD0B] ring-2 ring-[#10AD0B]/30'
-                                                : 'border-gray-700'
-                                        }`}
-                                    >
-                                        <img
-                                            src={photo}
-                                            alt={`${currentLot.brand} ${currentLot.model} ${idx + 1}`}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </button>
-                                ))}
-                            </div>
-                        ) : null}
-                    </div>
-
-                    <div className="flex flex-col gap-4 p-5">
-                        <div>
-                            <div className="mb-1 flex items-start justify-between">
-                                <span className="text-sm font-medium text-gray-400">{currentLot.brand}</span>
-                                <span className="text-2xl font-bold text-[#10AD0B]">{formattedSellPrice}</span>
-                            </div>
-                            <h1 className="text-2xl font-bold leading-tight text-white">{currentLot.model}</h1>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                            {currentLot.type && (
-                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                    {translateType(currentLot.type)}
-                                </span>
-                            )}
-
-                            {currentLot.condition && (
-                                <span className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
-                                    currentLot.condition.toUpperCase() === 'NEW'
-                                        ? 'border-green-800 bg-green-900/30 text-green-400'
-                                        : 'border-yellow-800 bg-yellow-900/30 text-yellow-400'
-                                }`}>
-                                    {translateCondition(currentLot.condition)}
-                                </span>
-                            )}
-
-                            {currentLot.params?.season && translateSeason(currentLot.params.season) !== '' && (
-                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                    {translateSeason(currentLot.params.season)}
-                                </span>
-                            )}
-                            {currentLot.params?.production_year ? (
-                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                    {currentLot.params.production_year} рік
-                                </span>
-                            ) : null}
-                            {currentLot.params?.country_of_origin ? (
-                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                    {currentLot.params.country_of_origin}
-                                </span>
-                            ) : null}
-                            {currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category) !== '' && (
-                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                    {translateAccessoryCategory(currentLot.params.accessory_category)}
-                                </span>
-                            )}
-                        </div>
-
-                        <div className="mt-2 rounded-xl border border-gray-800 bg-gray-900 p-4">
-                            <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-white">Характеристики</h3>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                                {currentLot.params?.width && currentLot.params?.profile && currentLot.params?.diameter && (
-                                    <>
-                                        <div className="text-gray-400">Розмір</div>
-                                        <div className="text-right font-medium text-white">{currentLot.params.width}/{currentLot.params.profile} R{currentLot.params.diameter}</div>
-                                    </>
-                                )}
-                                <div className="text-gray-400">В наявності</div>
-                                <div className="text-right font-medium text-white">{currentLot.current_quantity} шт.</div>
-
-                                {currentLot.params?.is_run_flat && (
-                                    <div className="col-span-2 flex justify-between">
-                                        <span className="text-gray-400">Run Flat</span><span className="font-bold text-[#10AD0B]">Так</span>
+                        {/* --- LEFT SIDE: PHOTOS (Desktop) / TOP (Mobile) --- */}
+                        <div className="flex-shrink-0 bg-gray-900 lg:w-[55%] lg:flex lg:flex-col lg:justify-center lg:bg-black/40 lg:border-r lg:border-gray-800">
+                             <div className="relative w-full aspect-square sm:aspect-[4/3] lg:h-full lg:aspect-auto">
+                                {activePhoto ? (
+                                    <img
+                                        src={activePhoto}
+                                        alt={`${currentLot.brand} ${currentLot.model}`}
+                                        onClick={() => setFullScreenPhoto(activePhoto)}
+                                        className="h-full w-full object-contain cursor-zoom-in active:opacity-80 transition-opacity bg-gray-900 lg:bg-transparent"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-center text-gray-600">
+                                        Немає фото
                                     </div>
                                 )}
-                                {currentLot.params?.is_spiked && (
-                                    <div className="col-span-2 flex justify-between">
-                                        <span className="text-gray-400">Шипи</span><span className="font-bold text-[#10AD0B]">Так</span>
-                                    </div>
-                                )}
-                                {currentLot.params?.anti_puncture && (
-                                    <div className="col-span-2 flex justify-between">
-                                        <span className="text-gray-400">Антипрокол</span><span className="font-bold text-[#10AD0B]">Так</span>
-                                    </div>
-                                )}
-                                {currentLot.params?.fastener_type && (
+
+                                {photos.length > 1 ? (
                                     <>
-                                        <div className="text-gray-400">Тип кріплення</div>
-                                        <div className="text-right font-medium text-white">{translateFastenerType(currentLot.params.fastener_type)}</div>
-                                    </>
-                                )}
-                                {currentLot.params?.thread_size && (
-                                    <>
-                                        <div className="text-gray-400">Різьба</div>
-                                        <div className="text-right font-medium text-white">{currentLot.params.thread_size}</div>
-                                    </>
-                                )}
-                                {currentLot.params?.seat_type && (
-                                    <>
-                                        <div className="text-gray-400">Посадка</div>
-                                        <div className="text-right font-medium text-white">{currentLot.params.seat_type}</div>
-                                    </>
-                                )}
-                                {currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter && (
-                                    <>
-                                        <div className="text-gray-400">Розмір кільця</div>
-                                        <div className="text-right font-medium text-white">
-                                            {currentLot.params.ring_inner_diameter}/{currentLot.params.ring_outer_diameter} мм
+                                        <button
+                                            type="button"
+                                            onClick={handlePrevPhoto}
+                                            className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-700 bg-gray-950/75 text-xl text-white backdrop-blur transition active:scale-95 lg:left-6"
+                                        >
+                                            ‹
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleNextPhoto}
+                                            className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-700 bg-gray-950/75 text-xl text-white backdrop-blur transition active:scale-95 lg:right-6"
+                                        >
+                                            ›
+                                        </button>
+                                        <div className="absolute bottom-3 right-3 rounded-full border border-gray-700 bg-gray-950/80 px-3 py-1 text-xs font-medium text-gray-100 backdrop-blur lg:bottom-6 lg:right-6">
+                                            {activePhotoIndex + 1} / {photos.length}
                                         </div>
                                     </>
-                                )}
-                                {currentLot.params?.spacer_type && (
-                                    <>
-                                        <div className="text-gray-400">Тип проставки</div>
-                                        <div className="text-right font-medium text-white">{translateSpacerType(currentLot.params.spacer_type)}</div>
-                                    </>
-                                )}
-                                {currentLot.params?.spacer_thickness && (
-                                    <>
-                                        <div className="text-gray-400">Товщина</div>
-                                        <div className="text-right font-medium text-white">{currentLot.params.spacer_thickness} мм</div>
-                                    </>
-                                )}
-                                {currentLot.params?.package_quantity && (
-                                    <>
-                                        <div className="text-gray-400">У комплекті</div>
-                                        <div className="text-right font-medium text-white">{currentLot.params.package_quantity} шт.</div>
-                                    </>
-                                )}
+                                ) : null}
                             </div>
+                            {/* Thumbnails hidden on mobile, or maybe show them? Original code showed them below image */}
+                            {/* Let's show thumbnails overlay or below on Desktop? Let's keep existing style for mobile, and allow thumbnails on desktop bottom */}
+                            {photos.length > 1 && (
+                                <div className="hide-scrollbar flex gap-2 overflow-x-auto px-4 py-3 bg-gray-900 lg:bg-transparent lg:justify-center lg:border-t lg:border-gray-800/50">
+                                    {photos.map((photo, idx) => (
+                                        <button
+                                            key={photo}
+                                            type="button"
+                                            onClick={() => setActivePhotoIndex(idx)}
+                                            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border transition ${
+                                                idx === activePhotoIndex
+                                                    ? 'border-[#10AD0B] ring-2 ring-[#10AD0B]/30'
+                                                    : 'border-gray-700'
+                                            }`}
+                                        >
+                                            <img
+                                                src={photo}
+                                                alt={`${currentLot.brand} ${currentLot.model} ${idx + 1}`}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {currentLot.defects && (
-                            <div className="mt-2 rounded-xl border border-red-900/50 bg-red-950/30 p-4">
-                                <h3 className="mb-1 text-sm font-bold text-red-400">Опис стану / Дефекти:</h3>
-                                <p className="leading-relaxed text-sm text-red-200/80">{currentLot.defects}</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                        {/* --- RIGHT SIDE: INFO (Desktop) / BOTTOM (Mobile) --- */}
+                        <div className="flex flex-col relative sm:flex-1 sm:min-h-0 lg:h-full">
+                            <div className="pb-[110px] sm:flex-1 sm:overflow-y-auto sm:pb-[140px] lg:pb-0 lg:p-6 lg:pt-12 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+                                 <div className="flex flex-col gap-4 p-5 lg:p-0">
+                                    <div>
+                                        <div className="mb-1 flex items-start justify-between">
+                                            <span className="text-sm font-medium text-gray-400">{currentLot.brand}</span>
+                                            <span className="text-2xl font-bold text-[#10AD0B] lg:hidden">{formattedSellPrice}</span>
+                                        </div>
+                                        <h1 className="text-2xl font-bold leading-tight text-white lg:text-3xl">{currentLot.model}</h1>
+                                        <p className="mt-2 text-3xl font-bold text-[#10AD0B] hidden lg:block">{formattedSellPrice}</p>
+                                    </div>
 
-                <div className="absolute bottom-0 left-0 right-0 border-t border-gray-900 bg-gray-950 p-4 pb-8 sm:rounded-b-[28px]">
-                    <div className="mb-3 flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={() => onCopyLink?.(currentLot)}
-                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gray-700 bg-gray-900 text-base text-white transition hover:bg-gray-800 active:scale-[0.98]"
-                            aria-label="Скопіювати посилання"
-                        >
-                            ⧉
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleToggleFavorite}
-                            className={`min-w-0 flex-1 rounded-xl border py-3 font-semibold transition active:scale-[0.98] ${
-                                isFavorite
-                                    ? 'border-[#10AD0B]/40 bg-[#10AD0B]/12 text-[#8ff38b]'
-                                    : 'border-gray-700 bg-gray-900 text-white hover:bg-gray-800'
-                            }`}
-                        >
-                            {isFavorite ? 'Прибрати з обраного' : 'Додати в обране'}
-                        </button>
-                    </div>
-                    <button
-                        onClick={handleAddToCart}
-                        disabled={isOutOfStock}
-                        className="w-full rounded-xl bg-[#10AD0B] py-4 font-bold text-white shadow-lg shadow-[#10AD0B]/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
-                    >
-                        {isOutOfStock ? 'Немає в наявності' : `Додати в кошик • ${formattedSellPrice}`}
-                    </button>
-                </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {currentLot.type && (
+                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
+                                                {translateType(currentLot.type)}
+                                            </span>
+                                        )}
+                                        {currentLot.condition && (
+                                            <span className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                                                currentLot.condition.toUpperCase() === 'NEW'
+                                                    ? 'border-green-800 bg-green-900/30 text-green-400'
+                                                    : 'border-yellow-800 bg-yellow-900/30 text-yellow-400'
+                                            }`}>
+                                                {translateCondition(currentLot.condition)}
+                                            </span>
+                                        )}
+                                        {currentLot.params?.season && translateSeason(currentLot.params.season) !== '' && (
+                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
+                                                {translateSeason(currentLot.params.season)}
+                                            </span>
+                                        )}
+                                        {currentLot.params?.production_year ? (
+                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
+                                                {currentLot.params.production_year} рік
+                                            </span>
+                                        ) : null}
+                                        {currentLot.params?.country_of_origin ? (
+                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
+                                                {currentLot.params.country_of_origin}
+                                            </span>
+                                        ) : null}
+                                        {currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category) !== '' && (
+                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
+                                                {translateAccessoryCategory(currentLot.params.accessory_category)}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-2 rounded-xl border border-gray-800 bg-gray-900 p-4">
+                                        <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-white">Характеристики</h3>
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                                             {/* Params List */}
+                                            {currentLot.params?.width && currentLot.params?.profile && currentLot.params?.diameter && (
+                                                <>
+                                                    <div className="text-gray-400">Розмір</div>
+                                                    <div className="text-right font-medium text-white">{currentLot.params.width}/{currentLot.params.profile} R{currentLot.params.diameter}</div>
+                                                </>
+                                            )}
+                                            <div className="text-gray-400">В наявності</div>
+                                            <div className="text-right font-medium text-white">{currentLot.current_quantity} шт.</div>
+                                            {/* ... rest of params ... */}
+                                            {currentLot.params?.is_run_flat && (
+                                                <div className="col-span-2 flex justify-between">
+                                                    <span className="text-gray-400">Run Flat</span><span className="font-bold text-[#10AD0B]">Так</span>
+                                                </div>
+                                            )}
+                                            {currentLot.params?.is_spiked && (
+                                                <div className="col-span-2 flex justify-between">
+                                                    <span className="text-gray-400">Шипи</span><span className="font-bold text-[#10AD0B]">Так</span>
+                                                </div>
+                                            )}
+                                            {currentLot.params?.anti_puncture && (
+                                                <div className="col-span-2 flex justify-between">
+                                                    <span className="text-gray-400">Антипрокол</span><span className="font-bold text-[#10AD0B]">Так</span>
+                                                </div>
+                                            )}
+                                            {currentLot.params?.fastener_type && (
+                                                <>
+                                                    <div className="text-gray-400">Тип кріплення</div>
+                                                    <div className="text-right font-medium text-white">{translateFastenerType(currentLot.params.fastener_type)}</div>
+                                                </>
+                                            )}
+                                            {currentLot.params?.thread_size && (
+                                                <>
+                                                    <div className="text-gray-400">Різьба</div>
+                                                    <div className="text-right font-medium text-white">{currentLot.params.thread_size}</div>
+                                                </>
+                                            )}
+                                            {currentLot.params?.seat_type && (
+                                                <>
+                                                    <div className="text-gray-400">Посадка</div>
+                                                    <div className="text-right font-medium text-white">{currentLot.params.seat_type}</div>
+                                                </>
+                                            )}
+                                            {currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter && (
+                                                <>
+                                                    <div className="text-gray-400">Розмір кільця</div>
+                                                    <div className="text-right font-medium text-white">
+                                                        {currentLot.params.ring_inner_diameter}/{currentLot.params.ring_outer_diameter} мм
+                                                    </div>
+                                                </>
+                                            )}
+                                            {currentLot.params?.spacer_type && (
+                                                <>
+                                                    <div className="text-gray-400">Тип проставки</div>
+                                                    <div className="text-right font-medium text-white">{translateSpacerType(currentLot.params.spacer_type)}</div>
+                                                </>
+                                            )}
+                                            {currentLot.params?.spacer_thickness && (
+                                                <>
+                                                    <div className="text-gray-400">Товщина</div>
+                                                    <div className="text-right font-medium text-white">{currentLot.params.spacer_thickness} мм</div>
+                                                </>
+                                            )}
+                                            {currentLot.params?.package_quantity && (
+                                                <>
+                                                    <div className="text-gray-400">У комплекті</div>
+                                                    <div className="text-right font-medium text-white">{currentLot.params.package_quantity} шт.</div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {currentLot.defects && (
+                                        <div className="mt-2 rounded-xl border border-red-900/50 bg-red-950/30 p-4">
+                                            <h3 className="mb-1 text-sm font-bold text-red-400">Опис стану / Дефекти:</h3>
+                                            <p className="leading-relaxed text-sm text-red-200/80">{currentLot.defects}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                             {/* Footer fixed at bottom of right column */}
+                            <div className="sticky bottom-0 z-20 border-t border-gray-900 bg-gray-950 p-4 pb-8 sm:absolute sm:bottom-0 sm:left-0 sm:right-0 sm:rounded-b-[28px] lg:static lg:bg-transparent lg:pb-6 lg:pt-4 lg:rounded-none lg:border-t lg:border-gray-800">
+                                <div className="mb-3 flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => onCopyLink?.(currentLot)}
+                                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gray-700 bg-gray-900 text-base text-white transition hover:bg-gray-800 active:scale-[0.98]"
+                                        aria-label="Скопіювати посилання"
+                                    >
+                                        ⧉
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleFavorite}
+                                        className={`min-w-0 flex-1 rounded-xl border py-3 font-semibold transition active:scale-[0.98] ${
+                                            isFavorite
+                                                ? 'border-[#10AD0B]/40 bg-[#10AD0B]/12 text-[#8ff38b]'
+                                                : 'border-gray-700 bg-gray-900 text-white hover:bg-gray-800'
+                                        }`}
+                                    >
+                                        {isFavorite ? 'Прибрати з обраного' : 'Додати в обране'}
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={handleAddToCart}
+                                    disabled={isOutOfStock}
+                                    className="w-full rounded-xl bg-[#10AD0B] py-4 font-bold text-white shadow-lg shadow-[#10AD0B]/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+                                >
+                                    {isOutOfStock ? 'Немає в наявності' : `Додати в кошик • ${formattedSellPrice}`}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
