@@ -6,7 +6,7 @@ import type { LotsSortParams } from './api/useLots';
 import { useFilterStore } from './store/useFilterStore';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { useDebounce } from './hooks/useDebounce';
-import { copyLotShareLink } from './utils/shareLotLink';
+import { shareLotLink } from './utils/shareLotLink';
 import type { LotPublicResponse } from './types/lot';
 
 import { Header } from './components/Header';
@@ -205,9 +205,9 @@ function App() {
 
     const handleCopyLotLink = async (lot: LotPublicResponse) => {
         try {
-            await copyLotShareLink(lot);
+            const result = await shareLotLink(lot);
             setToast({
-                title: 'Посилання скопійовано',
+                title: result.method === 'share' ? 'Поділитися відкрито' : 'Посилання скопійовано',
                 description: `${lot.brand} ${lot.model}`.trim(),
                 variant: 'success',
             });

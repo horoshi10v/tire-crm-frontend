@@ -18,6 +18,28 @@ export const getLotShareLink = (lotId: string) => {
     return url.toString();
 };
 
+export const shareLotLink = async (lot: Pick<LotPublicResponse, 'id' | 'brand' | 'model'>) => {
+    const shareLink = getLotShareLink(lot.id);
+    const shareData = {
+        title: `${lot.brand} ${lot.model}`.trim(),
+        text: `Перегляньте товар ${`${lot.brand} ${lot.model}`.trim()}`,
+        url: shareLink,
+    };
+
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ url: shareLink }))) {
+        await navigator.share(shareData);
+        return { method: 'share' as const, url: shareLink };
+    }
+
+    if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareLink);
+        return { method: 'copy' as const, url: shareLink };
+    }
+
+    fallbackCopyText(shareLink);
+    return { method: 'copy' as const, url: shareLink };
+};
+
 export const copyLotShareLink = async (lot: Pick<LotPublicResponse, 'id'>) => {
     const shareLink = getLotShareLink(lot.id);
 
