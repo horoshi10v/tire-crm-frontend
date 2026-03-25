@@ -3,6 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@tire-crm/shared';
 import type { LotInternalResponse, CreateLotDTO, StaffLotFilters, UpdateLotDTO } from '../types/lot';
 
+type LotSuggestionsResponse = {
+    items: string[];
+};
+
+type TrackSuggestionPayload = {
+    suggestion: string;
+};
+
 type UseStaffLotsOptions = {
     page?: number;
     pageSize?: number;
@@ -91,6 +99,53 @@ export function useStaffLots(
 
             const { data } = await apiClient.get<LotInternalResponse[]>('/staff/lots', { params });
             return data || [];
+        },
+    });
+}
+
+export function useStaffLotSuggestions(filters: Partial<StaffLotFilters>, limit = 8) {
+    return useQuery({
+        queryKey: ['staff-lot-suggestions', filters, limit],
+        queryFn: async () => {
+            const params: Record<string, string | number> = { limit };
+            if (filters.search?.trim()) params.search = filters.search.trim();
+            if (filters.type) params.type = filters.type;
+            if (filters.sort_by) params.sort_by = filters.sort_by;
+            if (filters.sort_order) params.sort_order = filters.sort_order;
+            if (filters.condition) params.condition = filters.condition;
+            if (filters.season) params.season = filters.season;
+            if (filters.width !== '' && filters.width !== undefined) params.width = filters.width;
+            if (filters.profile !== '' && filters.profile !== undefined) params.profile = filters.profile;
+            if (filters.diameter !== '' && filters.diameter !== undefined) params.diameter = filters.diameter;
+            if (filters.production_year !== '' && filters.production_year !== undefined) params.production_year = filters.production_year;
+            if (filters.country_of_origin?.trim()) params.country_of_origin = filters.country_of_origin.trim();
+            if (filters.is_run_flat) params.is_run_flat = 'true';
+            if (filters.is_spiked) params.is_spiked = 'true';
+            if (filters.anti_puncture) params.anti_puncture = 'true';
+            if (filters.warehouse_id?.trim()) params.warehouse_id = filters.warehouse_id.trim();
+            if (filters.accessory_category) params.accessory_category = filters.accessory_category;
+            if (filters.fastener_type) params.fastener_type = filters.fastener_type;
+            if (filters.thread_size?.trim()) params.thread_size = filters.thread_size.trim();
+            if (filters.seat_type?.trim()) params.seat_type = filters.seat_type.trim();
+            if (filters.ring_inner_diameter !== '' && filters.ring_inner_diameter !== undefined) params.ring_inner_diameter = filters.ring_inner_diameter;
+            if (filters.ring_outer_diameter !== '' && filters.ring_outer_diameter !== undefined) params.ring_outer_diameter = filters.ring_outer_diameter;
+            if (filters.spacer_type) params.spacer_type = filters.spacer_type;
+            if (filters.spacer_thickness !== '' && filters.spacer_thickness !== undefined) params.spacer_thickness = filters.spacer_thickness;
+            if (filters.package_quantity !== '' && filters.package_quantity !== undefined) params.package_quantity = filters.package_quantity;
+
+            const { data } = await apiClient.get<LotSuggestionsResponse>('/staff/lots/suggestions', { params });
+            return data.items ?? [];
+        },
+        staleTime: 30_000,
+    });
+}
+
+export function useTrackStaffLotSuggestionSelection() {
+    return useMutation({
+        mutationFn: async (suggestion: string) => {
+            await apiClient.post('/staff/lots/suggestions/track', {
+                suggestion,
+            } satisfies TrackSuggestionPayload);
         },
     });
 }

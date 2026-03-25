@@ -1,9 +1,11 @@
 // apps/client-tma/src/components/LotCard.tsx
 import { useEffect, useRef, useState } from 'react';
+import { getLotPrimaryLabel, getLotTagLabels, getSearchHighlightTokens, SearchHighlightedText } from '@tire-crm/shared';
 import type { AddItemResult } from '../store/useCartStore';
 import type { LotPublicResponse } from '../types/lot';
 import { useCartStore } from '../store/useCartStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
+import { useFilterStore } from '../store/useFilterStore';
 
 interface LotCardProps {
     lot: LotPublicResponse;
@@ -29,6 +31,7 @@ export const LotCard = ({
     const addItem = useCartStore((state) => state.addItem);
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
     const isFavorite = useFavoritesStore((state) => state.isFavorite(lot.id));
+    const searchQuery = useFilterStore((state) => state.filters.search);
     const previousFavoriteRef = useRef(isFavorite);
     const [favoriteFx, setFavoriteFx] = useState<'adding' | 'removing' | null>(null);
     const isOutOfStock = lot.current_quantity === 0;
@@ -36,19 +39,9 @@ export const LotCard = ({
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
     }).format(lot.sell_price)} грн`;
-    const typeLabel =
-        lot.type === 'TIRE' ? 'Шини' : lot.type === 'RIM' ? 'Диски' : 'Супутні товари';
-    const accessoryLabel =
-        lot.params?.accessory_category === 'FASTENERS'
-            ? 'Кріплення'
-            : lot.params?.accessory_category === 'HUB_RINGS'
-              ? 'Проставочні кільця'
-              : lot.params?.accessory_category === 'SPACERS'
-                ? 'Проставки'
-                : lot.params?.accessory_category === 'TIRE_BAGS'
-                  ? 'Пакети для шин'
-                  : '';
-    const metaLabel = lot.type === 'ACCESSORY' ? accessoryLabel || typeLabel : `${typeLabel} • ${lot.condition === 'NEW' ? 'Нові' : 'Вживані'}`;
+    const primaryLabel = getLotPrimaryLabel(lot) || [lot.brand, lot.model].filter(Boolean).join(' ');
+    const tags = getLotTagLabels(lot);
+    const highlightTokens = getSearchHighlightTokens(searchQuery);
     const stockBadge =
         lot.current_quantity === 0
             ? {
@@ -126,10 +119,23 @@ export const LotCard = ({
                         {stockBadge.label}
                     </span>
                 </div>
-                <span className="text-xs text-gray-400 mb-1">
-          {lot.brand} • {metaLabel}
-        </span>
-                <h2 className="text-sm font-semibold text-gray-100 flex-grow leading-tight mb-2">{lot.model}</h2>
+                <h2 className="mb-2 text-sm font-semibold leading-tight text-gray-100">
+                    <SearchHighlightedText text={primaryLabel} tokens={highlightTokens} />
+                </h2>
+                {tags.length > 0 ? (
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                        {tags.slice(0, 5).map((tag) => (
+                            <span
+                                key={tag}
+                                className="rounded-full border border-gray-700 bg-gray-800 px-2 py-1 text-[10px] font-medium text-gray-200"
+                            >
+                                <SearchHighlightedText text={tag} tokens={highlightTokens} />
+                            </span>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="mb-3 flex-grow" />
+                )}
                 <div className="mt-auto flex items-center justify-between">
                     <span className="font-bold text-[#10AD0B]">{formattedPrice}</span>
                     <button

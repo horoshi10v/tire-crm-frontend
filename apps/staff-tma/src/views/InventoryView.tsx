@@ -1,5 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useStaffLots } from '../api/staffLots';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  buildCatalogSearchHintChips,
+  buildSuggestionSections,
+  clearRecentSearches,
+  createDefaultSearchSuggestionSectionsConfig,
+  getLotPrimaryLabel,
+  getLotSearchableText,
+  getLotTagLabels,
+  loadRecentSearches,
+  saveRecentSearch,
+  getSearchHighlightTokens,
+  SearchSuggestionsDropdown,
+  SearchHighlightedText,
+} from '@tire-crm/shared';
+import { useStaffLotSuggestions, useStaffLots, useTrackStaffLotSuggestionSelection } from '../api/staffLots';
 import { useStaffWarehouses } from '../api/staffWarehouses';
 import InventoryFiltersDrawer from '../components/InventoryFiltersDrawer';
 import type { LotInternalResponse, StaffLotFilters } from '../types/lot';
@@ -65,46 +79,11 @@ const getStatusClassName = (status: string): string => {
   }
 };
 
-const getConditionLabel = (condition: string): string => {
-  return condition === 'NEW' ? 'Новий' : condition === 'USED' ? 'Вживаний' : condition;
-};
-
 const getTypeLabel = (type: string): string => {
   if (type === 'TIRE') return 'Шина';
   if (type === 'RIM') return 'Диск';
   if (type === 'ACCESSORY') return 'Супутній';
   return type;
-};
-
-const getSeasonLabel = (season?: string): string => {
-  if (season === 'SUMMER') return 'Літо';
-  if (season === 'WINTER') return 'Зима';
-  if (season === 'ALL_SEASON') return 'Всесезон';
-  return '';
-};
-
-const getAccessoryCategoryLabel = (value?: string): string => {
-  if (value === 'FASTENERS') return 'Кріплення';
-  if (value === 'HUB_RINGS') return 'Кільця';
-  if (value === 'SPACERS') return 'Проставки';
-  if (value === 'TIRE_BAGS') return 'Пакети';
-  return '';
-};
-
-const getFastenerTypeLabel = (value?: string): string => {
-  if (value === 'NUT') return 'Гайки';
-  if (value === 'BOLT') return 'Болти';
-  return '';
-};
-
-const getSpacerTypeLabel = (value?: string): string => {
-  if (value === 'ADAPTER') return 'Адаптер';
-  if (value === 'EXTENDER') return 'Розшир.';
-  return '';
-};
-
-const hasValue = (value?: string): value is string => {
-  return Boolean(value && value.trim());
 };
 
 const activeFiltersCount = (filters: StaffLotFilters): number => {
@@ -136,8 +115,8 @@ const activeFiltersCount = (filters: StaffLotFilters): number => {
 };
 
 const lotMatchesFilters = (lot: LotInternalResponse, search: string, filters: StaffLotFilters): boolean => {
-  const fullText = `${lot.brand} ${lot.model ?? ''} ${lot.id}`.toLowerCase();
-  if (search && !fullText.includes(search.toLowerCase())) {
+  const fullText = getLotSearchableText(lot);
+  if (search && !fullText.includes(search.toLowerCase().trim())) {
     return false;
   }
 
@@ -223,6 +202,12 @@ export default function InventoryView({
   isBulkPrinting = false,
   onOpenPriceTag,
 }: InventoryViewProps) {
+  const recentSearchConfig = {
+    persistentKey: 'staff-catalog-recent-searches',
+    persistentLimit: 6,
+    sessionKey: 'staff-catalog-recent-searches-session',
+    sessionLimit: 3,
+  } as const;
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -230,6 +215,15 @@ export default function InventoryView({
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches(recentSearchConfig));
+  const isTouchDevice = useMemo(
+    () => typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0),
+    [],
+  );
+  const [debouncedSuggestionSearch, setDebouncedSuggestionSearch] = useState('');
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -240,6 +234,34 @@ export default function InventoryView({
       window.clearTimeout(timeoutId);
     };
   }, [searchInput]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSuggestionSearch(searchInput.trim());
+    }, 180);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchInput]);
+
+  useEffect(() => {
+    if (!isSearchDropdownOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!searchContainerRef.current?.contains(event.target as Node)) {
+        setIsSearchDropdownOpen(false);
+        setActiveSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [isSearchDropdownOpen]);
 
   const { data: warehouses = [] } = useStaffWarehouses();
 
@@ -266,6 +288,45 @@ export default function InventoryView({
       .filter((lot) => lotMatchesFilters(lot, debouncedSearch, filters))
       .filter((lot) => (lowStockOnly ? lot.current_quantity <= LOW_STOCK_THRESHOLD : true));
   }, [debouncedSearch, filters, lots, lowStockOnly]);
+  const searchHintChips = useMemo(() => buildCatalogSearchHintChips(searchInput), [searchInput]);
+  const suggestionSectionsConfig = useMemo(
+    () => createDefaultSearchSuggestionSectionsConfig(!searchInput.trim()),
+    [searchInput],
+  );
+  const { data: searchSuggestions = [], isFetching: isSuggestionsLoading } = useStaffLotSuggestions(
+    {
+      ...filters,
+      search: debouncedSuggestionSearch.trim(),
+    },
+    8,
+  );
+  const trackSuggestionSelection = useTrackStaffLotSuggestionSelection();
+  const quickSearchSuggestions = useMemo(
+    () => (!searchInput.trim() ? searchSuggestions.slice(0, 6) : []),
+    [searchInput, searchSuggestions],
+  );
+  const autocompleteSuggestions = useMemo(
+    () => (searchInput.trim() ? searchSuggestions : []),
+    [searchInput, searchSuggestions],
+  );
+  const highlightTokens = useMemo(() => getSearchHighlightTokens(searchInput), [searchInput]);
+  const suggestionSections = useMemo(
+    () =>
+      buildSuggestionSections(
+        searchInput.trim() ? autocompleteSuggestions : quickSearchSuggestions,
+        recentSearches,
+        suggestionSectionsConfig,
+      ),
+    [autocompleteSuggestions, quickSearchSuggestions, recentSearches, suggestionSectionsConfig],
+  );
+  const dropdownSuggestionItems = useMemo(
+    () => suggestionSections.flatMap((section) => section.items),
+    [suggestionSections],
+  );
+
+  useEffect(() => {
+    setActiveSuggestionIndex(-1);
+  }, [dropdownSuggestionItems]);
 
   const selectedLots = useMemo(() => {
     const selectedSet = new Set(selectedIds);
@@ -297,6 +358,14 @@ export default function InventoryView({
       }
       return !prev;
     });
+  };
+
+  const applySearchSuggestion = (value: string) => {
+    setRecentSearches(saveRecentSearch(recentSearchConfig, value));
+    trackSuggestionSelection.mutate(value);
+    setSearchInput(value);
+    setIsSearchDropdownOpen(false);
+    setActiveSuggestionIndex(-1);
   };
 
   return (
@@ -396,16 +465,74 @@ export default function InventoryView({
 
       <div className="space-y-2">
         <label htmlFor="inventory-search" className="text-sm text-gray-300">
-          Пошук за брендом, моделлю або ID
+          Пошук за розміром, брендом, роком, станом або ID
         </label>
-        <input
-          id="inventory-search"
-          type="text"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          placeholder="Наприклад: Michelin Pilot"
-          className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-white outline-none transition focus:border-blue-500"
-        />
+        <div ref={searchContainerRef} className="relative">
+          <input
+            id="inventory-search"
+            type="text"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onFocus={() => {
+              if (dropdownSuggestionItems.length > 0) {
+                setIsSearchDropdownOpen(true);
+              }
+            }}
+            onKeyDown={(event) => {
+              if (isTouchDevice) {
+                return;
+              }
+              const suggestions = dropdownSuggestionItems;
+              if (suggestions.length === 0) {
+                return;
+              }
+
+              if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                setIsSearchDropdownOpen(true);
+                setActiveSuggestionIndex((prev) => (prev + 1) % suggestions.length);
+              } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                setIsSearchDropdownOpen(true);
+                setActiveSuggestionIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+              } else if (event.key === 'Enter') {
+                if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
+                  event.preventDefault();
+                  applySearchSuggestion(suggestions[activeSuggestionIndex]);
+                }
+              } else if (event.key === 'Escape') {
+                setIsSearchDropdownOpen(false);
+                setActiveSuggestionIndex(-1);
+              }
+            }}
+            placeholder="Наприклад: 225/45 R17, Michelin, 2024, Новий"
+            className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-white outline-none transition focus:border-blue-500"
+          />
+          <SearchSuggestionsDropdown
+            isOpen={isSearchDropdownOpen}
+            isLoading={isSuggestionsLoading}
+            sections={suggestionSections}
+            activeSuggestionIndex={activeSuggestionIndex}
+            highlightTokens={highlightTokens}
+            isTouchDevice={isTouchDevice}
+            query={searchInput}
+            onSelect={applySearchSuggestion}
+            onHoverIndexChange={setActiveSuggestionIndex}
+            onClearRecent={() => setRecentSearches(clearRecentSearches(recentSearchConfig))}
+          />
+        </div>
+        {searchHintChips.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {searchHintChips.map((chip) => (
+              <span
+                key={chip}
+                className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[11px] font-medium text-blue-200"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-300">
@@ -441,7 +568,11 @@ export default function InventoryView({
       ) : null}
 
       <div className="space-y-3">
-        {filteredLots.map((lot) => (
+        {filteredLots.map((lot) => {
+          const primaryLabel = getLotPrimaryLabel(lot) || [lot.brand, lot.model].filter(Boolean).join(' ');
+          const tags = getLotTagLabels(lot);
+
+          return (
           <article
             key={lot.id}
             onClick={() => onOpenDetails?.(lot, getWarehouseLabel(lot.warehouse_id))}
@@ -498,7 +629,7 @@ export default function InventoryView({
                 <div className="grid grid-cols-[1fr_72px] items-start gap-x-2 gap-y-2">
                   <div className="min-w-0">
                     <h3 className="text-base font-semibold leading-5 text-white">
-                      {lot.brand} {lot.model}
+                      <SearchHighlightedText text={primaryLabel} tokens={highlightTokens} />
                     </h3>
                     <p className="mt-0.5 break-words text-[11px] leading-4 text-gray-400">Склад: {getWarehouseLabel(lot.warehouse_id)}</p>
                   </div>
@@ -520,56 +651,11 @@ export default function InventoryView({
                   </div>
 
                   <div className="col-span-2 flex flex-wrap gap-1">
-                    {hasValue(getTypeLabel(lot.type)) ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {getTypeLabel(lot.type)}
+                    {tags.map((tag) => (
+                      <span key={tag} className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
+                        <SearchHighlightedText text={tag} tokens={highlightTokens} />
                       </span>
-                    ) : null}
-                    {hasValue(getConditionLabel(lot.condition)) ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {getConditionLabel(lot.condition)}
-                      </span>
-                    ) : null}
-                    {hasValue(getSeasonLabel(lot.params?.season)) ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {getSeasonLabel(lot.params?.season)}
-                      </span>
-                    ) : null}
-                    {hasValue(getAccessoryCategoryLabel(lot.params?.accessory_category)) ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {getAccessoryCategoryLabel(lot.params?.accessory_category)}
-                      </span>
-                    ) : null}
-                    {hasValue(getFastenerTypeLabel(lot.params?.fastener_type)) ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {getFastenerTypeLabel(lot.params?.fastener_type)}
-                      </span>
-                    ) : null}
-                    {hasValue(getSpacerTypeLabel(lot.params?.spacer_type)) ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {getSpacerTypeLabel(lot.params?.spacer_type)}
-                      </span>
-                    ) : null}
-                    {lot.params?.width && lot.params?.profile && lot.params?.diameter ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {lot.params.width}/{lot.params.profile} R{lot.params.diameter}
-                      </span>
-                    ) : null}
-                    {lot.params?.ring_inner_diameter && lot.params?.ring_outer_diameter ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {lot.params.ring_inner_diameter}/{lot.params.ring_outer_diameter} мм
-                      </span>
-                    ) : null}
-                    {lot.params?.spacer_thickness ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        {lot.params.spacer_thickness} мм
-                      </span>
-                    ) : null}
-                    {lot.params?.package_quantity ? (
-                      <span className="rounded-md border border-gray-700 bg-gray-800 px-2 py-1 text-[11px] text-gray-200">
-                        Комплект {lot.params.package_quantity} шт.
-                      </span>
-                    ) : null}
+                    ))}
                   </div>
                 </div>
               </div>
@@ -608,7 +694,8 @@ export default function InventoryView({
               </button>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
 
       {isFetching && !isLoading ? <p className="text-xs text-gray-500">Оновлення списку...</p> : null}

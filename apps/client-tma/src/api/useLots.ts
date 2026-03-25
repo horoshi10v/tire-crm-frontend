@@ -1,5 +1,5 @@
 // apps/client-tma/src/api/useLots.ts
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { apiClient } from '@tire-crm/shared';
 import type { LotPublicResponse } from '../types/lot';
 import type { LotFilters } from '../store/useFilterStore';
@@ -19,6 +19,14 @@ export interface PaginatedLotsResponse {
     total: number;
     has_next: boolean;
 }
+
+type LotSuggestionsResponse = {
+    items: string[];
+};
+
+type TrackSuggestionPayload = {
+    suggestion: string;
+};
 
 export const useLots = (filters: LotFilters, sort?: LotsSortParams, pageSize = 12) => {
     return useInfiniteQuery({
@@ -51,6 +59,35 @@ export const useLots = (filters: LotFilters, sort?: LotsSortParams, pageSize = 1
             }
 
             return allPages.length + 1;
+        },
+    });
+};
+
+export const useLotSuggestions = (filters: LotFilters, limit = 8) => {
+    return useQuery({
+        queryKey: ['lot-suggestions', filters, limit],
+        queryFn: async () => {
+            const params: Record<string, any> = { limit };
+
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== '' && value !== false) {
+                    params[key] = value;
+                }
+            });
+
+            const { data } = await apiClient.get<LotSuggestionsResponse>('/lots/suggestions', { params });
+            return data.items ?? [];
+        },
+        staleTime: 30_000,
+    });
+};
+
+export const useTrackLotSuggestionSelection = () => {
+    return useMutation({
+        mutationFn: async (suggestion: string) => {
+            await apiClient.post('/lots/suggestions/track', {
+                suggestion,
+            } satisfies TrackSuggestionPayload);
         },
     });
 };

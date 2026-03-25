@@ -1,7 +1,18 @@
 // apps/client-tma/src/App.tsx
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { authenticateTelegramUser, useAuthStore } from '@tire-crm/shared';
-import { useLots } from './api/useLots';
+import {
+    authenticateTelegramUser,
+    buildCatalogSearchHintChips,
+    buildSuggestionSections,
+    clearRecentSearches,
+    createDefaultSearchSuggestionSectionsConfig,
+    getSearchHighlightTokens,
+    loadRecentSearches,
+    saveRecentSearch,
+    SearchSuggestionsDropdown,
+    useAuthStore,
+} from '@tire-crm/shared';
+import { useLotSuggestions, useLots, useTrackLotSuggestionSelection } from './api/useLots';
 import type { LotsSortParams } from './api/useLots';
 import { useFilterStore } from './store/useFilterStore';
 import { useFavoritesStore } from './store/useFavoritesStore';
@@ -22,6 +33,12 @@ import { ToastAlert } from './components/ToastAlert';
 import { CheckoutSuccessModal } from './components/CheckoutSuccessModal';
 
 function App() {
+    const recentSearchConfig = {
+        persistentKey: 'client-catalog-recent-searches',
+        persistentLimit: 6,
+        sessionKey: 'client-catalog-recent-searches-session',
+        sessionLimit: 3,
+    } as const;
     type FeedbackState = {
         title: string;
         description: string;
@@ -44,6 +61,13 @@ function App() {
     });
     const [sortOption, setSortOption] = useState<SortOption>('DEFAULT');
     const [showCatalogControlsReturn, setShowCatalogControlsReturn] = useState(false);
+    const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+    const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+    const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches(recentSearchConfig));
+    const isTouchDevice = useMemo(
+        () => typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0),
+        []
+    );
 
     // Стейт для выбранного товара (для открытия на весь экран)
     const [selectedLot, setSelectedLot] = useState<LotPublicResponse | null>(null);
@@ -59,6 +83,11 @@ function App() {
 
     // Debounce только для текстового поиска (500мс)
     const debouncedSearch = useDebounce(filters.search, 500);
+    const debouncedSuggestionSearch = useDebounce(filters.search, 180);
+    const suggestionSectionsConfig = useMemo(
+        () => createDefaultSearchSuggestionSectionsConfig(!filters.search.trim()),
+        [filters.search]
+    );
     const sortParams = useMemo<LotsSortParams | undefined>(() => {
         switch (sortOption) {
             case 'PRICE_ASC':
@@ -74,6 +103,7 @@ function App() {
                 return undefined;
         }
     }, [sortOption]);
+    const searchHintChips = useMemo(() => buildCatalogSearchHintChips(filters.search), [filters.search]);
 
     // Передаем в хук актуальные фильтры, search заменяем на debounced версию
     const {
@@ -91,6 +121,37 @@ function App() {
         () => lotsPages?.pages.flatMap((page) => page.items ?? []) ?? [],
         [lotsPages]
     );
+    const searchContainerRef = useRef<HTMLDivElement | null>(null);
+    const { data: searchSuggestions = [], isFetching: isSuggestionsLoading } = useLotSuggestions(
+        {
+            ...filters,
+            search: debouncedSuggestionSearch.trim(),
+        },
+        8
+    );
+    const trackSuggestionSelection = useTrackLotSuggestionSelection();
+    const quickSearchSuggestions = useMemo(
+        () => (!filters.search.trim() ? searchSuggestions.slice(0, 6) : []),
+        [filters.search, searchSuggestions]
+    );
+    const autocompleteSuggestions = useMemo(
+        () => (filters.search.trim() ? searchSuggestions : []),
+        [filters.search, searchSuggestions]
+    );
+    const suggestionSections = useMemo(
+        () =>
+            buildSuggestionSections(
+                filters.search.trim() ? autocompleteSuggestions : quickSearchSuggestions,
+                recentSearches,
+                suggestionSectionsConfig
+            ),
+        [autocompleteSuggestions, quickSearchSuggestions, recentSearches, suggestionSectionsConfig]
+    );
+    const dropdownSuggestionItems = useMemo(
+        () => suggestionSections.flatMap((section) => section.items),
+        [suggestionSections]
+    );
+    const suggestionHighlightTokens = useMemo(() => getSearchHighlightTokens(filters.search), [filters.search]);
     const loadMoreRef = useRef<HTMLDivElement | null>(null);
     const catalogControlsRef = useRef<HTMLDivElement | null>(null);
 
@@ -126,6 +187,28 @@ function App() {
     useEffect(() => {
         syncFavoriteLots(lots ?? []);
     }, [lots, syncFavoriteLots]);
+
+    useEffect(() => {
+        setActiveSuggestionIndex(-1);
+    }, [dropdownSuggestionItems]);
+
+    useEffect(() => {
+        if (!isSearchDropdownOpen) {
+            return;
+        }
+
+        const handlePointerDown = (event: MouseEvent) => {
+            if (!searchContainerRef.current?.contains(event.target as Node)) {
+                setIsSearchDropdownOpen(false);
+                setActiveSuggestionIndex(-1);
+            }
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+        };
+    }, [isSearchDropdownOpen]);
 
     useEffect(() => {
         const node = loadMoreRef.current;
@@ -227,6 +310,14 @@ function App() {
         });
     };
 
+    const applySearchSuggestion = (value: string) => {
+        setRecentSearches(saveRecentSearch(recentSearchConfig, value));
+        trackSuggestionSelection.mutate(value);
+        setFilter('search', value);
+        setIsSearchDropdownOpen(false);
+        setActiveSuggestionIndex(-1);
+    };
+
     if (isAuthLoading) {
         return <BrandLoader fullscreen message="Авторизація через Telegram..." />;
     }
@@ -246,14 +337,58 @@ function App() {
                     <aside className="xl:sticky xl:top-4 xl:self-start">
                         <div ref={catalogControlsRef} className="mb-6 rounded-[28px] border border-white/10 bg-black/45 p-3 shadow-[0_24px_70px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-4">
                             <div className="mb-3 flex gap-2">
-                                <div className="relative flex-grow">
+                                <div ref={searchContainerRef} className="relative flex-grow">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
                                     <input
                                         type="text"
-                                        placeholder="Пошук за брендом чи моделлю..."
+                                        placeholder="Пошук за розміром, брендом, роком або станом..."
                                         value={filters.search}
                                         onChange={(e) => setFilter('search', e.target.value)}
+                                        onFocus={() => {
+                                            if (dropdownSuggestionItems.length > 0) {
+                                                setIsSearchDropdownOpen(true);
+                                            }
+                                        }}
+                                        onKeyDown={(event) => {
+                                            if (isTouchDevice) {
+                                                return;
+                                            }
+                                            const suggestions = dropdownSuggestionItems;
+                                            if (suggestions.length === 0) {
+                                                return;
+                                            }
+
+                                            if (event.key === 'ArrowDown') {
+                                                event.preventDefault();
+                                                setIsSearchDropdownOpen(true);
+                                                setActiveSuggestionIndex((prev) => (prev + 1) % suggestions.length);
+                                            } else if (event.key === 'ArrowUp') {
+                                                event.preventDefault();
+                                                setIsSearchDropdownOpen(true);
+                                                setActiveSuggestionIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+                                            } else if (event.key === 'Enter') {
+                                                if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
+                                                    event.preventDefault();
+                                                    applySearchSuggestion(suggestions[activeSuggestionIndex]);
+                                                }
+                                            } else if (event.key === 'Escape') {
+                                                setIsSearchDropdownOpen(false);
+                                                setActiveSuggestionIndex(-1);
+                                            }
+                                        }}
                                         className="w-full rounded-xl border border-gray-800 bg-gray-900 py-3 pl-10 pr-4 text-white transition-colors focus:border-[#10AD0B] focus:outline-none"
+                                    />
+                                    <SearchSuggestionsDropdown
+                                        isOpen={isSearchDropdownOpen}
+                                        isLoading={isSuggestionsLoading}
+                                        sections={suggestionSections}
+                                        activeSuggestionIndex={activeSuggestionIndex}
+                                        highlightTokens={suggestionHighlightTokens}
+                                        isTouchDevice={isTouchDevice}
+                                        query={filters.search}
+                                        onSelect={applySearchSuggestion}
+                                        onHoverIndexChange={setActiveSuggestionIndex}
+                                        onClearRecent={() => setRecentSearches(clearRecentSearches(recentSearchConfig))}
                                     />
                                 </div>
                                 <button
@@ -263,6 +398,18 @@ function App() {
                                     Фільтри
                                 </button>
                             </div>
+                            {searchHintChips.length > 0 ? (
+                                <div className="mb-3 flex flex-wrap gap-1.5">
+                                    {searchHintChips.map((chip) => (
+                                        <span
+                                            key={chip}
+                                            className="rounded-full border border-[#10AD0B]/20 bg-[#10AD0B]/10 px-2.5 py-1 text-[11px] font-medium text-[#b7f7b5]"
+                                        >
+                                            {chip}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : null}
 
                             <div className="hide-scrollbar mb-2 flex gap-2 overflow-x-auto pb-0.5 xl:flex-wrap xl:overflow-visible">
                                 {[
