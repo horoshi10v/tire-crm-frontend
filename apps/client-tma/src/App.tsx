@@ -122,6 +122,7 @@ function App() {
         [lotsPages]
     );
     const searchContainerRef = useRef<HTMLDivElement | null>(null);
+    const searchDropdownRef = useRef<HTMLDivElement | null>(null);
     const { data: searchSuggestions = [], isFetching: isSuggestionsLoading } = useLotSuggestions(
         {
             ...filters,
@@ -198,7 +199,11 @@ function App() {
         }
 
         const handlePointerDown = (event: MouseEvent) => {
-            if (!searchContainerRef.current?.contains(event.target as Node)) {
+            const targetNode = event.target as Node;
+            if (
+                !searchContainerRef.current?.contains(targetNode) &&
+                !searchDropdownRef.current?.contains(targetNode)
+            ) {
                 setIsSearchDropdownOpen(false);
                 setActiveSuggestionIndex(-1);
             }
@@ -337,7 +342,7 @@ function App() {
                     <aside className="xl:sticky xl:top-4 xl:self-start">
                         <div ref={catalogControlsRef} className="mb-6 rounded-[28px] border border-white/10 bg-black/45 p-3 shadow-[0_24px_70px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-4">
                             <div className="mb-3 flex gap-2">
-                                <div ref={searchContainerRef} className="relative flex-grow">
+                                <div ref={searchContainerRef} className="relative z-30 flex-grow">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
                                     <input
                                         type="text"
@@ -379,6 +384,8 @@ function App() {
                                         className="w-full rounded-xl border border-gray-800 bg-gray-900 py-3 pl-10 pr-4 text-white transition-colors focus:border-[#10AD0B] focus:outline-none"
                                     />
                                     <SearchSuggestionsDropdown
+                                        anchorRef={searchContainerRef}
+                                        dropdownRef={searchDropdownRef}
                                         isOpen={isSearchDropdownOpen}
                                         isLoading={isSuggestionsLoading}
                                         sections={suggestionSections}

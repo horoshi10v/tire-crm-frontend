@@ -218,6 +218,7 @@ export default function InventoryView({
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
+  const searchDropdownRef = useRef<HTMLDivElement | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => loadRecentSearches(recentSearchConfig));
   const isTouchDevice = useMemo(
     () => typeof window !== 'undefined' && (window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0),
@@ -251,7 +252,11 @@ export default function InventoryView({
     }
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!searchContainerRef.current?.contains(event.target as Node)) {
+      const targetNode = event.target as Node;
+      if (
+        !searchContainerRef.current?.contains(targetNode) &&
+        !searchDropdownRef.current?.contains(targetNode)
+      ) {
         setIsSearchDropdownOpen(false);
         setActiveSuggestionIndex(-1);
       }
@@ -467,7 +472,7 @@ export default function InventoryView({
         <label htmlFor="inventory-search" className="text-sm text-gray-300">
           Пошук за розміром, брендом, роком, станом або ID
         </label>
-        <div ref={searchContainerRef} className="relative">
+        <div ref={searchContainerRef} className="relative z-30">
           <input
             id="inventory-search"
             type="text"
@@ -509,6 +514,8 @@ export default function InventoryView({
             className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-white outline-none transition focus:border-blue-500"
           />
           <SearchSuggestionsDropdown
+            anchorRef={searchContainerRef}
+            dropdownRef={searchDropdownRef}
             isOpen={isSearchDropdownOpen}
             isLoading={isSuggestionsLoading}
             sections={suggestionSections}
