@@ -107,7 +107,7 @@ export function ResponsiveSelect({
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
                 disabled={disabled}
-                className={`w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B] md:hidden ${mobileSelectClassName}`}
+                className={`w-full appearance-none rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 pr-12 text-sm text-white outline-none transition-colors focus:border-[#10AD0B] md:hidden ${mobileSelectClassName}`}
             >
                 {options.map((option) => (
                     <option key={option.value || '__empty'} value={option.value}>
@@ -115,6 +115,22 @@ export function ResponsiveSelect({
                     </option>
                 ))}
             </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white md:hidden">
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="h-5 w-5"
+                >
+                    <path
+                        d="M5 7.5L10 12.5L15 7.5"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            </span>
 
             <div className="hidden md:block">
                 <button
