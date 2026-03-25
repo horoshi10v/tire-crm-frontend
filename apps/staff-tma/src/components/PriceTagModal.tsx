@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useLotQR } from '../api/staffLots';
 import type { LotInternalResponse } from '../types/lot';
-import { formatSellPrice } from '../utils/priceTagPrint';
+import { formatSellPrice, openPriceTagPrintUrl } from '../utils/priceTagPrint';
 
 type PriceTagModalProps = {
   lot: LotInternalResponse | null;
@@ -29,24 +29,7 @@ export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
     if (qrData?.dataUrl) {
       printUrl.searchParams.set('qr', qrData.dataUrl);
     }
-
-    const tg = (window as Window & {
-      Telegram?: {
-        WebApp?: {
-          openLink?: (url: string, options?: { try_instant_view?: boolean }) => void;
-        };
-      };
-    }).Telegram?.WebApp;
-
-    if (tg?.openLink) {
-      tg.openLink(printUrl.toString(), { try_instant_view: false });
-      return;
-    }
-
-    const printWindow = window.open(printUrl.toString(), '_blank');
-    if (!printWindow) {
-      window.location.href = printUrl.toString();
-    }
+    openPriceTagPrintUrl(printUrl.toString());
   };
 
   if (!lot) {

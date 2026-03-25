@@ -17,7 +17,7 @@ import AdminUsersView from './views/AdminUsersView';
 import AdminAuditLogView from './views/AdminAuditLogView';
 import AdminNotificationsView from './views/AdminNotificationsView';
 import type { CreateLotDTO, LotInternalResponse, UpdateLotDTO } from './types/lot';
-import { formatSellPrice, savePriceTagBatch } from './utils/priceTagPrint';
+import { formatSellPrice, openPriceTagPrintUrl, savePriceTagBatch } from './utils/priceTagPrint';
 
 type LotFormState =
   | { mode: 'create' }
@@ -199,7 +199,8 @@ function App() {
       );
 
       const batchKey = savePriceTagBatch(printItems);
-      window.location.href = `${window.location.origin}/print/price-tag?batch_key=${encodeURIComponent(batchKey)}`;
+      const printUrl = `${window.location.origin}/print/price-tag?batch_key=${encodeURIComponent(batchKey)}`;
+      openPriceTagPrintUrl(printUrl);
     } finally {
       setIsBulkPrinting(false);
     }

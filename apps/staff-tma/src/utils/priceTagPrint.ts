@@ -43,3 +43,23 @@ export const loadPriceTagBatch = (batchKey: string): PriceTagPrintItem[] => {
     return [];
   }
 };
+
+export const openPriceTagPrintUrl = (url: string): void => {
+  const tg = (window as Window & {
+    Telegram?: {
+      WebApp?: {
+        openLink?: (nextUrl: string, options?: { try_instant_view?: boolean }) => void;
+      };
+    };
+  }).Telegram?.WebApp;
+
+  if (tg?.openLink) {
+    tg.openLink(url, { try_instant_view: false });
+    return;
+  }
+
+  const printWindow = window.open(url, '_blank');
+  if (!printWindow) {
+    window.location.href = url;
+  }
+};

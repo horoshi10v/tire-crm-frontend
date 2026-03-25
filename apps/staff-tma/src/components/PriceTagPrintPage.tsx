@@ -97,9 +97,9 @@ export default function PriceTagPrintPage() {
                   <p className="mt-2 text-center text-3xl font-black leading-none">{item.price}</p>
                   <div className="mt-3 flex flex-1 items-center justify-center">
                     {item.qr ? (
-                      <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-24 w-24 object-contain" />
+                      <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-32 w-32 object-contain" />
                     ) : (
-                      <div className="flex h-24 w-24 items-center justify-center border border-black text-center text-[11px]">
+                      <div className="flex h-32 w-32 items-center justify-center border border-black text-center text-[11px]">
                         QR недоступний
                       </div>
                     )}
