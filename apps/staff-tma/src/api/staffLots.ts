@@ -71,6 +71,10 @@ export function useStaffLots(
             if (normalizedFilters.width !== '' && normalizedFilters.width !== undefined) params.width = normalizedFilters.width;
             if (normalizedFilters.profile !== '' && normalizedFilters.profile !== undefined) params.profile = normalizedFilters.profile;
             if (normalizedFilters.diameter !== '' && normalizedFilters.diameter !== undefined) params.diameter = normalizedFilters.diameter;
+            if (normalizedFilters.pcd?.trim()) params.pcd = normalizedFilters.pcd.trim();
+            if (normalizedFilters.dia !== '' && normalizedFilters.dia !== undefined) params.dia = normalizedFilters.dia;
+            if (normalizedFilters.et !== '' && normalizedFilters.et !== undefined) params.et = normalizedFilters.et;
+            if (normalizedFilters.rim_material) params.rim_material = normalizedFilters.rim_material;
             if (normalizedFilters.production_year !== '' && normalizedFilters.production_year !== undefined) {
                 params.production_year = normalizedFilters.production_year;
             }
@@ -117,6 +121,10 @@ export function useStaffLotSuggestions(filters: Partial<StaffLotFilters>, limit 
             if (filters.width !== '' && filters.width !== undefined) params.width = filters.width;
             if (filters.profile !== '' && filters.profile !== undefined) params.profile = filters.profile;
             if (filters.diameter !== '' && filters.diameter !== undefined) params.diameter = filters.diameter;
+            if (filters.pcd?.trim()) params.pcd = filters.pcd.trim();
+            if (filters.dia !== '' && filters.dia !== undefined) params.dia = filters.dia;
+            if (filters.et !== '' && filters.et !== undefined) params.et = filters.et;
+            if (filters.rim_material) params.rim_material = filters.rim_material;
             if (filters.production_year !== '' && filters.production_year !== undefined) params.production_year = filters.production_year;
             if (filters.country_of_origin?.trim()) params.country_of_origin = filters.country_of_origin.trim();
             if (filters.is_run_flat) params.is_run_flat = 'true';

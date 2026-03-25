@@ -1,6 +1,7 @@
 import type { LotInternalResponse } from '../types/lot';
 
 export type PriceTagPrintItem = {
+  kind?: 'default' | 'rim';
   title: string;
   price: string;
   qr: string;
@@ -46,9 +47,15 @@ const getSpacerTypeLabel = (value?: string): string => {
   return '';
 };
 
+const getRimMaterialLabel = (value?: string): string => {
+  if (value === 'STEEL') return 'Металеві';
+  if (value === 'ALLOY') return 'Легкосплавні';
+  return '';
+};
+
 export const buildPriceTagDetails = (
   lot: LotInternalResponse,
-): Pick<PriceTagPrintItem, 'subtitle' | 'meta'> => {
+): Pick<PriceTagPrintItem, 'kind' | 'subtitle' | 'meta'> => {
   if (lot.type === 'TIRE') {
     const subtitle =
       lot.params?.width && lot.params?.profile && lot.params?.diameter
@@ -65,22 +72,33 @@ export const buildPriceTagDetails = (
       lot.params?.anti_puncture ? 'Антипрокол' : '',
     ].filter(Boolean);
 
-    return { subtitle, meta };
+    return { kind: 'default', subtitle, meta };
   }
 
   if (lot.type === 'RIM') {
-    const subtitle = lot.params?.diameter ? `R${lot.params.diameter}` : 'Диск';
+    const subtitle = compactJoin(
+      lot.params?.width ? `${lot.params.width}J` : '',
+      lot.params?.diameter ? `R${lot.params.diameter}` : '',
+    ) || 'Диск';
+    const technicalLine = compactJoin(
+      lot.params?.pcd ? `PCD ${lot.params.pcd}` : '',
+      lot.params?.dia !== undefined ? `DIA ${lot.params.dia}` : '',
+      lot.params?.et || lot.params?.et === 0 ? `ET ${lot.params.et}` : '',
+    );
     const meta = [
+      getRimMaterialLabel(lot.params?.rim_material),
       lot.condition === 'NEW' ? 'Нові' : 'Вживані',
       lot.params?.production_year ? `${lot.params.production_year} р.` : '',
       lot.params?.country_of_origin ?? '',
+      technicalLine,
     ].filter(Boolean);
-    return { subtitle, meta };
+    return { kind: 'rim', subtitle, meta };
   }
 
   const accessoryCategory = lot.params?.accessory_category;
   if (accessoryCategory === 'FASTENERS') {
     return {
+      kind: 'default',
       subtitle: getFastenerTypeLabel(lot.params?.fastener_type) || 'Кріплення',
       meta: [
         lot.params?.thread_size ?? '',
@@ -93,6 +111,7 @@ export const buildPriceTagDetails = (
 
   if (accessoryCategory === 'HUB_RINGS') {
     return {
+      kind: 'default',
       subtitle:
         lot.params?.ring_inner_diameter && lot.params?.ring_outer_diameter
           ? `${lot.params.ring_inner_diameter}/${lot.params.ring_outer_diameter} мм`
@@ -103,6 +122,7 @@ export const buildPriceTagDetails = (
 
   if (accessoryCategory === 'SPACERS') {
     return {
+      kind: 'default',
       subtitle: compactJoin(
         getSpacerTypeLabel(lot.params?.spacer_type),
         lot.params?.spacer_thickness ? `${lot.params.spacer_thickness} мм` : '',
@@ -113,6 +133,7 @@ export const buildPriceTagDetails = (
 
   if (accessoryCategory === 'TIRE_BAGS') {
     return {
+      kind: 'default',
       subtitle: 'Пакети для шин',
       meta: [
         lot.params?.package_quantity ? `Комплект ${lot.params.package_quantity} шт.` : '',
@@ -122,6 +143,7 @@ export const buildPriceTagDetails = (
   }
 
   return {
+    kind: 'default',
     subtitle: getAccessoryCategoryLabel(accessoryCategory) || 'Супутній товар',
     meta: [lot.params?.country_of_origin ?? ''].filter(Boolean),
   };
@@ -158,6 +180,7 @@ export const decodePriceTagBatch = (payload: string | null): PriceTagPrintItem[]
         typeof item.title === 'string' &&
         typeof item.price === 'string' &&
         typeof item.qr === 'string' &&
+        (item.kind === undefined || item.kind === 'default' || item.kind === 'rim') &&
         (item.subtitle === undefined || typeof item.subtitle === 'string') &&
         (item.meta === undefined ||
           (Array.isArray(item.meta) && item.meta.every((metaItem: unknown) => typeof metaItem === 'string'))),

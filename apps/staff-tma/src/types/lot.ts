@@ -8,18 +8,23 @@ export type LotSortOrder = 'asc' | 'desc';
 export type AccessoryCategory = 'FASTENERS' | 'HUB_RINGS' | 'SPACERS' | 'TIRE_BAGS';
 export type FastenerType = 'NUT' | 'BOLT';
 export type SpacerType = 'ADAPTER' | 'EXTENDER';
+export type RimMaterial = 'STEEL' | 'ALLOY';
 
 export interface LotParams {
     anti_puncture?: boolean;
     accessory_category?: AccessoryCategory;
     country_of_origin?: string;
+    dia?: number;
     diameter?: number;
+    et?: number;
     fastener_type?: FastenerType;
     is_run_flat?: boolean;
     is_spiked?: boolean;
     package_quantity?: number;
+    pcd?: string;
     profile?: number;
     production_year?: number;
+    rim_material?: RimMaterial;
     ring_inner_diameter?: number;
     ring_outer_diameter?: number;
     seat_type?: string;
@@ -76,6 +81,10 @@ export interface StaffLotFilters {
     width: number | '';
     profile: number | '';
     diameter: number | '';
+    pcd: string;
+    dia: number | '';
+    et: number | '';
+    rim_material: '' | RimMaterial;
     production_year: number | '';
     country_of_origin: string;
     is_run_flat: boolean;
@@ -103,6 +112,10 @@ export const defaultStaffLotFilters: StaffLotFilters = {
     width: '',
     profile: '',
     diameter: '',
+    pcd: '',
+    dia: '',
+    et: '',
+    rim_material: '',
     production_year: '',
     country_of_origin: '',
     is_run_flat: false,

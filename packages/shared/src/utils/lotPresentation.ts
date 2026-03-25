@@ -5,13 +5,17 @@ export type LotParams = {
   accessory_category?: 'FASTENERS' | 'HUB_RINGS' | 'SPACERS' | 'TIRE_BAGS';
   anti_puncture?: boolean;
   country_of_origin?: string;
+  dia?: number;
   diameter?: number;
+  et?: number;
   fastener_type?: 'NUT' | 'BOLT';
   is_run_flat?: boolean;
   is_spiked?: boolean;
   package_quantity?: number;
+  pcd?: string;
   profile?: number;
   production_year?: number;
+  rim_material?: 'STEEL' | 'ALLOY';
   ring_inner_diameter?: number;
   ring_outer_diameter?: number;
   seat_type?: string;
@@ -59,6 +63,11 @@ const spacerTypeLabelMap: Record<string, string> = {
   EXTENDER: 'Розширювач',
 };
 
+const rimMaterialLabelMap: Record<string, string> = {
+  STEEL: 'Металеві',
+  ALLOY: 'Легкосплавні',
+};
+
 const typeLabelMap: Record<string, string> = {
   TIRE: 'Шини',
   RIM: 'Диски',
@@ -90,6 +99,20 @@ export const getLotSizeLabel = (lot: LotLike): string => {
 };
 
 export const getLotPrimaryLabel = (lot: LotLike): string => {
+  if (lot.type === 'RIM') {
+    const parts = [
+      lot.params?.width ? `${lot.params.width}J` : '',
+      lot.params?.diameter ? `R${lot.params.diameter}` : '',
+      lot.params?.pcd ? `PCD ${lot.params.pcd}` : '',
+      lot.params?.et !== undefined ? `ET ${lot.params.et}` : '',
+      lot.brand?.trim(),
+      lot.model?.trim(),
+      lot.params?.production_year ? String(lot.params.production_year) : '',
+    ];
+
+    return parts.filter(Boolean).join(' · ');
+  }
+
   const parts = [
     getLotSizeLabel(lot),
     lot.brand?.trim(),
@@ -103,6 +126,7 @@ export const getLotPrimaryLabel = (lot: LotLike): string => {
 export const getLotTagLabels = (lot: LotLike): string[] => {
   const params = lot.params;
   const tags: string[] = [];
+  const rimMaterialLabel = params?.rim_material ? rimMaterialLabelMap[params.rim_material] ?? params.rim_material : '';
 
   if (lot.condition) {
     tags.push(conditionLabelMap[lot.condition] ?? lot.condition);
@@ -110,8 +134,14 @@ export const getLotTagLabels = (lot: LotLike): string[] => {
   if (params?.season) {
     tags.push(seasonLabelMap[params.season] ?? params.season);
   }
+  if (lot.type === 'RIM' && rimMaterialLabel) {
+    tags.push(rimMaterialLabel);
+  }
   if (params?.country_of_origin) {
     tags.push(params.country_of_origin);
+  }
+  if (lot.type === 'RIM' && params?.dia !== undefined) {
+    tags.push(`DIA ${params.dia}`);
   }
   if (lot.type) {
     tags.push(typeLabelMap[lot.type] ?? lot.type);
@@ -177,6 +207,11 @@ export const getLotSearchableText = (lot: LotLike): string => {
     params?.season ?? '',
     seasonLabelMap[params?.season ?? ''] ?? '',
     params?.country_of_origin ?? '',
+    params?.rim_material ?? '',
+    rimMaterialLabelMap[params?.rim_material ?? ''] ?? '',
+    params?.pcd ?? '',
+    params?.dia ? String(params.dia) : '',
+    params?.et || params?.et === 0 ? String(params.et) : '',
     accessoryCategoryLabelMap[params?.accessory_category ?? ''] ?? '',
     fastenerTypeLabelMap[params?.fastener_type ?? ''] ?? '',
     spacerTypeLabelMap[params?.spacer_type ?? ''] ?? '',

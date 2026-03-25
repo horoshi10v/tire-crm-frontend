@@ -6,18 +6,23 @@ export type LotSeason = 'SUMMER' | 'WINTER' | 'ALL_SEASON';
 export type AccessoryCategory = 'FASTENERS' | 'HUB_RINGS' | 'SPACERS' | 'TIRE_BAGS';
 export type FastenerType = 'NUT' | 'BOLT';
 export type SpacerType = 'ADAPTER' | 'EXTENDER';
+export type RimMaterial = 'STEEL' | 'ALLOY';
 
 export interface LotParams {
     anti_puncture?: boolean;
     accessory_category?: AccessoryCategory;
     country_of_origin?: string;
+    dia?: number;
     diameter?: number;
+    et?: number;
     fastener_type?: FastenerType;
     is_run_flat?: boolean;
     is_spiked?: boolean;
     package_quantity?: number;
+    pcd?: string;
     profile?: number;
     production_year?: number;
+    rim_material?: RimMaterial;
     ring_inner_diameter?: number;
     ring_outer_diameter?: number;
     seat_type?: string;

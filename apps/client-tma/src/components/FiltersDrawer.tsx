@@ -11,6 +11,8 @@ interface FiltersDrawerProps {
 export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
     const { filters, setFilter, resetFilters } = useFilterStore();
     const isAccessory = filters.type === 'ACCESSORY';
+    const isRim = filters.type === 'RIM';
+    const isTire = filters.type === 'TIRE';
     const typeOptions = [
         { value: '', label: 'Всі' },
         { value: 'TIRE', label: 'Шини' },
@@ -38,6 +40,11 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
         { value: '', label: 'Усі проставки' },
         { value: 'ADAPTER', label: 'Адаптери' },
         { value: 'EXTENDER', label: 'Розширювальні' },
+    ];
+    const rimMaterialOptions = [
+        { value: '', label: 'Будь-який сплав' },
+        { value: 'STEEL', label: 'Металеві' },
+        { value: 'ALLOY', label: 'Легкосплавні' },
     ];
 
     return (
@@ -133,43 +140,66 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                         </>
                     ) : (
                         <>
-                            <div>
-                                <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Сезон</label>
-                                <div className="relative flex bg-gray-800 rounded-xl p-1 z-0">
-                                    <div className="absolute top-1 bottom-1 left-1 right-1 -z-10 pointer-events-none">
-                                        <div
-                                            className="h-full w-1/4 rounded-lg bg-[#10AD0B] shadow-md"
-                                            style={{
-                                                transform: `translateX(${['', 'SUMMER', 'WINTER', 'ALL_SEASON'].indexOf(filters.season) * 100}%)`,
-                                                transition: 'transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1)'
-                                            }}
-                                        ></div>
+                            {isTire ? (
+                                <div>
+                                    <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Сезон</label>
+                                    <div className="relative flex bg-gray-800 rounded-xl p-1 z-0">
+                                        <div className="absolute top-1 bottom-1 left-1 right-1 -z-10 pointer-events-none">
+                                            <div
+                                                className="h-full w-1/4 rounded-lg bg-[#10AD0B] shadow-md"
+                                                style={{
+                                                    transform: `translateX(${['', 'SUMMER', 'WINTER', 'ALL_SEASON'].indexOf(filters.season) * 100}%)`,
+                                                    transition: 'transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1)'
+                                                }}
+                                            ></div>
+                                        </div>
+
+                                        {['', 'SUMMER', 'WINTER', 'ALL_SEASON'].map((s) => (
+                                            <button
+                                                key={s}
+                                                onClick={() => setFilter('season', s)}
+                                                className={`flex-1 text-xs py-2.5 rounded-lg font-medium transition-colors duration-300 ${
+                                                    filters.season === s
+                                                        ? 'text-white'
+                                                        : 'text-gray-400 hover:text-gray-200'
+                                                }`}
+                                            >
+                                                {s === '' ? 'Всі' : s === 'SUMMER' ? 'Літо' : s === 'WINTER' ? 'Зима' : 'Всесезон'}
+                                            </button>
+                                        ))}
                                     </div>
-
-                                    {['', 'SUMMER', 'WINTER', 'ALL_SEASON'].map((s) => (
-                                        <button
-                                            key={s}
-                                            onClick={() => setFilter('season', s)}
-                                            className={`flex-1 text-xs py-2.5 rounded-lg font-medium transition-colors duration-300 ${
-                                                filters.season === s
-                                                    ? 'text-white'
-                                                    : 'text-gray-400 hover:text-gray-200'
-                                            }`}
-                                        >
-                                            {s === '' ? 'Всі' : s === 'SUMMER' ? 'Літо' : s === 'WINTER' ? 'Зима' : 'Всесезон'}
-                                        </button>
-                                    ))}
                                 </div>
-                            </div>
+                            ) : null}
 
                             <div>
-                                <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Параметри (Шир / Проф / Радіус)</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <input type="number" placeholder="Ширина" value={filters.width} onChange={(e) => setFilter('width', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
-                                    <input type="number" placeholder="Профіль" value={filters.profile} onChange={(e) => setFilter('profile', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
-                                    <input type="number" placeholder="Радіус" value={filters.diameter} onChange={(e) => setFilter('diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">
+                                    {isRim ? 'Параметри диска (J / R)' : 'Параметри (Шир / Проф / Радіус)'}
+                                </label>
+                                <div className={`grid gap-2 ${isTire ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                                    <input type="number" step="0.1" placeholder={isRim ? 'Ширина J' : 'Ширина'} value={filters.width} onChange={(e) => setFilter('width', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                    {isTire ? (
+                                        <input type="number" step="0.1" placeholder="Профіль" value={filters.profile} onChange={(e) => setFilter('profile', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                    ) : null}
+                                    <input type="number" step="0.1" placeholder="Радіус R" value={filters.diameter} onChange={(e) => setFilter('diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-2 py-2.5 text-center text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
                                 </div>
                             </div>
+
+                            {isRim ? (
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Сплав</label>
+                                        <ResponsiveSelect value={filters.rim_material} onChange={(value) => setFilter('rim_material', value)} options={rimMaterialOptions} />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">PCD / DIA / ET</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                        <input type="text" placeholder="PCD" value={filters.pcd} onChange={(e) => setFilter('pcd', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                        <input type="number" step="0.1" placeholder="DIA" value={filters.dia} onChange={(e) => setFilter('dia', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                        <input type="number" step="0.1" placeholder="ET" value={filters.et} onChange={(e) => setFilter('et', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
+                                    </div>
+                                    </div>
+                                </div>
+                            ) : null}
 
                             <div className="grid grid-cols-2 gap-2">
                                 <input type="number" placeholder="Рік випуску" value={filters.production_year} onChange={(e) => setFilter('production_year', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
@@ -181,20 +211,22 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                                 />
                             </div>
 
-                            <div className="flex flex-col gap-4 mt-2 bg-gray-800/50 p-4 rounded-xl border border-gray-800">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" checked={filters.is_run_flat} onChange={(e) => setFilter('is_run_flat', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
-                                    <span className="text-sm font-medium text-gray-200">Run Flat (Посилена боковина)</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" checked={filters.is_spiked} onChange={(e) => setFilter('is_spiked', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
-                                    <span className="text-sm font-medium text-gray-200">Шиповані</span>
-                                </label>
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" checked={filters.anti_puncture} onChange={(e) => setFilter('anti_puncture', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
-                                    <span className="text-sm font-medium text-gray-200">Антипрокол (Seal)</span>
-                                </label>
-                            </div>
+                            {isTire ? (
+                                <div className="flex flex-col gap-4 mt-2 bg-gray-800/50 p-4 rounded-xl border border-gray-800">
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" checked={filters.is_run_flat} onChange={(e) => setFilter('is_run_flat', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                                        <span className="text-sm font-medium text-gray-200">Run Flat (Посилена боковина)</span>
+                                    </label>
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" checked={filters.is_spiked} onChange={(e) => setFilter('is_spiked', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                                        <span className="text-sm font-medium text-gray-200">Шиповані</span>
+                                    </label>
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" checked={filters.anti_puncture} onChange={(e) => setFilter('anti_puncture', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                                        <span className="text-sm font-medium text-gray-200">Антипрокол (Seal)</span>
+                                    </label>
+                                </div>
+                            ) : null}
                         </>
                     )}
                 </div>

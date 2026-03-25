@@ -9,6 +9,10 @@ export interface LotFilters {
     width: number | '';
     profile: number | '';
     diameter: number | '';
+    pcd: string;
+    dia: number | '';
+    et: number | '';
+    rim_material: string;
     production_year: number | '';
     country_of_origin: string;
     is_run_flat: boolean;
@@ -39,6 +43,10 @@ const defaultFilters: LotFilters = {
     width: '',
     profile: '',
     diameter: '',
+    pcd: '',
+    dia: '',
+    et: '',
+    rim_material: '',
     production_year: '',
     country_of_origin: '',
     is_run_flat: false,

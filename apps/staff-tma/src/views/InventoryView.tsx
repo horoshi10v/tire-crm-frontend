@@ -96,6 +96,10 @@ const activeFiltersCount = (filters: StaffLotFilters): number => {
     filters.width !== '',
     filters.profile !== '',
     filters.diameter !== '',
+    filters.pcd.trim() !== '',
+    filters.dia !== '',
+    filters.et !== '',
+    filters.rim_material !== '',
     filters.production_year !== '',
     filters.country_of_origin.trim() !== '',
     filters.is_run_flat,
@@ -140,6 +144,18 @@ const lotMatchesFilters = (lot: LotInternalResponse, search: string, filters: St
     return false;
   }
   if (filters.diameter !== '' && lot.params?.diameter !== filters.diameter) {
+    return false;
+  }
+  if (filters.pcd && !(lot.params?.pcd ?? '').toLowerCase().includes(filters.pcd.toLowerCase())) {
+    return false;
+  }
+  if (filters.dia !== '' && lot.params?.dia !== filters.dia) {
+    return false;
+  }
+  if (filters.et !== '' && lot.params?.et !== filters.et) {
+    return false;
+  }
+  if (filters.rim_material && lot.params?.rim_material !== filters.rim_material) {
     return false;
   }
   if (filters.production_year !== '' && lot.params?.production_year !== filters.production_year) {

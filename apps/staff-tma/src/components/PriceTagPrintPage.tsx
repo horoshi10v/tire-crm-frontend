@@ -41,6 +41,7 @@ export default function PriceTagPrintPage() {
 
     return [
       {
+        kind: 'default',
         title: decodeParam(params.get('title'), 'Цінник'),
         price: decodeParam(params.get('price'), '0 грн'),
         qr: params.get('qr') ?? '',
@@ -107,27 +108,70 @@ export default function PriceTagPrintPage() {
               {page.map((item, itemIndex) => (
                 <div
                   key={`${pageIndex}-${itemIndex}-${item.title}`}
-                  className="flex min-h-[66mm] break-inside-avoid flex-col rounded-lg border-2 border-black bg-white p-3"
+                  className={`flex min-h-[66mm] break-inside-avoid flex-col rounded-lg border-2 border-black bg-white p-3 ${
+                    item.kind === 'rim' ? 'justify-between' : ''
+                  }`}
                 >
-                  <p className="text-center text-lg font-extrabold leading-tight tracking-tight">{item.title}</p>
-                  {item.subtitle ? (
-                    <p className="mt-1 text-center text-base font-semibold leading-tight">{item.subtitle}</p>
-                  ) : null}
-                  {item.meta && item.meta.length > 0 ? (
-                    <p className="mt-2 text-center text-[11px] font-medium leading-snug text-gray-700">
-                      {item.meta.join(' · ')}
-                    </p>
-                  ) : null}
-                  <p className="mt-2 text-center text-3xl font-black leading-none">{item.price}</p>
-                  <div className="mt-3 flex flex-1 items-center justify-center">
-                    {item.qr ? (
-                      <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-36 w-36 object-contain" />
-                    ) : (
-                      <div className="flex h-36 w-36 items-center justify-center border border-black text-center text-[11px]">
-                        QR недоступний
+                  {item.kind === 'rim' ? (
+                    <>
+                      <div>
+                        <p className="text-center text-lg font-extrabold leading-tight tracking-tight">{item.title}</p>
+                        {item.subtitle ? (
+                          <p className="mt-1 text-center text-base font-semibold leading-tight">{item.subtitle}</p>
+                        ) : null}
+                        {item.meta && item.meta.length > 0 ? (
+                          <div className="mt-2 space-y-1">
+                            <div className="grid grid-cols-2 gap-1 text-[11px] font-medium text-gray-800">
+                              {item.meta.slice(0, Math.max(0, item.meta.length - 1)).map((metaRow) => (
+                                <div key={metaRow} className="rounded border border-black/15 bg-black/[0.03] px-1.5 py-1 text-center">
+                                  {metaRow}
+                                </div>
+                              ))}
+                            </div>
+                            {item.meta[item.meta.length - 1] ? (
+                              <div className="rounded border border-black/20 bg-black/[0.04] px-2 py-1 text-center text-[11px] font-bold tracking-[0.14em] text-black">
+                                {item.meta[item.meta.length - 1]}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
-                    )}
-                  </div>
+                      <div>
+                        <p className="mt-2 text-center text-3xl font-black leading-none">{item.price}</p>
+                        <div className="mt-3 flex items-center justify-center">
+                          {item.qr ? (
+                            <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-36 w-36 object-contain" />
+                          ) : (
+                            <div className="flex h-36 w-36 items-center justify-center border border-black text-center text-[11px]">
+                              QR недоступний
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-center text-lg font-extrabold leading-tight tracking-tight">{item.title}</p>
+                      {item.subtitle ? (
+                        <p className="mt-1 text-center text-base font-semibold leading-tight">{item.subtitle}</p>
+                      ) : null}
+                      {item.meta && item.meta.length > 0 ? (
+                        <p className="mt-2 text-center text-[11px] font-medium leading-snug text-gray-700">
+                          {item.meta.join(' · ')}
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-center text-3xl font-black leading-none">{item.price}</p>
+                      <div className="mt-3 flex flex-1 items-center justify-center">
+                        {item.qr ? (
+                          <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-36 w-36 object-contain" />
+                        ) : (
+                          <div className="flex h-36 w-36 items-center justify-center border border-black text-center text-[11px]">
+                            QR недоступний
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>

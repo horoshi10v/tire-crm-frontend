@@ -20,6 +20,12 @@ export default function InventoryFiltersDrawer({
   warehouses,
 }: InventoryFiltersDrawerProps) {
   const isAccessory = filters.type === 'ACCESSORY';
+  const isRim = filters.type === 'RIM';
+  const rimMaterialOptions = [
+    { value: '', label: 'Будь-який сплав' },
+    { value: 'STEEL', label: 'Металеві' },
+    { value: 'ALLOY', label: 'Легкосплавні' },
+  ] as const;
 
   return (
     <div
@@ -258,6 +264,48 @@ export default function InventoryFiltersDrawer({
                   />
                 </div>
               </div>
+
+              {isRim ? (
+                <div className="grid grid-cols-1 gap-3">
+                  <select
+                    value={filters.rim_material}
+                    onChange={(event) => onSetFilter('rim_material', event.target.value as StaffLotFilters['rim_material'])}
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                  >
+                    {rimMaterialOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="grid grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="PCD"
+                    value={filters.pcd}
+                    onChange={(event) => onSetFilter('pcd', event.target.value)}
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                  />
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="DIA"
+                    value={filters.dia}
+                    onChange={(event) => onSetFilter('dia', event.target.value ? Number(event.target.value) : '')}
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                  />
+                  <input
+                    type="number"
+                    step="0.1"
+                    placeholder="ET"
+                    value={filters.et}
+                    onChange={(event) => onSetFilter('et', event.target.value ? Number(event.target.value) : '')}
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                  />
+                  </div>
+                </div>
+              ) : null}
 
               <div className="grid grid-cols-2 gap-2">
                 <input

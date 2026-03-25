@@ -8,6 +8,7 @@ import type {
   FastenerType,
   LotInternalResponse,
   LotParams,
+  RimMaterial,
   LotSeason,
   LotType,
   SpacerType,
@@ -52,6 +53,10 @@ type LotFormState = {
     width: string;
     profile: string;
     diameter: string;
+    pcd: string;
+    dia: string;
+    et: string;
+    rim_material: '' | RimMaterial;
     production_year: string;
     country_of_origin: string;
     season: '' | LotSeason;
@@ -102,6 +107,11 @@ const fastenerTypeOptions: Array<{ label: string; value: FastenerType }> = [
 const spacerTypeOptions: Array<{ label: string; value: SpacerType }> = [
   { value: 'ADAPTER', label: 'Адаптер' },
   { value: 'EXTENDER', label: 'Розширювальна' },
+];
+
+const rimMaterialOptions: Array<{ label: string; value: RimMaterial }> = [
+  { value: 'STEEL', label: 'Металеві' },
+  { value: 'ALLOY', label: 'Легкосплавні' },
 ];
 
 const extractPhotoUrl = (payload: UploadPhotoResponse): string => {
@@ -159,6 +169,13 @@ const normalizeSpacerType = (value: string | undefined): '' | SpacerType => {
   return '';
 };
 
+const normalizeRimMaterial = (value: string | undefined): '' | RimMaterial => {
+  if (value === 'STEEL' || value === 'ALLOY') {
+    return value;
+  }
+  return '';
+};
+
 const toInputNumber = (value: number | undefined): string => {
   if (value === undefined || Number.isNaN(value)) {
     return '';
@@ -181,6 +198,10 @@ const createInitialState = (lot: LotInternalResponse | null): LotFormState => ({
     width: toInputNumber(lot?.params?.width),
     profile: toInputNumber(lot?.params?.profile),
     diameter: toInputNumber(lot?.params?.diameter),
+    pcd: lot?.params?.pcd ?? '',
+    dia: toInputNumber(lot?.params?.dia),
+    et: toInputNumber(lot?.params?.et),
+    rim_material: normalizeRimMaterial(lot?.params?.rim_material),
     production_year: toInputNumber(lot?.params?.production_year),
     country_of_origin: lot?.params?.country_of_origin ?? '',
     season: normalizeSeason(lot?.params?.season),
@@ -204,6 +225,10 @@ const hasMeaningfulParams = (params: LotFormState['params']): boolean => {
     params.width.trim() ||
       params.profile.trim() ||
       params.diameter.trim() ||
+      params.pcd.trim() ||
+      params.dia.trim() ||
+      params.et.trim() ||
+      params.rim_material ||
       params.production_year.trim() ||
       params.country_of_origin.trim() ||
       params.season ||
@@ -239,9 +264,13 @@ const buildParamsPayload = (params: LotFormState['params']): LotParams => {
     is_spiked: params.is_spiked,
   };
 
-  if (params.width.trim()) payload.width = toInteger(params.width);
-  if (params.profile.trim()) payload.profile = toInteger(params.profile);
-  if (params.diameter.trim()) payload.diameter = toInteger(params.diameter);
+  if (params.width.trim()) payload.width = toDecimal(params.width);
+  if (params.profile.trim()) payload.profile = toDecimal(params.profile);
+  if (params.diameter.trim()) payload.diameter = toDecimal(params.diameter);
+  if (params.pcd.trim()) payload.pcd = params.pcd.trim();
+  if (params.dia.trim()) payload.dia = toDecimal(params.dia);
+  if (params.et.trim()) payload.et = toDecimal(params.et);
+  if (params.rim_material) payload.rim_material = params.rim_material;
   if (params.production_year.trim()) payload.production_year = toInteger(params.production_year);
   if (params.country_of_origin.trim()) payload.country_of_origin = params.country_of_origin.trim();
   if (params.season) payload.season = params.season;
@@ -249,10 +278,10 @@ const buildParamsPayload = (params: LotFormState['params']): LotParams => {
   if (params.fastener_type) payload.fastener_type = params.fastener_type;
   if (params.thread_size.trim()) payload.thread_size = params.thread_size.trim();
   if (params.seat_type.trim()) payload.seat_type = params.seat_type.trim();
-  if (params.ring_inner_diameter.trim()) payload.ring_inner_diameter = toInteger(params.ring_inner_diameter);
-  if (params.ring_outer_diameter.trim()) payload.ring_outer_diameter = toInteger(params.ring_outer_diameter);
+  if (params.ring_inner_diameter.trim()) payload.ring_inner_diameter = toDecimal(params.ring_inner_diameter);
+  if (params.ring_outer_diameter.trim()) payload.ring_outer_diameter = toDecimal(params.ring_outer_diameter);
   if (params.spacer_type) payload.spacer_type = params.spacer_type;
-  if (params.spacer_thickness.trim()) payload.spacer_thickness = toInteger(params.spacer_thickness);
+  if (params.spacer_thickness.trim()) payload.spacer_thickness = toDecimal(params.spacer_thickness);
   if (params.package_quantity.trim()) payload.package_quantity = toInteger(params.package_quantity);
 
   return payload;
@@ -285,6 +314,8 @@ export default function LotFormModal(props: LotFormModalProps) {
     return hasMeaningfulParams(form.params);
   }, [editLot, form.params, props.mode]);
   const isAccessory = form.type === 'ACCESSORY';
+  const isTire = form.type === 'TIRE';
+  const isRim = form.type === 'RIM';
 
   const warehouseOptions = useMemo(() => {
     const mapped = warehouses.map((warehouse) => ({
@@ -744,11 +775,11 @@ export default function LotFormModal(props: LotFormModalProps) {
               <>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
                   <label className="space-y-1">
-                    <span className="text-sm text-gray-300">Ширина</span>
+                    <span className="text-sm text-gray-300">{isRim ? 'Ширина J' : 'Ширина'}</span>
                     <input
                       type="number"
                       min={0}
-                      step={1}
+                      step="0.1"
                       value={form.params.width}
                       onChange={(event) =>
                         setForm((prev) => ({
@@ -760,29 +791,33 @@ export default function LotFormModal(props: LotFormModalProps) {
                     />
                   </label>
 
-                  <label className="space-y-1">
-                    <span className="text-sm text-gray-300">Профіль</span>
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={form.params.profile}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          params: { ...prev.params, profile: event.target.value },
-                        }))
-                      }
-                      className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                    />
-                  </label>
+                  {isTire ? (
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Профіль</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.1"
+                        value={form.params.profile}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, profile: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+                  ) : (
+                    <div />
+                  )}
 
                   <label className="space-y-1">
-                    <span className="text-sm text-gray-300">Діаметр</span>
+                    <span className="text-sm text-gray-300">Радіус R</span>
                     <input
                       type="number"
                       min={0}
-                      step={1}
+                      step="0.1"
                       value={form.params.diameter}
                       onChange={(event) =>
                         setForm((prev) => ({
@@ -794,30 +829,112 @@ export default function LotFormModal(props: LotFormModalProps) {
                     />
                   </label>
 
-                  <label className="space-y-1">
-                    <span className="text-sm text-gray-300">Сезон</span>
-                    <select
-                      value={form.params.season}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          params: {
-                            ...prev.params,
-                            season: event.target.value as '' | LotSeason,
-                          },
-                        }))
-                      }
-                      className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
-                    >
-                      <option value="">Не вказано</option>
-                      {seasonOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  {isTire ? (
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Сезон</span>
+                      <select
+                        value={form.params.season}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: {
+                              ...prev.params,
+                              season: event.target.value as '' | LotSeason,
+                            },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      >
+                        <option value="">Не вказано</option>
+                        {seasonOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : (
+                    <div />
+                  )}
                 </div>
+
+                {isRim ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">Сплав</span>
+                      <select
+                        value={form.params.rim_material}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, rim_material: event.target.value as '' | RimMaterial },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      >
+                        <option value="">Не вказано</option>
+                        {rimMaterialOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">PCD</span>
+                      <input
+                        type="text"
+                        value={form.params.pcd}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, pcd: event.target.value },
+                          }))
+                        }
+                        placeholder="5x112"
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+                  </div>
+                ) : null}
+
+                {isRim ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">DIA</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.1"
+                        value={form.params.dia}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, dia: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+
+                    <label className="space-y-1">
+                      <span className="text-sm text-gray-300">ET</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={form.params.et}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, et: event.target.value },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      />
+                    </label>
+                  </div>
+                ) : null}
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label className="space-y-1">
@@ -854,49 +971,51 @@ export default function LotFormModal(props: LotFormModalProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
-                    <input
-                      type="checkbox"
-                      checked={form.params.is_run_flat}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          params: { ...prev.params, is_run_flat: event.target.checked },
-                        }))
-                      }
-                    />
-                    Run Flat
-                  </label>
+                {isTire ? (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
+                      <input
+                        type="checkbox"
+                        checked={form.params.is_run_flat}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, is_run_flat: event.target.checked },
+                          }))
+                        }
+                      />
+                      Run Flat
+                    </label>
 
-                  <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
-                    <input
-                      type="checkbox"
-                      checked={form.params.is_spiked}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          params: { ...prev.params, is_spiked: event.target.checked },
-                        }))
-                      }
-                    />
-                    Шипована
-                  </label>
+                    <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
+                      <input
+                        type="checkbox"
+                        checked={form.params.is_spiked}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, is_spiked: event.target.checked },
+                          }))
+                        }
+                      />
+                      Шипована
+                    </label>
 
-                  <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
-                    <input
-                      type="checkbox"
-                      checked={form.params.anti_puncture}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          params: { ...prev.params, anti_puncture: event.target.checked },
-                        }))
-                      }
-                    />
-                    Антипрокол
-                  </label>
-                </div>
+                    <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
+                      <input
+                        type="checkbox"
+                        checked={form.params.anti_puncture}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, anti_puncture: event.target.checked },
+                          }))
+                        }
+                      />
+                      Антипрокол
+                    </label>
+                  </div>
+                ) : null}
               </>
             )}
           </section>
