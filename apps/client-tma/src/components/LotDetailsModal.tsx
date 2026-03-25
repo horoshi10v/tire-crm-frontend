@@ -223,8 +223,8 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                         </button>
 
                         {/* --- LEFT SIDE: PHOTOS (Desktop) / TOP (Mobile) --- */}
-                        <div className="flex-shrink-0 bg-gray-900 lg:w-[55%] lg:flex lg:flex-col lg:justify-center lg:bg-black/40 lg:border-r lg:border-gray-800">
-                             <div className="relative w-full aspect-square sm:aspect-[4/3] lg:h-full lg:aspect-auto">
+                        <div className="flex-shrink-0 bg-gray-900 lg:flex lg:h-full lg:w-[55%] lg:min-h-0 lg:flex-col lg:bg-black/40 lg:border-r lg:border-gray-800">
+                             <div className="relative w-full aspect-square sm:aspect-[4/3] lg:min-h-0 lg:flex-1 lg:aspect-auto">
                                 {activePhoto ? (
                                     <img
                                         src={activePhoto}
