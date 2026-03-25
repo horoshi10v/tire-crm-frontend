@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { authenticateTelegramUser, useAuthStore } from '@tire-crm/shared';
 import { useTelegramQR } from './hooks/useTelegramQR';
 import { useCreateLot, useDeleteLot, useFindStaffLotById, useUpdateLot } from './api/staffLots';
+import { useStaffWarehouses } from './api/staffWarehouses';
 import InventoryView from './views/InventoryView';
 import PriceTagModal from './components/PriceTagModal';
 import LotFormModal from './components/LotFormModal';
@@ -42,6 +43,7 @@ function App() {
   const updateLotMutation = useUpdateLot();
   const deleteLotMutation = useDeleteLot();
   const findLotByIdMutation = useFindStaffLotById();
+  const { data: warehouses = [] } = useStaffWarehouses();
 
   // Авторизація
   useEffect(() => {
@@ -100,9 +102,12 @@ function App() {
           return;
         }
 
+        const warehouseLabel =
+          warehouses.find((warehouse) => warehouse.id === lot.warehouse_id)?.name ?? 'Невідомий склад';
+
         setActiveTab('inventory');
-        setLotDetails(null);
-        setLotFormState({ mode: 'edit', lot });
+        setLotFormState(null);
+        setLotDetails({ lot, warehouseLabel });
       } catch {
         alert('Не вдалося відкрити лот після сканування QR.');
       }
