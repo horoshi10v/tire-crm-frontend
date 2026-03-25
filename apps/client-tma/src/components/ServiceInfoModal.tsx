@@ -200,6 +200,30 @@ export const ServiceInfoModal = ({ isOpen, onClose }: ServiceInfoModalProps) => 
                                 </span>
                             </div>
                         </a>
+
+                        <a
+                            href="https://t.me/shina_dp_shop_bot"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-[#10AD0B]/35 hover:bg-white/8"
+                        >
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#10AD0B]">
+                                        Перейти в Telegram-бот
+                                    </p>
+                                    <p className="mt-2 text-base font-bold text-white">
+                                        @shina_dp_shop_bot
+                                    </p>
+                                    <p className="mt-1 text-sm text-gray-400">
+                                        Перехід у бот для перегляду товарів і оформлення замовлення через Telegram.
+                                    </p>
+                                </div>
+                                <span className="mt-0.5 text-xl text-white transition group-hover:text-[#10AD0B]">
+                                    ↗
+                                </span>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>

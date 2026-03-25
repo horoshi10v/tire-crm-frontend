@@ -1,6 +1,7 @@
 // apps/client-tma/src/components/FiltersDrawer.tsx
 import { CountrySearchSelect } from '@tire-crm/shared';
 import { useFilterStore } from '../store/useFilterStore';
+import { ResponsiveSelect } from './ResponsiveSelect';
 
 interface FiltersDrawerProps {
     isOpen: boolean;
@@ -10,6 +11,34 @@ interface FiltersDrawerProps {
 export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
     const { filters, setFilter, resetFilters } = useFilterStore();
     const isAccessory = filters.type === 'ACCESSORY';
+    const typeOptions = [
+        { value: '', label: 'Всі' },
+        { value: 'TIRE', label: 'Шини' },
+        { value: 'RIM', label: 'Диски' },
+        { value: 'ACCESSORY', label: 'Супутні товари' },
+    ];
+    const conditionOptions = [
+        { value: '', label: 'Будь-який' },
+        { value: 'NEW', label: 'Нові' },
+        { value: 'USED', label: 'Вживані' },
+    ];
+    const accessoryCategoryOptions = [
+        { value: '', label: 'Усі' },
+        { value: 'FASTENERS', label: 'Кріплення' },
+        { value: 'HUB_RINGS', label: 'Проставочні кільця' },
+        { value: 'SPACERS', label: 'Проставки' },
+        { value: 'TIRE_BAGS', label: 'Пакети для шин' },
+    ];
+    const fastenerTypeOptions = [
+        { value: '', label: 'Гайки і болти' },
+        { value: 'NUT', label: 'Гайки' },
+        { value: 'BOLT', label: 'Болти' },
+    ];
+    const spacerTypeOptions = [
+        { value: '', label: 'Усі проставки' },
+        { value: 'ADAPTER', label: 'Адаптери' },
+        { value: 'EXTENDER', label: 'Розширювальні' },
+    ];
 
     return (
         // Загальний контейнер (Фон).
@@ -45,38 +74,11 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Тип</label>
-                            <div className="relative">
-                                <select
-                                    value={filters.type}
-                                    onChange={(e) => setFilter('type', e.target.value)}
-                                    className="w-full appearance-none rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 pr-11 text-sm text-white outline-none transition-colors focus:border-[#10AD0B] md:appearance-auto md:pr-3"
-                                >
-                                    <option value="">Всі</option>
-                                    <option value="TIRE">Шини</option>
-                                    <option value="RIM">Диски</option>
-                                    <option value="ACCESSORY">Супутні товари</option>
-                                </select>
-                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-300 md:hidden">
-                                    ▾
-                                </span>
-                            </div>
+                            <ResponsiveSelect value={filters.type} onChange={(value) => setFilter('type', value)} options={typeOptions} />
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Стан</label>
-                            <div className="relative">
-                                <select
-                                    value={filters.condition}
-                                    onChange={(e) => setFilter('condition', e.target.value)}
-                                    className="w-full appearance-none rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 pr-11 text-sm text-white outline-none transition-colors focus:border-[#10AD0B] md:appearance-auto md:pr-3"
-                                >
-                                    <option value="">Будь-який</option>
-                                    <option value="NEW">Нові</option>
-                                    <option value="USED">Вживані</option>
-                                </select>
-                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-300 md:hidden">
-                                    ▾
-                                </span>
-                            </div>
+                            <ResponsiveSelect value={filters.condition} onChange={(value) => setFilter('condition', value)} options={conditionOptions} />
                         </div>
                     </div>
 
@@ -85,31 +87,21 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                             <div className="grid grid-cols-1 gap-3">
                                 <div>
                                     <label className="text-xs text-gray-400 mb-1 block uppercase tracking-wider">Категорія</label>
-                                    <select
+                                    <ResponsiveSelect
                                         value={filters.accessory_category}
-                                        onChange={(e) => setFilter('accessory_category', e.target.value)}
-                                        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B]"
-                                    >
-                                        <option value="">Усі</option>
-                                        <option value="FASTENERS">Кріплення</option>
-                                        <option value="HUB_RINGS">Проставочні кільця</option>
-                                        <option value="SPACERS">Проставки</option>
-                                        <option value="TIRE_BAGS">Пакети для шин</option>
-                                    </select>
+                                        onChange={(value) => setFilter('accessory_category', value)}
+                                        options={accessoryCategoryOptions}
+                                    />
                                 </div>
                             </div>
 
                             {filters.accessory_category === 'FASTENERS' ? (
                                 <div className="grid grid-cols-2 gap-2">
-                                    <select
+                                    <ResponsiveSelect
                                         value={filters.fastener_type}
-                                        onChange={(e) => setFilter('fastener_type', e.target.value)}
-                                        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]"
-                                    >
-                                        <option value="">Гайки і болти</option>
-                                        <option value="NUT">Гайки</option>
-                                        <option value="BOLT">Болти</option>
-                                    </select>
+                                        onChange={(value) => setFilter('fastener_type', value)}
+                                        options={fastenerTypeOptions}
+                                    />
                                     <input type="text" placeholder="Різьба, напр. M12x1.5" value={filters.thread_size} onChange={(e) => setFilter('thread_size', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
                                     <input type="text" placeholder="Тип посадки" value={filters.seat_type} onChange={(e) => setFilter('seat_type', e.target.value)} className="col-span-2 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
                                 </div>
@@ -124,15 +116,11 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
 
                             {filters.accessory_category === 'SPACERS' ? (
                                 <div className="grid grid-cols-2 gap-2">
-                                    <select
+                                    <ResponsiveSelect
                                         value={filters.spacer_type}
-                                        onChange={(e) => setFilter('spacer_type', e.target.value)}
-                                        className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]"
-                                    >
-                                        <option value="">Усі проставки</option>
-                                        <option value="ADAPTER">Адаптери</option>
-                                        <option value="EXTENDER">Розширювальні</option>
-                                    </select>
+                                        onChange={(value) => setFilter('spacer_type', value)}
+                                        options={spacerTypeOptions}
+                                    />
                                     <input type="number" placeholder="Товщина, мм" value={filters.spacer_thickness} onChange={(e) => setFilter('spacer_thickness', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
                                 </div>
                             ) : null}

@@ -31,8 +31,16 @@ import { BrandLoader } from './components/BrandLoader';
 import { ServiceInfoModal } from './components/ServiceInfoModal';
 import { ToastAlert } from './components/ToastAlert';
 import { CheckoutSuccessModal } from './components/CheckoutSuccessModal';
+import { ResponsiveSelect } from './components/ResponsiveSelect';
 
 function App() {
+    const sortOptions = [
+        { value: 'DEFAULT', label: 'За замовчуванням' },
+        { value: 'NEWEST', label: 'За новизною' },
+        { value: 'PRICE_ASC', label: 'Ціна: від дешевих' },
+        { value: 'PRICE_DESC', label: 'Ціна: від дорогих' },
+        { value: 'IN_STOCK', label: 'Спочатку в наявності' },
+    ] as const;
     const recentSearchConfig = {
         persistentKey: 'client-catalog-recent-searches',
         persistentLimit: 6,
@@ -440,22 +448,15 @@ function App() {
                                 ))}
                             </div>
 
-                            <div className="relative">
-                                <select
-                                    value={sortOption}
-                                    onChange={(e) => setSortOption(e.target.value as SortOption)}
-                                    className="w-full appearance-none rounded-xl border border-gray-800 bg-gray-900 px-4 py-3 pr-11 text-sm text-white outline-none transition-colors focus:border-[#10AD0B] md:appearance-auto md:pr-4"
-                                >
-                                    <option value="DEFAULT">За замовчуванням</option>
-                                    <option value="NEWEST">За новизною</option>
-                                    <option value="PRICE_ASC">Ціна: від дешевих</option>
-                                    <option value="PRICE_DESC">Ціна: від дорогих</option>
-                                    <option value="IN_STOCK">Спочатку в наявності</option>
-                                </select>
-                                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-300 md:hidden">
-                                    ▾
-                                </span>
-                            </div>
+                            <ResponsiveSelect
+                                value={sortOption}
+                                onChange={(value) => setSortOption(value as SortOption)}
+                                options={[...sortOptions]}
+                                className="z-20"
+                                mobileSelectClassName="border-gray-800 bg-gray-900 px-4 py-3"
+                                desktopButtonClassName="border-gray-800 bg-gray-900 px-4 py-3"
+                                dropdownClassName="border-gray-800 bg-gray-900"
+                            />
 
                             <div className="mt-4">
                             <button
