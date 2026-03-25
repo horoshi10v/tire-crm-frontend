@@ -123,14 +123,6 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
     ]
         .filter(Boolean)
         .join(' · ');
-    const rimKeySpecs = currentLot.type === 'RIM'
-        ? [
-            currentLot.params?.rim_material ? { label: 'Сплав', value: translateRimMaterial(currentLot.params.rim_material) || currentLot.params.rim_material } : null,
-            currentLot.params?.pcd ? { label: 'PCD', value: currentLot.params.pcd } : null,
-            currentLot.params?.dia ? { label: 'DIA', value: `${currentLot.params.dia}` } : null,
-            currentLot.params?.et || currentLot.params?.et === 0 ? { label: 'ET', value: `${currentLot.params.et}` } : null,
-        ].filter(Boolean) as Array<{ label: string; value: string }>
-        : [];
     const specRows: SpecRow[] = [
         ...(sizeLabel ? [{ label: currentLot.type === 'RIM' ? 'Радіус R' : 'Розмір', value: sizeLabel }] : []),
         ...(currentLot.type === 'RIM' && currentLot.params?.width ? [{ label: 'Ширина J', value: `${currentLot.params.width}` }] : []),
@@ -336,24 +328,6 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                             </span>
                                         )}
                                     </div>
-
-                                    {rimKeySpecs.length > 0 ? (
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {rimKeySpecs.map((spec) => (
-                                                <div
-                                                    key={spec.label}
-                                                    className="rounded-xl border border-[#10AD0B]/25 bg-[#10AD0B]/10 px-3 py-3"
-                                                >
-                                                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7fe47b]">
-                                                        {spec.label}
-                                                    </div>
-                                                    <div className="mt-1 text-base font-bold text-white lg:text-lg">
-                                                        {spec.value}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : null}
 
                                     <div className="mt-2 rounded-xl border border-gray-800 bg-gray-900 p-4">
                                         <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-white">Характеристики</h3>
