@@ -1,17 +1,11 @@
 import { useMemo } from 'react';
 import { useLotQR } from '../api/staffLots';
 import type { LotInternalResponse } from '../types/lot';
+import { formatSellPrice } from '../utils/priceTagPrint';
 
 type PriceTagModalProps = {
   lot: LotInternalResponse | null;
   onClose: () => void;
-};
-
-const formatSellPrice = (value: number): string => {
-  return `${new Intl.NumberFormat('uk-UA', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value)} грн`;
 };
 
 export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {

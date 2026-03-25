@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { authenticateTelegramUser, useAuthStore } from '@tire-crm/shared';
 import { useTelegramQR } from './hooks/useTelegramQR';
-import { useCreateLot, useDeleteLot, useFindStaffLotById, useUpdateLot } from './api/staffLots';
+import { getLotQRData, useCreateLot, useDeleteLot, useFindStaffLotById, useUpdateLot } from './api/staffLots';
 import { useStaffWarehouses } from './api/staffWarehouses';
 import InventoryView from './views/InventoryView';
 import PriceTagModal from './components/PriceTagModal';
@@ -17,6 +17,7 @@ import AdminUsersView from './views/AdminUsersView';
 import AdminAuditLogView from './views/AdminAuditLogView';
 import AdminNotificationsView from './views/AdminNotificationsView';
 import type { CreateLotDTO, LotInternalResponse, UpdateLotDTO } from './types/lot';
+import { formatSellPrice, savePriceTagBatch } from './utils/priceTagPrint';
 
 type LotFormState =
   | { mode: 'create' }
@@ -36,6 +37,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<StaffTab>('inventory');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [priceTagLot, setPriceTagLot] = useState<LotInternalResponse | null>(null);
+  const [isBulkPrinting, setIsBulkPrinting] = useState(false);
   const [lotFormState, setLotFormState] = useState<LotFormState>(null);
   const [lotDetails, setLotDetails] = useState<LotDetailsState>(null);
 
@@ -169,6 +171,40 @@ function App() {
     }
   };
 
+  const handleBulkPrintLots = async (lots: LotInternalResponse[]) => {
+    if (lots.length === 0 || isBulkPrinting) {
+      return;
+    }
+
+    setIsBulkPrinting(true);
+
+    try {
+      const printItems = await Promise.all(
+        lots.map(async (lot) => {
+          try {
+            const qrData = await getLotQRData(lot.id);
+            return {
+              title: `${lot.brand} ${lot.model ?? ''}`.trim(),
+              price: formatSellPrice(lot.sell_price),
+              qr: qrData.dataUrl,
+            };
+          } catch {
+            return {
+              title: `${lot.brand} ${lot.model ?? ''}`.trim(),
+              price: formatSellPrice(lot.sell_price),
+              qr: '',
+            };
+          }
+        }),
+      );
+
+      const batchKey = savePriceTagBatch(printItems);
+      window.location.href = `${window.location.origin}/print/price-tag?batch_key=${encodeURIComponent(batchKey)}`;
+    } finally {
+      setIsBulkPrinting(false);
+    }
+  };
+
   if (isPrintRoute) {
     return <PriceTagPrintPage />;
   }
@@ -257,6 +293,8 @@ function App() {
                 onOpenDetails={(lot, warehouseLabel) => setLotDetails({ lot, warehouseLabel })}
                 onDeleteLot={handleDeleteLot}
                 onBulkDeleteLots={handleBulkDeleteLots}
+                onBulkPrintLots={handleBulkPrintLots}
+                isBulkPrinting={isBulkPrinting}
                 onOpenPriceTag={(lot) => setPriceTagLot(lot)}
               />
             ) : activeTab === 'warehouses' ? (

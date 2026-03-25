@@ -156,19 +156,23 @@ const blobToDataUrl = (blob: Blob): Promise<string> => {
     });
 };
 
+export const getLotQRData = async (id: string): Promise<LotQRData> => {
+    const { data } = await apiClient.get(`/staff/lots/${id}/qr`, {
+        responseType: 'blob',
+    });
+
+    return {
+        objectUrl: URL.createObjectURL(data),
+        dataUrl: await blobToDataUrl(data),
+    };
+};
+
 export const useLotQR = (id: string | null) => {
     return useQuery({
         queryKey: ['lot-qr', id],
         queryFn: async () => {
             if (!id) return null;
-            // Запрашиваем как blob, чтобы передался токен авторизации
-            const { data } = await apiClient.get(`/staff/lots/${id}/qr`, {
-                responseType: 'blob',
-            });
-            return {
-                objectUrl: URL.createObjectURL(data),
-                dataUrl: await blobToDataUrl(data),
-            } satisfies LotQRData;
+            return getLotQRData(id);
         },
         enabled: !!id, // Запрос улетит только если передали ID
     });

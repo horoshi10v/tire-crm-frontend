@@ -11,6 +11,8 @@ type InventoryViewProps = {
   onEditLot?: (lot: LotInternalResponse) => void;
   onDeleteLot?: (lot: LotInternalResponse) => void;
   onBulkDeleteLots?: (lots: LotInternalResponse[]) => void;
+  onBulkPrintLots?: (lots: LotInternalResponse[]) => void | Promise<void>;
+  isBulkPrinting?: boolean;
   onOpenPriceTag?: (lot: LotInternalResponse) => void;
 };
 
@@ -206,6 +208,8 @@ export default function InventoryView({
   onEditLot,
   onDeleteLot,
   onBulkDeleteLots,
+  onBulkPrintLots,
+  isBulkPrinting = false,
   onOpenPriceTag,
 }: InventoryViewProps) {
   const [searchInput, setSearchInput] = useState('');
@@ -359,6 +363,14 @@ export default function InventoryView({
             className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-100 transition hover:bg-gray-700"
           >
             Очистити вибір
+          </button>
+          <button
+            type="button"
+            disabled={selectedLots.length === 0 || isBulkPrinting}
+            onClick={() => void onBulkPrintLots?.(selectedLots)}
+            className="rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-medium text-blue-200 transition hover:bg-blue-900/45 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {isBulkPrinting ? 'Підготовка цінників...' : 'Друк цінників'}
           </button>
           <button
             type="button"
