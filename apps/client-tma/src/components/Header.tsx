@@ -1,17 +1,37 @@
 // apps/client-tma/src/components/Header.tsx
+import { useEffect, useRef, useState } from 'react';
 import { useCartStore } from '../store/useCartStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
 
 interface HeaderProps {
     onOpenCart: () => void;
+    onOpenFavorites: () => void;
     onOpenProfile: () => void;
     onOpenBrandInfo: () => void;
 }
 
-export const Header = ({ onOpenCart, onOpenProfile, onOpenBrandInfo }: HeaderProps) => {
+export const Header = ({ onOpenCart, onOpenFavorites, onOpenProfile, onOpenBrandInfo }: HeaderProps) => {
     const cartItems = useCartStore((state) => state.items);
     const totalFavorites = useFavoritesStore((state) => state.items.length);
     const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+    const prevFavoritesRef = useRef(totalFavorites);
+    const [isFavoritesBadgeAnimated, setIsFavoritesBadgeAnimated] = useState(false);
+
+    useEffect(() => {
+        if (prevFavoritesRef.current !== totalFavorites) {
+            setIsFavoritesBadgeAnimated(true);
+            const timeoutId = window.setTimeout(() => {
+                setIsFavoritesBadgeAnimated(false);
+            }, 420);
+            prevFavoritesRef.current = totalFavorites;
+            return () => {
+                window.clearTimeout(timeoutId);
+            };
+        }
+
+        prevFavoritesRef.current = totalFavorites;
+        return undefined;
+    }, [totalFavorites]);
 
     return (
         <header className="mb-4 flex items-center gap-3">
@@ -30,14 +50,18 @@ export const Header = ({ onOpenCart, onOpenProfile, onOpenBrandInfo }: HeaderPro
                 </div>
             </button>
             <div className="flex gap-3">
-                <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 p-2 text-xl">
+                <button
+                    onClick={onOpenFavorites}
+                    className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 p-2 text-xl transition hover:bg-gray-700"
+                    aria-label="Open Favorites"
+                >
                     <span aria-hidden="true">♥</span>
                     {totalFavorites > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-gray-950 bg-[#10AD0B] px-1 text-[10px] font-bold text-white">
+                        <span className={`absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-gray-950 bg-[#10AD0B] px-1 text-[10px] font-bold text-white ${isFavoritesBadgeAnimated ? 'animate-badge-pulse' : ''}`}>
                             {totalFavorites}
                         </span>
                     )}
-                </div>
+                </button>
                 <button
                     onClick={onOpenProfile}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 p-2 text-xl transition hover:bg-gray-700"

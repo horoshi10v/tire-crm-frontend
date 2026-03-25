@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import type { LotPublicResponse } from '../types/lot';
 import type { AddItemResult } from '../store/useCartStore';
 import { useCartStore } from '../store/useCartStore';
+import { useFavoritesStore } from '../store/useFavoritesStore';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface LotDetailsModalProps {
     lot: LotPublicResponse | null;
@@ -10,6 +12,7 @@ interface LotDetailsModalProps {
     onAddedToCart?: (lot: LotPublicResponse) => void;
     onAddToCartLimitReached?: (lot: LotPublicResponse, result: AddItemResult) => void;
     onCopyLink?: (lot: LotPublicResponse) => void | Promise<void>;
+    onFavoriteChange?: (lot: LotPublicResponse, nextFavoriteState: boolean) => void;
 }
 
 // Хелпери для перекладу (стійкі до регістру)
@@ -46,10 +49,13 @@ const translateSpacerType = (value?: string) => {
     return '';
 };
 
-export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached, onCopyLink }: LotDetailsModalProps) => {
+export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached, onCopyLink, onFavoriteChange }: LotDetailsModalProps) => {
     const addItem = useCartStore((state) => state.addItem);
+    const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+    const isFavorite = useFavoritesStore((state) => (lot ? state.isFavorite(lot.id) : false));
     const [isOpen, setIsOpen] = useState(false);
     const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+    const [isRemoveFavoriteConfirmOpen, setIsRemoveFavoriteConfirmOpen] = useState(false);
 
     // Стейт для повноекранного фото
     const [fullScreenPhoto, setFullScreenPhoto] = useState<string | null>(null);
@@ -109,6 +115,23 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
         setActivePhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
     };
 
+    const handleToggleFavorite = () => {
+        if (isFavorite) {
+            setIsRemoveFavoriteConfirmOpen(true);
+            return;
+        }
+
+        const nextFavoriteState = !isFavorite;
+        toggleFavorite(currentLot);
+        onFavoriteChange?.(currentLot, nextFavoriteState);
+    };
+
+    const confirmRemoveFavorite = () => {
+        setIsRemoveFavoriteConfirmOpen(false);
+        toggleFavorite(currentLot);
+        onFavoriteChange?.(currentLot, false);
+    };
+
     return (
         <>
             {/* Головна модалка товару */}
@@ -118,23 +141,28 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                 }`}
             >
                 <div
-                    className={`relative mx-auto flex h-full w-full max-w-4xl flex-col bg-gray-950 transition-transform duration-300 ease-in-out lg:border-x lg:border-gray-800 ${
-                        isOpen ? 'translate-y-0' : 'translate-y-full'
+                    className={`flex h-full w-full items-end justify-center overflow-y-auto p-0 sm:p-4 lg:p-6 ${
+                        isOpen ? 'pointer-events-auto' : 'pointer-events-none'
                     }`}
                 >
+                    <div
+                        className={`relative flex h-full w-full flex-col bg-gray-950 transition-transform duration-300 ease-in-out sm:h-auto sm:max-h-[min(92vh,980px)] sm:max-w-3xl sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-gray-800 sm:shadow-[0_28px_80px_rgba(0,0,0,0.5)] xl:max-w-4xl ${
+                            isOpen ? 'translate-y-0 sm:scale-100' : 'translate-y-full sm:translate-y-8 sm:scale-[0.985]'
+                        }`}
+                    >
                 {/* Sticky Header - вирівнювання по правому краю (justify-end) */}
-                <div className="absolute top-0 left-0 right-0 z-10 flex justify-end items-center p-4 bg-gradient-to-b from-gray-950/80 to-transparent">
+                <div className="absolute left-0 right-0 top-0 z-10 flex items-center justify-end bg-gradient-to-b from-gray-950/80 to-transparent p-4">
                     <button
                         onClick={handleClose}
-                        className="w-10 h-10 rounded-full bg-gray-900/80 backdrop-blur flex items-center justify-center text-white text-xl border border-gray-700 shadow-lg active:scale-90 transition-transform"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-700 bg-gray-900/80 text-xl text-white shadow-lg backdrop-blur transition-transform active:scale-90"
                     >
                         ✕
                     </button>
                 </div>
 
-                <div className="flex-grow overflow-y-auto pb-28 hide-scrollbar">
+                <div className="min-h-0 flex-1 overflow-y-auto pb-44 sm:pb-48">
                     <div className="border-b border-gray-800 bg-gray-900">
-                        <div className="relative w-full aspect-square overflow-hidden">
+                        <div className="relative w-full aspect-square overflow-hidden sm:aspect-[4/3]">
                             {activePhoto ? (
                                 <img
                                     src={activePhoto}
@@ -172,7 +200,7 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                         </div>
 
                         {photos.length > 1 ? (
-                            <div className="flex gap-2 overflow-x-auto px-4 py-3 hide-scrollbar">
+                            <div className="hide-scrollbar flex gap-2 overflow-x-auto px-4 py-3">
                                 {photos.map((photo, idx) => (
                                     <button
                                         key={photo}
@@ -195,57 +223,55 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                         ) : null}
                     </div>
 
-                    <div className="p-5 flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 p-5">
                         <div>
-                            <div className="flex justify-between items-start mb-1">
-                                <span className="text-sm text-gray-400 font-medium">{currentLot.brand}</span>
+                            <div className="mb-1 flex items-start justify-between">
+                                <span className="text-sm font-medium text-gray-400">{currentLot.brand}</span>
                                 <span className="text-2xl font-bold text-[#10AD0B]">{formattedSellPrice}</span>
                             </div>
-                            <h1 className="text-2xl font-bold text-white leading-tight">{currentLot.model}</h1>
+                            <h1 className="text-2xl font-bold leading-tight text-white">{currentLot.model}</h1>
                         </div>
 
-                        {/* Беджі з перевірками */}
                         <div className="flex flex-wrap gap-2">
                             {currentLot.type && (
-                                <span className="bg-gray-800 border border-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium">
+                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
                                     {translateType(currentLot.type)}
                                 </span>
                             )}
 
                             {currentLot.condition && (
-                                <span className={`border text-xs px-3 py-1.5 rounded-lg font-medium ${
+                                <span className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
                                     currentLot.condition.toUpperCase() === 'NEW'
-                                        ? 'bg-green-900/30 border-green-800 text-green-400'
-                                        : 'bg-yellow-900/30 border-yellow-800 text-yellow-400'
+                                        ? 'border-green-800 bg-green-900/30 text-green-400'
+                                        : 'border-yellow-800 bg-yellow-900/30 text-yellow-400'
                                 }`}>
                                     {translateCondition(currentLot.condition)}
                                 </span>
                             )}
 
-                            {/* Рендеримо тег сезону ТІЛЬКИ якщо переклад не порожній */}
                             {currentLot.params?.season && translateSeason(currentLot.params.season) !== '' && (
-                                <span className="bg-gray-800 border border-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium">
+                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
                                     {translateSeason(currentLot.params.season)}
                                 </span>
                             )}
                             {currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category) !== '' && (
-                                <span className="bg-gray-800 border border-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-lg font-medium">
+                                <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
                                     {translateAccessoryCategory(currentLot.params.accessory_category)}
                                 </span>
                             )}
                         </div>
 
-                        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 mt-2">
-                            <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-wider">Характеристики</h3>
-                            <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                        <div className="mt-2 rounded-xl border border-gray-800 bg-gray-900 p-4">
+                            <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-white">Характеристики</h3>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                                 {currentLot.params?.width && currentLot.params?.profile && currentLot.params?.diameter && (
                                     <>
                                         <div className="text-gray-400">Розмір</div>
-                                        <div className="text-white font-medium text-right">{currentLot.params.width}/{currentLot.params.profile} R{currentLot.params.diameter}</div>
+                                        <div className="text-right font-medium text-white">{currentLot.params.width}/{currentLot.params.profile} R{currentLot.params.diameter}</div>
                                     </>
                                 )}
                                 <div className="text-gray-400">В наявності</div>
-                                <div className="text-white font-medium text-right">{currentLot.current_quantity} шт.</div>
+                                <div className="text-right font-medium text-white">{currentLot.current_quantity} шт.</div>
 
                                 {currentLot.params?.is_run_flat && (
                                     <div className="col-span-2 flex justify-between">
@@ -265,25 +291,25 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                 {currentLot.params?.fastener_type && (
                                     <>
                                         <div className="text-gray-400">Тип кріплення</div>
-                                        <div className="text-white font-medium text-right">{translateFastenerType(currentLot.params.fastener_type)}</div>
+                                        <div className="text-right font-medium text-white">{translateFastenerType(currentLot.params.fastener_type)}</div>
                                     </>
                                 )}
                                 {currentLot.params?.thread_size && (
                                     <>
                                         <div className="text-gray-400">Різьба</div>
-                                        <div className="text-white font-medium text-right">{currentLot.params.thread_size}</div>
+                                        <div className="text-right font-medium text-white">{currentLot.params.thread_size}</div>
                                     </>
                                 )}
                                 {currentLot.params?.seat_type && (
                                     <>
                                         <div className="text-gray-400">Посадка</div>
-                                        <div className="text-white font-medium text-right">{currentLot.params.seat_type}</div>
+                                        <div className="text-right font-medium text-white">{currentLot.params.seat_type}</div>
                                     </>
                                 )}
                                 {currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter && (
                                     <>
                                         <div className="text-gray-400">Розмір кільця</div>
-                                        <div className="text-white font-medium text-right">
+                                        <div className="text-right font-medium text-white">
                                             {currentLot.params.ring_inner_diameter}/{currentLot.params.ring_outer_diameter} мм
                                         </div>
                                     </>
@@ -291,52 +317,65 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                 {currentLot.params?.spacer_type && (
                                     <>
                                         <div className="text-gray-400">Тип проставки</div>
-                                        <div className="text-white font-medium text-right">{translateSpacerType(currentLot.params.spacer_type)}</div>
+                                        <div className="text-right font-medium text-white">{translateSpacerType(currentLot.params.spacer_type)}</div>
                                     </>
                                 )}
                                 {currentLot.params?.spacer_thickness && (
                                     <>
                                         <div className="text-gray-400">Товщина</div>
-                                        <div className="text-white font-medium text-right">{currentLot.params.spacer_thickness} мм</div>
+                                        <div className="text-right font-medium text-white">{currentLot.params.spacer_thickness} мм</div>
                                     </>
                                 )}
                                 {currentLot.params?.package_quantity && (
                                     <>
                                         <div className="text-gray-400">У комплекті</div>
-                                        <div className="text-white font-medium text-right">{currentLot.params.package_quantity} шт.</div>
+                                        <div className="text-right font-medium text-white">{currentLot.params.package_quantity} шт.</div>
                                     </>
                                 )}
                             </div>
                         </div>
 
                         {currentLot.defects && (
-                            <div className="bg-red-950/30 border border-red-900/50 rounded-xl p-4 mt-2">
-                                <h3 className="text-sm font-bold text-red-400 mb-1">Опис стану / Дефекти:</h3>
-                                <p className="text-sm text-red-200/80 leading-relaxed">{currentLot.defects}</p>
+                            <div className="mt-2 rounded-xl border border-red-900/50 bg-red-950/30 p-4">
+                                <h3 className="mb-1 text-sm font-bold text-red-400">Опис стану / Дефекти:</h3>
+                                <p className="leading-relaxed text-sm text-red-200/80">{currentLot.defects}</p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div className="absolute bottom-0 left-0 right-0 border-t border-gray-900 bg-gray-950 p-4 pb-8">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[220px,minmax(0,1fr)]">
+                <div className="absolute bottom-0 left-0 right-0 border-t border-gray-900 bg-gray-950 p-4 pb-8 sm:rounded-b-[28px]">
+                    <div className="mb-3 flex items-center gap-3">
                         <button
                             type="button"
                             onClick={() => onCopyLink?.(currentLot)}
-                            className="rounded-xl border border-gray-700 bg-gray-900 py-4 font-semibold text-white transition hover:bg-gray-800 active:scale-[0.98]"
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gray-700 bg-gray-900 text-base text-white transition hover:bg-gray-800 active:scale-[0.98]"
+                            aria-label="Скопіювати посилання"
                         >
-                            Скопіювати посилання
+                            ⧉
                         </button>
                         <button
-                            onClick={handleAddToCart}
-                            disabled={isOutOfStock}
-                            className="w-full rounded-xl bg-[#10AD0B] py-4 font-bold text-white shadow-lg shadow-[#10AD0B]/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+                            type="button"
+                            onClick={handleToggleFavorite}
+                            className={`min-w-0 flex-1 rounded-xl border py-3 font-semibold transition active:scale-[0.98] ${
+                                isFavorite
+                                    ? 'border-[#10AD0B]/40 bg-[#10AD0B]/12 text-[#8ff38b]'
+                                    : 'border-gray-700 bg-gray-900 text-white hover:bg-gray-800'
+                            }`}
                         >
-                            {isOutOfStock ? 'Немає в наявності' : `Додати в кошик • ${formattedSellPrice}`}
+                            {isFavorite ? 'Прибрати з обраного' : 'Додати в обране'}
                         </button>
                     </div>
+                    <button
+                        onClick={handleAddToCart}
+                        disabled={isOutOfStock}
+                        className="w-full rounded-xl bg-[#10AD0B] py-4 font-bold text-white shadow-lg shadow-[#10AD0B]/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+                    >
+                        {isOutOfStock ? 'Немає в наявності' : `Додати в кошик • ${formattedSellPrice}`}
+                    </button>
                 </div>
-            </div>
+                    </div>
+                </div>
             </div>
 
             {/* Просмотрщик фото на весь екран (Lightbox) */}
@@ -359,6 +398,15 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                     />
                 </div>
             )}
+            <ConfirmDialog
+                isOpen={isRemoveFavoriteConfirmOpen}
+                title="Прибрати товар з обраного?"
+                description={`${currentLot.brand} ${currentLot.model}`.trim()}
+                confirmLabel="Так"
+                cancelLabel="Ні"
+                onConfirm={confirmRemoveFavorite}
+                onCancel={() => setIsRemoveFavoriteConfirmOpen(false)}
+            />
         </>
     );
 };

@@ -13,7 +13,7 @@ const fallbackCopyText = (value: string) => {
 };
 
 export const getLotShareLink = (lotId: string) => {
-    const url = new URL(window.location.href);
+    const url = new URL(window.location.pathname, window.location.origin);
     url.searchParams.set('lot', lotId);
     return url.toString();
 };
