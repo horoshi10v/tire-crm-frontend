@@ -108,6 +108,8 @@ const hasValue = (value?: string): value is string => {
 const activeFiltersCount = (filters: StaffLotFilters): number => {
   return [
     filters.type !== '',
+    filters.sort_by !== defaultStaffLotFilters.sort_by,
+    filters.sort_order !== defaultStaffLotFilters.sort_order,
     filters.season !== '',
     filters.condition !== '',
     filters.width !== '',
@@ -381,6 +383,20 @@ export default function InventoryView({
           placeholder="Наприклад: Michelin Pilot"
           className="w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-white outline-none transition focus:border-blue-500"
         />
+      </div>
+
+      <div className="rounded-xl border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-300">
+        Сортування: <span className="font-semibold text-white">
+          {filters.sort_by === 'price'
+            ? filters.sort_order === 'asc'
+              ? 'Ціна: від дешевих'
+              : 'Ціна: від дорогих'
+            : filters.sort_by === 'stock'
+              ? 'Спочатку в наявності'
+              : filters.sort_by === 'popularity'
+                ? 'За популярністю'
+                : 'За новизною'}
+        </span>
       </div>
 
       {isLoading ? (

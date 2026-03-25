@@ -56,6 +56,8 @@ export function useStaffLots(
             const params: Record<string, string | number> = { page, page_size: normalizedPageSize };
             if (normalizedFilters.search?.trim()) params.search = normalizedFilters.search.trim();
             if (normalizedFilters.type) params.type = normalizedFilters.type;
+            if (normalizedFilters.sort_by) params.sort_by = normalizedFilters.sort_by;
+            if (normalizedFilters.sort_order) params.sort_order = normalizedFilters.sort_order;
             if (normalizedFilters.condition) params.condition = normalizedFilters.condition;
             if (normalizedFilters.season) params.season = normalizedFilters.season;
             if (normalizedFilters.width !== '' && normalizedFilters.width !== undefined) params.width = normalizedFilters.width;

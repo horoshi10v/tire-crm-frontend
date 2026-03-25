@@ -3,6 +3,8 @@
 export type LotCondition = 'NEW' | 'USED';
 export type LotType = 'TIRE' | 'RIM' | 'ACCESSORY';
 export type LotSeason = 'SUMMER' | 'WINTER' | 'ALL_SEASON';
+export type LotSortBy = 'price' | 'created_at' | 'stock' | 'popularity';
+export type LotSortOrder = 'asc' | 'desc';
 export type AccessoryCategory = 'FASTENERS' | 'HUB_RINGS' | 'SPACERS' | 'TIRE_BAGS';
 export type FastenerType = 'NUT' | 'BOLT';
 export type SpacerType = 'ADAPTER' | 'EXTENDER';
@@ -65,6 +67,8 @@ export type UpdateLotDTO = Partial<CreateLotDTO>;
 export interface StaffLotFilters {
     search: string;
     type: '' | LotType;
+    sort_by: LotSortBy;
+    sort_order: LotSortOrder;
     season: '' | LotSeason;
     condition: '' | LotCondition;
     width: number | '';
@@ -88,6 +92,8 @@ export interface StaffLotFilters {
 export const defaultStaffLotFilters: StaffLotFilters = {
     search: '',
     type: '',
+    sort_by: 'created_at',
+    sort_order: 'desc',
     season: '',
     condition: '',
     width: '',

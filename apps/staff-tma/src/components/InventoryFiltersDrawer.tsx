@@ -41,6 +41,25 @@ export default function InventoryFiltersDrawer({
         </div>
 
         <div className="flex max-h-[62vh] flex-col gap-5 overflow-y-auto pb-4">
+          <div>
+            <label className="mb-1 block text-xs uppercase tracking-wider text-gray-400">Сортування</label>
+            <select
+              value={`${filters.sort_by}:${filters.sort_order}`}
+              onChange={(event) => {
+                const [sortBy, sortOrder] = event.target.value.split(':') as [StaffLotFilters['sort_by'], StaffLotFilters['sort_order']];
+                onSetFilter('sort_by', sortBy);
+                onSetFilter('sort_order', sortOrder);
+              }}
+              className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+            >
+              <option value="popularity:desc">За популярністю</option>
+              <option value="created_at:desc">За новизною</option>
+              <option value="price:asc">Ціна: від дешевих</option>
+              <option value="price:desc">Ціна: від дорогих</option>
+              <option value="stock:desc">Спочатку в наявності</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs uppercase tracking-wider text-gray-400">Тип</label>
