@@ -1,5 +1,6 @@
 // apps/client-tma/src/components/LotDetailsModal.tsx
 import { useState, useEffect } from 'react';
+import { getLotPrimaryLabel } from '@tire-crm/shared';
 import type { LotPublicResponse } from '../types/lot';
 import type { AddItemResult } from '../store/useCartStore';
 import { useCartStore } from '../store/useCartStore';
@@ -49,6 +50,12 @@ const translateSpacerType = (value?: string) => {
     return '';
 };
 
+type SpecRow = {
+    label: string;
+    value: string;
+    accent?: boolean;
+};
+
 export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached, onCopyLink, onFavoriteChange }: LotDetailsModalProps) => {
     const addItem = useCartStore((state) => state.addItem);
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
@@ -92,10 +99,52 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
     const hasPhotos = photos.length > 0;
     const activePhoto = hasPhotos ? photos[Math.min(activePhotoIndex, photos.length - 1)] : null;
     const isOutOfStock = currentLot.current_quantity === 0;
+    const sizeLabel =
+        currentLot.params?.width && currentLot.params?.profile && currentLot.params?.diameter
+            ? `${currentLot.params.width}/${currentLot.params.profile} R${currentLot.params.diameter}`
+            : currentLot.params?.diameter
+              ? `R${currentLot.params.diameter}`
+              : '';
     const formattedSellPrice = `${new Intl.NumberFormat('uk-UA', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
     }).format(currentLot.sell_price ?? 0)} грн`;
+    const primaryLabel = getLotPrimaryLabel(currentLot) || [currentLot.brand, currentLot.model].filter(Boolean).join(' ');
+    const headlineLabel = [
+        sizeLabel,
+        currentLot.model,
+        currentLot.params?.production_year ? `${currentLot.params.production_year}` : '',
+    ]
+        .filter(Boolean)
+        .join(' · ');
+    const specRows: SpecRow[] = [
+        ...(sizeLabel ? [{ label: 'Розмір', value: sizeLabel }] : []),
+        { label: 'В наявності', value: `${currentLot.current_quantity} шт.` },
+        ...(currentLot.params?.season && translateSeason(currentLot.params.season)
+            ? [{ label: 'Сезон', value: translateSeason(currentLot.params.season) }]
+            : []),
+        ...(currentLot.params?.production_year ? [{ label: 'Рік випуску', value: `${currentLot.params.production_year}` }] : []),
+        ...(currentLot.params?.country_of_origin ? [{ label: 'Країна виробник', value: currentLot.params.country_of_origin }] : []),
+        ...(currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category)
+            ? [{ label: 'Категорія', value: translateAccessoryCategory(currentLot.params.accessory_category) }]
+            : []),
+        ...(currentLot.params?.is_run_flat ? [{ label: 'Run Flat', value: 'Так', accent: true }] : []),
+        ...(currentLot.params?.is_spiked ? [{ label: 'Шипи', value: 'Так', accent: true }] : []),
+        ...(currentLot.params?.anti_puncture ? [{ label: 'Антипрокол', value: 'Так', accent: true }] : []),
+        ...(currentLot.params?.fastener_type && translateFastenerType(currentLot.params.fastener_type)
+            ? [{ label: 'Тип кріплення', value: translateFastenerType(currentLot.params.fastener_type) }]
+            : []),
+        ...(currentLot.params?.thread_size ? [{ label: 'Різьба', value: currentLot.params.thread_size }] : []),
+        ...(currentLot.params?.seat_type ? [{ label: 'Посадка', value: currentLot.params.seat_type }] : []),
+        ...(currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter
+            ? [{ label: 'Розмір кільця', value: `${currentLot.params.ring_inner_diameter}/${currentLot.params.ring_outer_diameter} мм` }]
+            : []),
+        ...(currentLot.params?.spacer_type && translateSpacerType(currentLot.params.spacer_type)
+            ? [{ label: 'Тип проставки', value: translateSpacerType(currentLot.params.spacer_type) }]
+            : []),
+        ...(currentLot.params?.spacer_thickness ? [{ label: 'Товщина', value: `${currentLot.params.spacer_thickness} мм` }] : []),
+        ...(currentLot.params?.package_quantity ? [{ label: 'У комплекті', value: `${currentLot.params.package_quantity} шт.` }] : []),
+    ];
     const handleClose = () => {
         setIsOpen(false);
         window.setTimeout(onClose, 300);
@@ -161,7 +210,7 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                 >
                     <div
                         onClick={(e) => e.stopPropagation()}
-                        className={`relative flex h-full w-full flex-col bg-gray-950 transition-transform duration-300 ease-in-out overflow-y-auto sm:h-auto sm:max-h-[min(92vh,980px)] sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-gray-800 sm:shadow-[0_28px_80px_rgba(0,0,0,0.5)] lg:overflow-hidden xl:max-w-6xl lg:flex-row lg:rounded-[28px] lg:border lg:border-gray-800 lg:shadow-[0_28px_80px_rgba(0,0,0,0.5)] ${
+                        className={`relative flex h-full w-full flex-col bg-gray-950 transition-transform duration-300 ease-in-out overflow-y-auto sm:h-auto sm:max-h-[min(92vh,980px)] sm:overflow-hidden sm:rounded-[28px] sm:border sm:border-gray-800 sm:shadow-[0_28px_80px_rgba(0,0,0,0.5)] lg:h-[min(92vh,980px)] lg:items-stretch lg:overflow-hidden xl:max-w-6xl lg:flex-row lg:rounded-[28px] lg:border lg:border-gray-800 lg:shadow-[0_28px_80px_rgba(0,0,0,0.5)] ${
                             isOpen ? 'translate-y-0 lg:scale-100' : 'translate-y-full sm:translate-y-8 lg:translate-y-0 lg:scale-95'
                         }`}
                     >
@@ -238,15 +287,15 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                         </div>
 
                         {/* --- RIGHT SIDE: INFO (Desktop) / BOTTOM (Mobile) --- */}
-                        <div className="flex flex-col relative sm:flex-1 sm:min-h-0 lg:h-full">
-                            <div className="pb-[110px] sm:flex-1 sm:overflow-y-auto sm:pb-[140px] lg:pb-0 lg:p-6 lg:pt-12 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+                        <div className="relative flex flex-col sm:flex-1 sm:min-h-0 lg:h-full lg:min-h-0 lg:self-stretch">
+                            <div className="pb-[110px] sm:flex-1 sm:overflow-y-auto sm:pb-[140px] lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pb-40 lg:p-6 lg:pt-12 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
                                  <div className="flex flex-col gap-4 p-5 lg:p-0">
                                     <div>
                                         <div className="mb-1 flex items-start justify-between">
                                             <span className="text-sm font-medium text-gray-400">{currentLot.brand}</span>
                                             <span className="text-2xl font-bold text-[#10AD0B] lg:hidden">{formattedSellPrice}</span>
                                         </div>
-                                        <h1 className="text-2xl font-bold leading-tight text-white lg:text-3xl">{currentLot.model}</h1>
+                                        <h1 className="text-2xl font-bold leading-tight text-white lg:text-3xl">{headlineLabel || primaryLabel}</h1>
                                         <p className="mt-2 text-3xl font-bold text-[#10AD0B] hidden lg:block">{formattedSellPrice}</p>
                                     </div>
 
@@ -265,100 +314,17 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                                 {translateCondition(currentLot.condition)}
                                             </span>
                                         )}
-                                        {currentLot.params?.season && translateSeason(currentLot.params.season) !== '' && (
-                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                                {translateSeason(currentLot.params.season)}
-                                            </span>
-                                        )}
-                                        {currentLot.params?.production_year ? (
-                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                                {currentLot.params.production_year} рік
-                                            </span>
-                                        ) : null}
-                                        {currentLot.params?.country_of_origin ? (
-                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                                {currentLot.params.country_of_origin}
-                                            </span>
-                                        ) : null}
-                                        {currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category) !== '' && (
-                                            <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                                {translateAccessoryCategory(currentLot.params.accessory_category)}
-                                            </span>
-                                        )}
                                     </div>
 
                                     <div className="mt-2 rounded-xl border border-gray-800 bg-gray-900 p-4">
                                         <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-white">Характеристики</h3>
                                         <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                                             {/* Params List */}
-                                            {currentLot.params?.width && currentLot.params?.profile && currentLot.params?.diameter && (
-                                                <>
-                                                    <div className="text-gray-400">Розмір</div>
-                                                    <div className="text-right font-medium text-white">{currentLot.params.width}/{currentLot.params.profile} R{currentLot.params.diameter}</div>
-                                                </>
-                                            )}
-                                            <div className="text-gray-400">В наявності</div>
-                                            <div className="text-right font-medium text-white">{currentLot.current_quantity} шт.</div>
-                                            {/* ... rest of params ... */}
-                                            {currentLot.params?.is_run_flat && (
-                                                <div className="col-span-2 flex justify-between">
-                                                    <span className="text-gray-400">Run Flat</span><span className="font-bold text-[#10AD0B]">Так</span>
+                                            {specRows.map((row) => (
+                                                <div key={row.label} className="contents">
+                                                    <div className="text-gray-400">{row.label}</div>
+                                                    <div className={`text-right font-medium ${row.accent ? 'text-[#10AD0B]' : 'text-white'}`}>{row.value}</div>
                                                 </div>
-                                            )}
-                                            {currentLot.params?.is_spiked && (
-                                                <div className="col-span-2 flex justify-between">
-                                                    <span className="text-gray-400">Шипи</span><span className="font-bold text-[#10AD0B]">Так</span>
-                                                </div>
-                                            )}
-                                            {currentLot.params?.anti_puncture && (
-                                                <div className="col-span-2 flex justify-between">
-                                                    <span className="text-gray-400">Антипрокол</span><span className="font-bold text-[#10AD0B]">Так</span>
-                                                </div>
-                                            )}
-                                            {currentLot.params?.fastener_type && (
-                                                <>
-                                                    <div className="text-gray-400">Тип кріплення</div>
-                                                    <div className="text-right font-medium text-white">{translateFastenerType(currentLot.params.fastener_type)}</div>
-                                                </>
-                                            )}
-                                            {currentLot.params?.thread_size && (
-                                                <>
-                                                    <div className="text-gray-400">Різьба</div>
-                                                    <div className="text-right font-medium text-white">{currentLot.params.thread_size}</div>
-                                                </>
-                                            )}
-                                            {currentLot.params?.seat_type && (
-                                                <>
-                                                    <div className="text-gray-400">Посадка</div>
-                                                    <div className="text-right font-medium text-white">{currentLot.params.seat_type}</div>
-                                                </>
-                                            )}
-                                            {currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter && (
-                                                <>
-                                                    <div className="text-gray-400">Розмір кільця</div>
-                                                    <div className="text-right font-medium text-white">
-                                                        {currentLot.params.ring_inner_diameter}/{currentLot.params.ring_outer_diameter} мм
-                                                    </div>
-                                                </>
-                                            )}
-                                            {currentLot.params?.spacer_type && (
-                                                <>
-                                                    <div className="text-gray-400">Тип проставки</div>
-                                                    <div className="text-right font-medium text-white">{translateSpacerType(currentLot.params.spacer_type)}</div>
-                                                </>
-                                            )}
-                                            {currentLot.params?.spacer_thickness && (
-                                                <>
-                                                    <div className="text-gray-400">Товщина</div>
-                                                    <div className="text-right font-medium text-white">{currentLot.params.spacer_thickness} мм</div>
-                                                </>
-                                            )}
-                                            {currentLot.params?.package_quantity && (
-                                                <>
-                                                    <div className="text-gray-400">У комплекті</div>
-                                                    <div className="text-right font-medium text-white">{currentLot.params.package_quantity} шт.</div>
-                                                </>
-                                            )}
+                                            ))}
                                         </div>
                                     </div>
 
@@ -372,7 +338,7 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                             </div>
 
                              {/* Footer fixed at bottom of right column */}
-                            <div className="sticky bottom-0 z-20 border-t border-gray-900 bg-gray-950 p-4 pb-8 sm:absolute sm:bottom-0 sm:left-0 sm:right-0 sm:rounded-b-[28px] lg:static lg:bg-transparent lg:pb-6 lg:pt-4 lg:rounded-none lg:border-t lg:border-gray-800">
+                            <div className="sticky bottom-0 z-20 border-t border-gray-900 bg-gray-950 p-4 pb-8 sm:absolute sm:bottom-0 sm:left-0 sm:right-0 sm:rounded-b-[28px] lg:absolute lg:bottom-0 lg:left-0 lg:right-0 lg:rounded-none lg:border-t lg:border-gray-800 lg:bg-gray-950/95 lg:pb-6 lg:pt-4 lg:backdrop-blur">
                                 <div className="mb-3 flex items-center gap-3">
                                     <button
                                         type="button"
@@ -430,7 +396,7 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
             <ConfirmDialog
                 isOpen={isRemoveFavoriteConfirmOpen}
                 title="Прибрати товар з обраного?"
-                description={`${currentLot.brand} ${currentLot.model}`.trim()}
+                description={primaryLabel.trim()}
                 confirmLabel="Так"
                 cancelLabel="Ні"
                 onConfirm={confirmRemoveFavorite}
