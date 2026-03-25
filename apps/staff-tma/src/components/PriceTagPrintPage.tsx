@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { loadPriceTagBatch, type PriceTagPrintItem } from '../utils/priceTagPrint';
+import { decodePriceTagBatch, type PriceTagPrintItem } from '../utils/priceTagPrint';
 
 const decodeParam = (value: string | null, fallback = ''): string => {
   if (!value) {
@@ -15,11 +15,12 @@ const decodeParam = (value: string | null, fallback = ''): string => {
 
 export default function PriceTagPrintPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const batchKey = params.get('batch_key');
+  const hashParams = useMemo(() => new URLSearchParams(window.location.hash.replace(/^#/, '')), []);
+  const payload = hashParams.get('payload');
 
   const items = useMemo<PriceTagPrintItem[]>(() => {
-    if (batchKey) {
-      const batchItems = loadPriceTagBatch(batchKey);
+    if (payload) {
+      const batchItems = decodePriceTagBatch(payload);
       if (batchItems.length > 0) {
         return batchItems;
       }
@@ -32,7 +33,7 @@ export default function PriceTagPrintPage() {
         qr: params.get('qr') ?? '',
       },
     ];
-  }, [batchKey, params]);
+  }, [params, payload]);
 
   const pages = useMemo(() => {
     const chunkSize = 8;

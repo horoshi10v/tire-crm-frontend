@@ -4,8 +4,6 @@ export type PriceTagPrintItem = {
   qr: string;
 };
 
-export const PRICE_TAG_PRINT_STORAGE_PREFIX = 'staff-price-tag-print:';
-
 export const formatSellPrice = (value: number): string => {
   return `${new Intl.NumberFormat('uk-UA', {
     minimumFractionDigits: 0,
@@ -13,20 +11,26 @@ export const formatSellPrice = (value: number): string => {
   }).format(value)} грн`;
 };
 
-export const savePriceTagBatch = (items: PriceTagPrintItem[]): string => {
-  const batchKey = `${PRICE_TAG_PRINT_STORAGE_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  window.localStorage.setItem(batchKey, JSON.stringify(items));
-  return batchKey;
+const toBase64Url = (value: string): string => {
+  return btoa(unescape(encodeURIComponent(value))).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 };
 
-export const loadPriceTagBatch = (batchKey: string): PriceTagPrintItem[] => {
-  const rawValue = window.localStorage.getItem(batchKey);
-  if (!rawValue) {
+const fromBase64Url = (value: string): string => {
+  const padded = value.padEnd(Math.ceil(value.length / 4) * 4, '=').replaceAll('-', '+').replaceAll('_', '/');
+  return decodeURIComponent(escape(atob(padded)));
+};
+
+export const encodePriceTagBatch = (items: PriceTagPrintItem[]): string => {
+  return toBase64Url(JSON.stringify(items));
+};
+
+export const decodePriceTagBatch = (payload: string | null): PriceTagPrintItem[] => {
+  if (!payload) {
     return [];
   }
 
   try {
-    const parsed = JSON.parse(rawValue);
+    const parsed = JSON.parse(fromBase64Url(payload));
     if (!Array.isArray(parsed)) {
       return [];
     }
