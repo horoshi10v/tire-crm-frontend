@@ -71,6 +71,8 @@ export const ServiceInfoModal = ({ isOpen, onClose }: ServiceInfoModalProps) => 
             style={{
                 opacity: isVisible ? 1 : 0,
                 backgroundColor: isVisible ? 'rgba(0, 0, 0, 0.72)' : 'rgba(0, 0, 0, 0)',
+                paddingTop: 'max(12px, env(safe-area-inset-top))',
+                paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
             }}
         >
             <button
@@ -87,6 +89,7 @@ export const ServiceInfoModal = ({ isOpen, onClose }: ServiceInfoModalProps) => 
                 className="relative flex w-full max-w-md flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,_rgba(8,8,8,0.98),_rgba(14,14,14,0.98))] p-5 shadow-[0_24px_60px_rgba(0,0,0,0.48)] will-change-transform sm:max-h-[min(92vh,860px)] lg:max-w-[860px]"
                 style={{
                     opacity: isVisible ? 1 : 0,
+                    maxHeight: 'calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
                     transform: isVisible ? 'translateY(0px) scale(1)' : 'translateY(72px) scale(0.975)',
                     transitionProperty: 'transform, opacity',
                     transitionDuration: isVisible ? '620ms' : '360ms',
