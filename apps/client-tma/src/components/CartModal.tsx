@@ -123,7 +123,16 @@ export const CartModal = ({ isOpen, onClose, onOpenServiceInfo, onOrderSuccess, 
                 },
                 onError: (err: { response?: { data?: { error?: string; message?: string } }; message?: string }) => {
                     console.error('Failed to place order:', err);
-                    onOrderError(err.response?.data?.error || err.response?.data?.message || err.message || 'Не вдалося оформити замовлення.');
+                    const backendMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+                    if (backendMessage?.includes('too many order attempts')) {
+                        onOrderError('Занадто багато спроб оформлення з одного підключення. Спробуйте трохи пізніше.');
+                        return;
+                    }
+                    if (backendMessage?.includes('already submitted recently')) {
+                        onOrderError('Схоже замовлення вже було нещодавно відправлено. Якщо потрібно, повторіть спробу трохи пізніше.');
+                        return;
+                    }
+                    onOrderError(backendMessage || 'Не вдалося оформити замовлення.');
                 },
             }
         );
