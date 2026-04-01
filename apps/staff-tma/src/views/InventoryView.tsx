@@ -16,6 +16,7 @@ import {
 import { useStaffLotSuggestions, useStaffLots, useTrackStaffLotSuggestionSelection } from '../api/staffLots';
 import { useStaffWarehouses } from '../api/staffWarehouses';
 import InventoryFiltersDrawer from '../components/InventoryFiltersDrawer';
+import LotActionPanel from '../components/LotActionPanel';
 import type { LotInternalResponse, StaffLotFilters } from '../types/lot';
 import { defaultStaffLotFilters } from '../types/lot';
 
@@ -688,48 +689,15 @@ export default function InventoryView({
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-4 gap-2">
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onEditLot?.(lot);
-                }}
-                className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-100 transition hover:bg-gray-700"
-              >
-                Редагувати
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDeleteLot?.(lot);
-                }}
-                className="rounded-lg border border-red-700/70 bg-red-900/25 px-3 py-2 text-sm font-medium text-red-200 transition hover:bg-red-900/40"
-              >
-                Видалити
-              </button>
-              <button
-                type="button"
-                disabled={lot.current_quantity <= 0}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onSellLot?.(lot);
-                }}
-                className="rounded-lg border border-emerald-700/70 bg-emerald-900/25 px-3 py-2 text-sm font-medium text-emerald-200 transition hover:bg-emerald-900/40 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Продати
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onOpenPriceTag?.(lot);
-                }}
-                className="rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-medium text-blue-200 transition hover:bg-blue-900/45"
-              >
-                Цінник
-              </button>
+            <div className="mt-4">
+              <LotActionPanel
+                lot={lot}
+                compact
+                onEdit={onEditLot}
+                onDelete={onDeleteLot}
+                onSell={onSellLot}
+                onOpenPriceTag={onOpenPriceTag}
+              />
             </div>
           </article>
           );

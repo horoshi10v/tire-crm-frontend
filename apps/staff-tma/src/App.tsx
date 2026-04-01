@@ -412,6 +412,10 @@ function App() {
             setLotDetails(null);
             setLotFormState({ mode: 'edit', lot });
           }}
+          onDelete={(lot) => {
+            setLotDetails(null);
+            void handleDeleteLot(lot);
+          }}
           onOpenPriceTag={(lot) => {
             setLotDetails(null);
             setPriceTagLot(lot);

@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import type { LotInternalResponse } from '../types/lot';
+import LotActionPanel from './LotActionPanel';
 
 type LotDetailsModalProps = {
   lot: LotInternalResponse | null;
   warehouseLabel: string;
   onClose: () => void;
   onEdit: (lot: LotInternalResponse) => void;
+  onDelete: (lot: LotInternalResponse) => void;
   onOpenPriceTag: (lot: LotInternalResponse) => void;
   onSell: (lot: LotInternalResponse) => void;
 };
@@ -46,7 +48,7 @@ const getRimMaterialLabel = (value?: string) => {
   return '—';
 };
 
-export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, onOpenPriceTag, onSell }: LotDetailsModalProps) {
+export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, onDelete, onOpenPriceTag, onSell }: LotDetailsModalProps) {
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
 
   if (!lot) {
@@ -173,29 +175,14 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
             </div>
           ) : null}
 
-          <div className="grid grid-cols-3 gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => onEdit(lot)}
-              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-100 transition hover:bg-gray-700"
-            >
-              Редагувати
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenPriceTag(lot)}
-              className="rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-900/45"
-            >
-              Цінник
-            </button>
-            <button
-              type="button"
-              onClick={() => onSell(lot)}
-              disabled={lot.current_quantity <= 0}
-              className="rounded-lg border border-emerald-700/70 bg-emerald-900/30 px-3 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-900/45 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Продати
-            </button>
+          <div className="pt-2">
+            <LotActionPanel
+              lot={lot}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onSell={onSell}
+              onOpenPriceTag={onOpenPriceTag}
+            />
           </div>
         </div>
       </div>
