@@ -217,10 +217,9 @@ export default function AdminReportsView() {
   }, [lots]);
 
   const lotAnalyticsChartMax = useMemo(() => {
-    return Math.max(
-      1,
-      ...(lotAnalyticsReport?.daily ?? []).flatMap((point) => [point.views, point.favorites_added, point.orders_created])
-    );
+    return (lotAnalyticsReport?.daily ?? []).reduce((maxValue, point) => {
+      return Math.max(maxValue, point.views, point.favorites_added, point.orders_created);
+    }, 1);
   }, [lotAnalyticsReport]);
 
   const preparedLotAnalyticsDailyRows = useMemo(() => {
