@@ -186,16 +186,16 @@ export default function PriceTagPrintPage() {
                   className={`break-inside-avoid bg-white ${
                     format === 'a4'
                       ? `flex min-h-[66mm] flex-col rounded-lg border-2 border-black p-3 ${item.kind === 'rim' ? 'justify-between' : ''}`
-                      : 'flex h-[100mm] w-[100mm] flex-col px-[3.2mm] py-[3mm]'
+                      : 'grid h-[100mm] w-[100mm] grid-rows-[auto_auto_1fr] px-[3.2mm] py-[4.8mm]'
                   }`}
                 >
                   {format === 'thermal' ? (
                     <>
-                      <div className="pb-[1.5mm]">
-                        <div className="flex items-start justify-between gap-[1.2mm]">
+                      <div className="pb-[0.8mm]">
+                        <div className="flex items-start justify-between gap-[1mm]">
                           <div>
                             <p className="text-[2.3mm] font-bold uppercase tracking-[0.18em] text-black/70">SHINA DP</p>
-                            <p className="mt-[0.5mm] text-[2.1mm] font-bold uppercase tracking-[0.12em] text-black/55">Артикул</p>
+                            <p className="mt-[0.25mm] text-[2.1mm] font-bold uppercase tracking-[0.12em] text-black/55">Артикул</p>
                             <p className="mt-[0.2mm] text-[3.7mm] font-black leading-none">{buildLotCode(item.lotId)}</p>
                           </div>
                           <div className="flex flex-col gap-[0.8mm]">
@@ -214,33 +214,28 @@ export default function PriceTagPrintPage() {
                           </div>
                         </div>
 
-                        {item.brand ? (
-                          <p className="mt-[1.1mm] text-center text-[2.4mm] font-bold uppercase tracking-[0.18em] text-black/65">
-                            {item.brand}
-                          </p>
-                        ) : null}
-
-                        <p className="mt-[0.8mm] text-center text-[4.8mm] font-extrabold leading-[1.02] tracking-tight">
-                          {item.title}
+                        <p className="mt-[8mm] text-center text-[6mm] font-extrabold leading-[1.01] tracking-tight">
+                          {[item.brand, item.title].filter(Boolean).join(' - ')}
                         </p>
                       </div>
 
-                      {item.subtitle ? (
-                        <div className="rounded-[1.6mm] border-[0.25mm] border-black/70 px-[1.4mm] py-[1.1mm]">
-                          <p className="text-[2mm] font-bold uppercase tracking-[0.12em] text-black/55">
-                            {item.kind === 'rim' ? 'Параметри диска' : item.kind === 'tire' ? 'Розмір шини' : 'Позиція'}
-                          </p>
-                          <p className="mt-[0.5mm] text-[4mm] font-black leading-tight">{item.subtitle}</p>
-                        </div>
-                      ) : null}
-
-                      <div className="mt-[1.2mm] grid min-h-[46mm] grid-cols-[1fr_37mm] gap-[1.4mm]">
-                        <div className="flex min-h-0 flex-col gap-[1.1mm]">
+                      <div className="grid min-h-0 grid-cols-[1fr_49mm] gap-[0.9mm] items-center self-center">
+                        <div className="grid min-h-0 grid-rows-[auto_auto_auto] gap-[1.3mm] self-center">
+                          {item.subtitle ? (
+                            <div className="px-[0.2mm] py-[0.2mm]">
+                              <p className="text-[2mm] font-bold uppercase tracking-[0.12em] text-black/55">
+                                {item.kind === 'rim' ? 'Параметри диска' : item.kind === 'tire' ? 'Розмір шини' : 'Позиція'}
+                              </p>
+                              <p className="mt-[0.15mm] text-[5.8mm] font-black leading-tight">{item.subtitle}</p>
+                            </div>
+                          ) : (
+                            <div />
+                          )}
                           {item.kind === 'rim' ? (
                             <>
                               {item.technicalLine ? (
-                                <div className="rounded-[1.6mm] bg-black px-[1.5mm] py-[1.2mm] text-white">
-                                  <p className="text-[1.9mm] font-bold uppercase tracking-[0.12em] text-white/70">Технічні дані</p>
+                                <div className="rounded-[1.6mm] border border-black/20 px-[1.5mm] py-[1.2mm] text-black">
+                                  <p className="text-[1.9mm] font-bold uppercase tracking-[0.12em] text-black/55">Технічні дані</p>
                                   <p className="mt-[0.5mm] text-[3.1mm] font-black leading-tight">{item.technicalLine}</p>
                                 </div>
                               ) : null}
@@ -260,15 +255,15 @@ export default function PriceTagPrintPage() {
                           ) : item.kind === 'tire' ? (
                             <>
                               {item.meta && item.meta.length > 0 ? (
-                                <div className="rounded-[1.6mm] border border-black/20 px-[1.5mm] py-[1.2mm]">
+                                <div className="rounded-[1.4mm] border border-black/20 px-[1.3mm] py-[1mm]">
                                   <p className="text-[1.9mm] font-bold uppercase tracking-[0.12em] text-black/55">Сезон / Рік / Країна</p>
-                                  <p className="mt-[0.5mm] text-[2.9mm] font-black leading-tight">{item.meta.slice(0, 3).join(' / ')}</p>
+                                  <p className="mt-[0.25mm] text-[3mm] font-black leading-tight">{item.meta.slice(0, 3).join(' / ')}</p>
                                 </div>
                               ) : null}
                               {item.technicalLine ? (
-                                <div className="rounded-[1.6mm] bg-black px-[1.5mm] py-[1.2mm] text-white">
-                                  <p className="text-[1.9mm] font-bold uppercase tracking-[0.12em] text-white/70">Опції шини</p>
-                                  <p className="mt-[0.5mm] text-[2.95mm] font-black leading-tight">{item.technicalLine}</p>
+                                <div className="rounded-[1.4mm] border border-black/20 px-[1.3mm] py-[0.9mm] text-black">
+                                  <p className="text-[1.9mm] font-bold uppercase tracking-[0.12em] text-black/55">Опції шини</p>
+                                  <p className="mt-[0.25mm] text-[3.2mm] font-black leading-tight">{item.technicalLine}</p>
                                 </div>
                               ) : null}
                             </>
@@ -287,22 +282,22 @@ export default function PriceTagPrintPage() {
                                 </div>
                               ) : null}
                               {item.technicalLine ? (
-                                <div className="rounded-[1.6mm] bg-black px-[1.5mm] py-[1.2mm] text-white">
-                                  <p className="text-[1.9mm] font-bold uppercase tracking-[0.12em] text-white/70">Деталі</p>
+                                <div className="rounded-[1.6mm] border border-black/20 px-[1.5mm] py-[1.2mm] text-black">
+                                  <p className="text-[1.9mm] font-bold uppercase tracking-[0.12em] text-black/55">Деталі</p>
                                   <p className="mt-[0.5mm] text-[2.8mm] font-black leading-tight">{item.technicalLine}</p>
                                 </div>
                               ) : null}
                             </>
                           )}
 
-                          <div className="mt-auto rounded-[1.8mm] border-[0.3mm] border-black/75 px-[1.5mm] py-[1.2mm]">
+                          <div className="px-[0.3mm] py-[0.2mm] self-start">
                             <p className="text-[1.9mm] font-bold uppercase tracking-[0.12em] text-black/55">Ціна</p>
-                            <p className="mt-[0.5mm] text-[6.8mm] font-black leading-none">{item.price}</p>
+                            <p className="mt-[0.2mm] text-[8mm] font-black leading-none">{item.price}</p>
                           </div>
                         </div>
 
-                        <div className="flex min-h-0 flex-col p-[0.3mm]">
-                          <div className="flex flex-1 items-center justify-center overflow-hidden">
+                        <div className="flex min-h-0 items-center justify-end p-0">
+                          <div className="flex h-[49mm] w-[49mm] shrink-0 items-center justify-center overflow-hidden">
                             {item.qr ? (
                               <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-full w-full object-contain" />
                             ) : (
