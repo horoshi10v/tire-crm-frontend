@@ -45,8 +45,47 @@ const createInitialLotAnalyticsFilters = (): LotAnalyticsReportFilters => ({
   warehouse_id: undefined,
   lot_id: undefined,
   type: undefined,
+  brand: undefined,
+  model: undefined,
+  condition: undefined,
   source: undefined,
+  group_by: 'DAY',
+  top_limit: 10,
 });
+
+const formatDateInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const shiftDays = (dateString: string, days: number): string => {
+  const date = new Date(`${dateString}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return formatDateInput(date);
+};
+
+const calculatePreviousPeriodFilters = (filters: LotAnalyticsReportFilters): LotAnalyticsReportFilters | null => {
+  if (!filters.start_date || !filters.end_date) {
+    return null;
+  }
+
+  const start = new Date(`${filters.start_date}T00:00:00`);
+  const end = new Date(`${filters.end_date}T00:00:00`);
+  const diffMs = end.getTime() - start.getTime();
+  if (Number.isNaN(diffMs) || diffMs < 0) {
+    return null;
+  }
+
+  const rangeDays = Math.floor(diffMs / (24 * 60 * 60 * 1000)) + 1;
+
+  return {
+    ...filters,
+    start_date: shiftDays(filters.start_date, -rangeDays),
+    end_date: shiftDays(filters.end_date, -rangeDays),
+  };
+};
 
 const createInitialInventoryExportState = (): InventoryExportFormState => ({
   search: '',
@@ -115,6 +154,7 @@ const extractApiErrorMessage = (error: unknown): string => {
 };
 
 export default function AdminReportsView() {
+  const [topMetric, setTopMetric] = useState<'views' | 'favorites_added' | 'conversion_rate'>('views');
   const [pnlFilters, setPnlFilters] = useState<PnLFiltersState>(createInitialPnLState());
   const [appliedPnlFilters, setAppliedPnlFilters] = useState<PnLReportFilters>({});
   const [reportRequested, setReportRequested] = useState(false);
@@ -147,6 +187,14 @@ export default function AdminReportsView() {
     isError: isLotAnalyticsRequestError,
     error: lotAnalyticsRequestError,
   } = useAdminLotAnalyticsReport(appliedLotAnalyticsFilters, lotAnalyticsRequested);
+  const previousPeriodFilters = useMemo(
+    () => calculatePreviousPeriodFilters(appliedLotAnalyticsFilters),
+    [appliedLotAnalyticsFilters]
+  );
+  const {
+    data: previousLotAnalyticsReport,
+    isLoading: isPreviousLotAnalyticsLoading,
+  } = useAdminLotAnalyticsReport(previousPeriodFilters ?? {}, lotAnalyticsRequested && Boolean(previousPeriodFilters));
   const {
     data: webAnalyticsReport,
     isLoading: isWebAnalyticsLoading,
@@ -167,6 +215,24 @@ export default function AdminReportsView() {
   } = useAdminLotAnalyticsReport(
     { ...appliedLotAnalyticsFilters, source: 'STAFF' },
     lotAnalyticsRequested
+  );
+  const {
+    data: previousWebAnalyticsReport,
+  } = useAdminLotAnalyticsReport(
+    previousPeriodFilters ? { ...previousPeriodFilters, source: 'WEB' } : {},
+    lotAnalyticsRequested && Boolean(previousPeriodFilters)
+  );
+  const {
+    data: previousTmaAnalyticsReport,
+  } = useAdminLotAnalyticsReport(
+    previousPeriodFilters ? { ...previousPeriodFilters, source: 'TMA' } : {},
+    lotAnalyticsRequested && Boolean(previousPeriodFilters)
+  );
+  const {
+    data: previousStaffAnalyticsReport,
+  } = useAdminLotAnalyticsReport(
+    previousPeriodFilters ? { ...previousPeriodFilters, source: 'STAFF' } : {},
+    lotAnalyticsRequested && Boolean(previousPeriodFilters)
   );
   const exportPnlMutation = useExportPnL();
   const exportInventoryMutation = useExportInventory();
@@ -226,6 +292,7 @@ export default function AdminReportsView() {
     return (lotAnalyticsReport?.daily ?? []).map((point) => ({
       ...point,
       total: point.views + point.favorites_added + point.orders_created,
+      conversionRate: point.views > 0 ? point.orders_created / point.views : 0,
       viewWidth: `${(point.views / lotAnalyticsChartMax) * 100}%`,
       favoriteWidth: `${(point.favorites_added / lotAnalyticsChartMax) * 100}%`,
       orderWidth: `${(point.orders_created / lotAnalyticsChartMax) * 100}%`,
@@ -233,21 +300,72 @@ export default function AdminReportsView() {
   }, [lotAnalyticsChartMax, lotAnalyticsReport]);
 
   const stackedLotAnalyticsDailyRows = useMemo(() => {
-    const maxTotal = Math.max(1, ...preparedLotAnalyticsDailyRows.map((point) => point.total));
+    const previousDailyRows = previousLotAnalyticsReport?.daily ?? [];
+    const maxTotal = Math.max(
+      1,
+      ...preparedLotAnalyticsDailyRows.map((point) => point.total),
+      ...previousDailyRows.map((point) => point.views + point.favorites_added + point.orders_created)
+    );
 
     return preparedLotAnalyticsDailyRows.map((point) => {
       const totalWidth = (point.total / maxTotal) * 100;
       const safeTotal = Math.max(point.total, 1);
+      const previousPoint = previousDailyRows.find((previousRow) => previousRow.date === point.date) ?? null;
+      const previousTotal = previousPoint
+        ? previousPoint.views + previousPoint.favorites_added + previousPoint.orders_created
+        : 0;
 
       return {
         ...point,
         totalWidth: `${totalWidth}%`,
+        previousTotal,
+        previousTotalWidth: `${(previousTotal / maxTotal) * 100}%`,
         stackedViewWidth: `${(point.views / safeTotal) * 100}%`,
         stackedFavoriteWidth: `${(point.favorites_added / safeTotal) * 100}%`,
         stackedOrderWidth: `${(point.orders_created / safeTotal) * 100}%`,
       };
     });
+  }, [preparedLotAnalyticsDailyRows, previousLotAnalyticsReport]);
+
+  const conversionChartMax = useMemo(() => {
+    return preparedLotAnalyticsDailyRows.reduce((maxValue, point) => Math.max(maxValue, point.conversionRate), 0);
   }, [preparedLotAnalyticsDailyRows]);
+
+  const preparedConversionRows = useMemo(() => {
+    const safeMax = conversionChartMax > 0 ? conversionChartMax : 1;
+    return preparedLotAnalyticsDailyRows.map((point) => ({
+      ...point,
+      conversionWidth: `${(point.conversionRate / safeMax) * 100}%`,
+    }));
+  }, [conversionChartMax, preparedLotAnalyticsDailyRows]);
+
+  const lotAnalyticsPeriodLabel = useMemo(() => {
+    switch (appliedLotAnalyticsFilters.group_by ?? 'DAY') {
+      case 'WEEK':
+        return 'тижнях';
+      case 'MONTH':
+        return 'місяцях';
+      default:
+        return 'днях';
+    }
+  }, [appliedLotAnalyticsFilters.group_by]);
+
+  const buildDeltaValue = (current: number, previous: number): string => {
+    if (previous === 0) {
+      return current === 0 ? '0%' : 'new';
+    }
+    return `${current >= previous ? '+' : ''}${formatNumber(((current - previous) / previous) * 100)}%`;
+  };
+
+  const buildDeltaTone = (current: number, previous: number): string => {
+    if (current > previous) {
+      return 'text-emerald-300';
+    }
+    if (current < previous) {
+      return 'text-red-300';
+    }
+    return 'text-gray-300';
+  };
 
   const sourceBreakdownCards = useMemo(
     () => [
@@ -255,6 +373,7 @@ export default function AdminReportsView() {
         key: 'WEB',
         title: 'WEB',
         report: webAnalyticsReport,
+        previousReport: previousWebAnalyticsReport,
         accentClass: 'border-blue-700/30 bg-blue-500/10',
         labelClass: 'text-blue-200/80',
       },
@@ -262,6 +381,7 @@ export default function AdminReportsView() {
         key: 'TMA',
         title: 'TMA',
         report: tmaAnalyticsReport,
+        previousReport: previousTmaAnalyticsReport,
         accentClass: 'border-emerald-700/30 bg-emerald-500/10',
         labelClass: 'text-emerald-200/80',
       },
@@ -269,12 +389,107 @@ export default function AdminReportsView() {
         key: 'STAFF',
         title: 'STAFF',
         report: staffAnalyticsReport,
+        previousReport: previousStaffAnalyticsReport,
         accentClass: 'border-amber-700/30 bg-amber-500/10',
         labelClass: 'text-amber-200/80',
       },
     ],
-    [staffAnalyticsReport, tmaAnalyticsReport, webAnalyticsReport]
+    [
+      previousStaffAnalyticsReport,
+      previousTmaAnalyticsReport,
+      previousWebAnalyticsReport,
+      staffAnalyticsReport,
+      tmaAnalyticsReport,
+      webAnalyticsReport,
+    ]
   );
+
+  const buildSourceMetricComparison = (current: number, previous: number) => ({
+    current,
+    previous,
+    delta: buildDeltaValue(current, previous),
+    deltaTone: buildDeltaTone(current, previous),
+  });
+
+  const comparisonCards = useMemo(() => {
+    if (!lotAnalyticsReport || !previousLotAnalyticsReport || !previousPeriodFilters) {
+      return [];
+    }
+
+    const buildDelta = (current: number, previous: number) => {
+      if (previous === 0) {
+        return current === 0 ? '0%' : 'new';
+      }
+      return `${current >= previous ? '+' : ''}${formatNumber(((current - previous) / previous) * 100)}%`;
+    };
+
+    return [
+      {
+        key: 'views',
+        title: 'Перегляди',
+        current: lotAnalyticsReport.totals.views,
+        previous: previousLotAnalyticsReport.totals.views,
+        delta: buildDelta(lotAnalyticsReport.totals.views, previousLotAnalyticsReport.totals.views),
+        deltaTone: buildDeltaTone(lotAnalyticsReport.totals.views, previousLotAnalyticsReport.totals.views),
+      },
+      {
+        key: 'favorites',
+        title: 'Збереження',
+        current: lotAnalyticsReport.totals.favorites_added,
+        previous: previousLotAnalyticsReport.totals.favorites_added,
+        delta: buildDelta(lotAnalyticsReport.totals.favorites_added, previousLotAnalyticsReport.totals.favorites_added),
+        deltaTone: buildDeltaTone(lotAnalyticsReport.totals.favorites_added, previousLotAnalyticsReport.totals.favorites_added),
+      },
+      {
+        key: 'orders',
+        title: 'Замовлення',
+        current: lotAnalyticsReport.totals.orders_created,
+        previous: previousLotAnalyticsReport.totals.orders_created,
+        delta: buildDelta(lotAnalyticsReport.totals.orders_created, previousLotAnalyticsReport.totals.orders_created),
+        deltaTone: buildDeltaTone(lotAnalyticsReport.totals.orders_created, previousLotAnalyticsReport.totals.orders_created),
+      },
+      {
+        key: 'conversion',
+        title: 'Конверсія',
+        current: lotAnalyticsReport.totals.conversion_rate,
+        previous: previousLotAnalyticsReport.totals.conversion_rate,
+        delta: buildDelta(lotAnalyticsReport.totals.conversion_rate, previousLotAnalyticsReport.totals.conversion_rate),
+        deltaTone: buildDeltaTone(lotAnalyticsReport.totals.conversion_rate, previousLotAnalyticsReport.totals.conversion_rate),
+        format: 'percent' as const,
+      },
+    ];
+  }, [lotAnalyticsReport, previousLotAnalyticsReport, previousPeriodFilters]);
+
+  const activeTopSection = useMemo(() => {
+    if (!lotAnalyticsReport) {
+      return null;
+    }
+
+    if (topMetric === 'favorites_added') {
+      return {
+        title: 'Топ збережень',
+        rows: lotAnalyticsReport.top_favorited,
+        metricLabel: 'Збереження',
+        metricKey: 'favorites_added' as const,
+      };
+    }
+
+    if (topMetric === 'conversion_rate') {
+      return {
+        title: 'Топ конверсії',
+        rows: lotAnalyticsReport.top_converting,
+        metricLabel: 'Конверсія',
+        metricKey: 'conversion_rate' as const,
+      };
+    }
+
+    return {
+      title: 'Топ переглядів',
+      rows: lotAnalyticsReport.top_viewed,
+      metricLabel: 'Перегляди',
+      metricKey: 'views' as const,
+    };
+  }, [lotAnalyticsReport, topMetric]);
 
   const applyPnLFilters = () => {
     setPnlError(null);
@@ -317,7 +532,12 @@ export default function AdminReportsView() {
       warehouse_id: lotAnalyticsFilters.warehouse_id || undefined,
       lot_id: lotAnalyticsFilters.lot_id || undefined,
       type: lotAnalyticsFilters.type || undefined,
+      brand: lotAnalyticsFilters.brand || undefined,
+      model: lotAnalyticsFilters.model || undefined,
+      condition: lotAnalyticsFilters.condition || undefined,
       source: lotAnalyticsFilters.source || undefined,
+      group_by: lotAnalyticsFilters.group_by || 'DAY',
+      top_limit: lotAnalyticsFilters.top_limit || 10,
     });
     setLotAnalyticsRequested(true);
   };
@@ -381,6 +601,18 @@ export default function AdminReportsView() {
     } catch (error) {
       setInventoryExportError(`Не вдалося експортувати склад: ${extractApiErrorMessage(error)}`);
     }
+  };
+
+  const applyPresetRange = (days: 0 | 7 | 30 | 90) => {
+    const today = new Date();
+    const endDate = formatDateInput(today);
+    const startDate = formatDateInput(new Date(today.getFullYear(), today.getMonth(), today.getDate() - days));
+
+    setLotAnalyticsFilters((prev) => ({
+      ...prev,
+      start_date: startDate,
+      end_date: endDate,
+    }));
   };
 
   return (
@@ -531,6 +763,43 @@ export default function AdminReportsView() {
             </select>
           </label>
           <label className="space-y-1">
+            <span className="text-sm text-gray-300">Бренд</span>
+            <input
+              type="text"
+              value={lotAnalyticsFilters.brand ?? ''}
+              onChange={(event) => setLotAnalyticsFilters((prev) => ({ ...prev, brand: event.target.value || undefined }))}
+              placeholder="Michelin, Hankook..."
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Модель</span>
+            <input
+              type="text"
+              value={lotAnalyticsFilters.model ?? ''}
+              onChange={(event) => setLotAnalyticsFilters((prev) => ({ ...prev, model: event.target.value || undefined }))}
+              placeholder="Pilot Sport 4, Enasave..."
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Стан</span>
+            <select
+              value={lotAnalyticsFilters.condition ?? ''}
+              onChange={(event) =>
+                setLotAnalyticsFilters((prev) => ({
+                  ...prev,
+                  condition: (event.target.value || undefined) as LotAnalyticsReportFilters['condition'],
+                }))
+              }
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            >
+              <option value="">Будь-який стан</option>
+              <option value="NEW">Нові</option>
+              <option value="USED">Вживані</option>
+            </select>
+          </label>
+          <label className="space-y-1">
             <span className="text-sm text-gray-300">Джерело</span>
             <select
               value={lotAnalyticsFilters.source ?? ''}
@@ -546,6 +815,40 @@ export default function AdminReportsView() {
               <option value="WEB">WEB</option>
               <option value="TMA">TMA</option>
               <option value="STAFF">STAFF</option>
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Групування</span>
+            <select
+              value={lotAnalyticsFilters.group_by ?? 'DAY'}
+              onChange={(event) =>
+                setLotAnalyticsFilters((prev) => ({
+                  ...prev,
+                  group_by: (event.target.value || 'DAY') as LotAnalyticsReportFilters['group_by'],
+                }))
+              }
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            >
+              <option value="DAY">По днях</option>
+              <option value="WEEK">По тижнях</option>
+              <option value="MONTH">По місяцях</option>
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Top limit</span>
+            <select
+              value={lotAnalyticsFilters.top_limit ?? 10}
+              onChange={(event) =>
+                setLotAnalyticsFilters((prev) => ({
+                  ...prev,
+                  top_limit: Number(event.target.value) as LotAnalyticsReportFilters['top_limit'],
+                }))
+              }
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
             </select>
           </label>
           <label className="space-y-1 xl:col-span-2">
@@ -584,6 +887,24 @@ export default function AdminReportsView() {
           </button>
         </div>
 
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            { label: 'Сьогодні', days: 0 as const },
+            { label: '7 днів', days: 7 as const },
+            { label: '30 днів', days: 30 as const },
+            { label: '90 днів', days: 90 as const },
+          ].map((preset) => (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() => applyPresetRange(preset.days)}
+              className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-semibold text-gray-200 transition hover:bg-gray-700"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+
         {lotAnalyticsError ? (
           <div className="mt-3 rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">{lotAnalyticsError}</div>
         ) : null}
@@ -619,6 +940,36 @@ export default function AdminReportsView() {
               </div>
             </div>
 
+            {previousPeriodFilters ? (
+              <div className="rounded-xl border border-violet-700/30 bg-violet-500/10 p-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-xs uppercase tracking-wide text-violet-200/80">Поточний період vs попередній</p>
+                  <p className="text-[11px] text-violet-100/70">
+                    {previousPeriodFilters.start_date} - {previousPeriodFilters.end_date}
+                  </p>
+                </div>
+                {isPreviousLotAnalyticsLoading ? (
+                  <p className="text-sm text-gray-300">Завантаження порівняння...</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                    {comparisonCards.map((card) => (
+                      <div key={card.key} className="rounded-xl border border-violet-700/20 bg-gray-950/50 p-3">
+                        <p className="text-xs uppercase tracking-wide text-violet-100/70">{card.title}</p>
+                        <p className="mt-2 text-xl font-bold text-white">
+                          {'format' in card && card.format === 'percent' ? formatPercent(card.current) : formatNumber(card.current)}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          Було:{' '}
+                          {'format' in card && card.format === 'percent' ? formatPercent(card.previous) : formatNumber(card.previous)}
+                        </p>
+                      <p className={`mt-1 text-xs font-semibold ${card.deltaTone}`}>{card.delta}</p>
+                    </div>
+                  ))}
+                </div>
+                )}
+              </div>
+            ) : null}
+
             <div className="grid grid-cols-1 gap-2 xl:grid-cols-3">
               {sourceBreakdownCards.map((card) => (
                 <div key={card.key} className={`rounded-xl border p-3 ${card.accentClass}`}>
@@ -629,13 +980,64 @@ export default function AdminReportsView() {
                     <p className="mt-2 text-sm text-gray-300">Завантаження...</p>
                   ) : (
                     <>
-                      <p className="mt-2 text-xl font-bold text-white">{formatNumber(card.report?.totals.views ?? 0)} переглядів</p>
-                      <p className="mt-1 text-xs text-gray-200/80">
-                        Збереження: {formatNumber(card.report?.totals.favorites_added ?? 0)} • Замовлення:{' '}
-                        {formatNumber(card.report?.totals.orders_created ?? 0)}
-                      </p>
-                      <p className="mt-1 text-xs font-semibold text-white">
+                      <div className="mt-3 grid grid-cols-1 gap-2">
+                        {[
+                          {
+                            key: 'views',
+                            title: 'Перегляди',
+                            value: buildSourceMetricComparison(
+                              card.report?.totals.views ?? 0,
+                              card.previousReport?.totals.views ?? 0
+                            ),
+                          },
+                          {
+                            key: 'favorites',
+                            title: 'Збереження',
+                            value: buildSourceMetricComparison(
+                              card.report?.totals.favorites_added ?? 0,
+                              card.previousReport?.totals.favorites_added ?? 0
+                            ),
+                          },
+                          {
+                            key: 'orders',
+                            title: 'Замовлення',
+                            value: buildSourceMetricComparison(
+                              card.report?.totals.orders_created ?? 0,
+                              card.previousReport?.totals.orders_created ?? 0
+                            ),
+                          },
+                        ].map((metric) => (
+                          <div key={`${card.key}-${metric.key}`} className="rounded-lg border border-gray-800/60 bg-gray-950/50 p-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-[11px] uppercase tracking-wide text-gray-400">{metric.title}</p>
+                                <p className="mt-1 text-lg font-bold text-white">{formatNumber(metric.value.current)}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[11px] text-gray-500">Було {formatNumber(metric.value.previous)}</p>
+                                <p className={`mt-1 text-xs font-semibold ${metric.value.deltaTone}`}>{metric.value.delta}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs font-semibold text-white">
                         Конверсія: {formatPercent(card.report?.totals.conversion_rate ?? 0)}
+                        {card.previousReport ? (
+                          <span
+                            className={`ml-2 ${
+                              buildDeltaTone(
+                                card.report?.totals.conversion_rate ?? 0,
+                                card.previousReport.totals.conversion_rate
+                              )
+                            }`}
+                          >
+                            {buildDeltaValue(
+                              card.report?.totals.conversion_rate ?? 0,
+                              card.previousReport.totals.conversion_rate
+                            )}
+                          </span>
+                        ) : null}
                       </p>
                     </>
                   )}
@@ -645,7 +1047,7 @@ export default function AdminReportsView() {
 
             <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-wider text-gray-400">Динаміка по днях</p>
+                <p className="text-xs uppercase tracking-wider text-gray-400">Динаміка по {lotAnalyticsPeriodLabel}</p>
                 <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-400">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
@@ -669,11 +1071,21 @@ export default function AdminReportsView() {
                     <div key={point.date} className="grid grid-cols-[92px_1fr] items-center gap-3">
                       <div className="text-xs text-gray-400">{point.date}</div>
                       <div className="flex items-center gap-3">
-                        <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-800">
-                          <div className="flex h-full overflow-hidden rounded-full" style={{ width: point.totalWidth }}>
-                            <div className="h-full bg-blue-500" style={{ width: point.stackedViewWidth }} />
-                            <div className="h-full bg-amber-500" style={{ width: point.stackedFavoriteWidth }} />
-                            <div className="h-full bg-emerald-500" style={{ width: point.stackedOrderWidth }} />
+                        <div className="relative flex-1">
+                          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+                            <div className="h-1.5 overflow-hidden rounded-full bg-gray-900">
+                              <div
+                                className="h-full rounded-full border border-violet-300/80 bg-violet-400/20"
+                                style={{ width: point.previousTotalWidth }}
+                              />
+                            </div>
+                          </div>
+                          <div className="relative h-3 overflow-hidden rounded-full bg-gray-800">
+                            <div className="flex h-full overflow-hidden rounded-full" style={{ width: point.totalWidth }}>
+                              <div className="h-full bg-blue-500" style={{ width: point.stackedViewWidth }} />
+                              <div className="h-full bg-amber-500" style={{ width: point.stackedFavoriteWidth }} />
+                              <div className="h-full bg-emerald-500" style={{ width: point.stackedOrderWidth }} />
+                            </div>
                           </div>
                         </div>
                         <div className="grid min-w-[108px] grid-cols-3 gap-2 text-right text-xs text-white">
@@ -681,6 +1093,44 @@ export default function AdminReportsView() {
                           <span>{point.favorites_added}</span>
                           <span>{point.orders_created}</span>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {previousPeriodFilters ? (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-gray-800 pt-3 text-[11px] text-gray-400">
+                  <div className="inline-flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-gray-700" />
+                    Поточний період
+                  </div>
+                  <div className="inline-flex items-center gap-2">
+                    <span className="h-1.5 w-6 rounded-full border border-violet-300/80 bg-violet-400/20" />
+                    Попередній період overlay
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-wider text-gray-400">Конверсія по {lotAnalyticsPeriodLabel}</p>
+                <p className="text-[11px] text-gray-500">Замовлення / перегляди</p>
+              </div>
+              {preparedConversionRows.length === 0 ? (
+                <p className="text-sm text-gray-400">Немає подій за вибраний період.</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {preparedConversionRows.map((point) => (
+                    <div key={`conversion-${point.date}`} className="grid grid-cols-[92px_1fr] items-center gap-3">
+                      <div className="text-xs text-gray-400">{point.date}</div>
+                      <div className="flex items-center gap-3">
+                        <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-800">
+                          <div className="h-full rounded-full bg-fuchsia-500" style={{ width: point.conversionWidth }} />
+                        </div>
+                        <span className="min-w-[56px] text-right text-xs font-semibold text-white">
+                          {formatPercent(point.conversionRate)}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -712,36 +1162,52 @@ export default function AdminReportsView() {
               </div>
             ) : null}
 
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-              {[
-                { title: 'Топ переглядів', rows: lotAnalyticsReport.top_viewed, metricLabel: 'Перегляди', metricKey: 'views' as const },
-                { title: 'Топ збережень', rows: lotAnalyticsReport.top_favorited, metricLabel: 'Збереження', metricKey: 'favorites_added' as const },
-                { title: 'Топ конверсії', rows: lotAnalyticsReport.top_converting, metricLabel: 'Конверсія', metricKey: 'conversion_rate' as const },
-              ].map((section) => (
-                <div key={section.title} className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-                  <p className="mb-2 text-xs uppercase tracking-wider text-gray-400">{section.title}</p>
-                  <div className="space-y-2">
-                    {section.rows.length === 0 ? (
-                      <p className="text-sm text-gray-400">Немає даних.</p>
-                    ) : (
-                      section.rows.map((row) => (
-                        <div key={`${section.title}-${row.lot_id}`} className="rounded-lg border border-gray-800 bg-gray-900 p-2">
-                          <p className="text-sm font-semibold text-white">{buildLotLabel(row)}</p>
-                          <p className="mt-1 text-xs text-gray-500">
-                            {row.type} • {row.condition} • перегляди {row.views} • збереження {row.favorites_added} • замовлення {row.orders_created}
-                          </p>
-                          <p className="mt-1 text-xs font-semibold text-emerald-300">
-                            {section.metricKey === 'conversion_rate'
-                              ? `${section.metricLabel}: ${formatPercent(row.conversion_rate)}`
-                              : `${section.metricLabel}: ${formatNumber(row[section.metricKey])}`}
-                          </p>
-                        </div>
-                      ))
-                    )}
+            {activeTopSection ? (
+              <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs uppercase tracking-wider text-gray-400">{activeTopSection.title}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: 'views', label: 'Перегляди' },
+                      { key: 'favorites_added', label: 'Збереження' },
+                      { key: 'conversion_rate', label: 'Конверсія' },
+                    ].map((option) => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        onClick={() => setTopMetric(option.key as typeof topMetric)}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                          topMetric === option.key
+                            ? 'border-blue-700/60 bg-blue-900/40 text-blue-100'
+                            : 'border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="space-y-2">
+                  {activeTopSection.rows.length === 0 ? (
+                    <p className="text-sm text-gray-400">Немає даних.</p>
+                  ) : (
+                    activeTopSection.rows.map((row) => (
+                      <div key={`${activeTopSection.title}-${row.lot_id}`} className="rounded-lg border border-gray-800 bg-gray-900 p-2">
+                        <p className="text-sm font-semibold text-white">{buildLotLabel(row)}</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {row.type} • {row.condition} • перегляди {row.views} • збереження {row.favorites_added} • замовлення {row.orders_created}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-emerald-300">
+                          {activeTopSection.metricKey === 'conversion_rate'
+                            ? `${activeTopSection.metricLabel}: ${formatPercent(row.conversion_rate)}`
+                            : `${activeTopSection.metricLabel}: ${formatNumber(row[activeTopSection.metricKey])}`}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </article>

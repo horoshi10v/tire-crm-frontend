@@ -50,6 +50,7 @@ export interface LotAnalyticsLotRow {
 }
 
 export interface LotAnalyticsReport {
+  group_by: 'DAY' | 'WEEK' | 'MONTH';
   totals: LotAnalyticsTotals;
   daily: LotAnalyticsDailyPoint[];
   top_viewed: LotAnalyticsLotRow[];
@@ -70,7 +71,12 @@ export interface LotAnalyticsReportFilters {
   warehouse_id?: string;
   lot_id?: string;
   type?: 'TIRE' | 'RIM' | 'ACCESSORY';
+  brand?: string;
+  model?: string;
+  condition?: 'NEW' | 'USED';
   source?: 'WEB' | 'TMA' | 'STAFF';
+  group_by?: 'DAY' | 'WEEK' | 'MONTH';
+  top_limit?: 10 | 25 | 50;
 }
 
 export interface InventoryExportFilters {
