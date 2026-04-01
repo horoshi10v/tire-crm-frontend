@@ -18,7 +18,13 @@ import AdminUsersView from './views/AdminUsersView';
 import AdminAuditLogView from './views/AdminAuditLogView';
 import AdminNotificationsView from './views/AdminNotificationsView';
 import type { CreateLotDTO, LotInternalResponse, UpdateLotDTO } from './types/lot';
-import { buildPriceTagDetails, encodePriceTagBatch, formatSellPrice, openPriceTagPrintUrl } from './utils/priceTagPrint';
+import {
+  buildPriceTagDetails,
+  DEFAULT_PRICE_TAG_FORMAT,
+  encodePriceTagBatch,
+  formatSellPrice,
+  openPriceTagPrintUrl,
+} from './utils/priceTagPrint';
 
 type LotFormState =
   | { mode: 'create' }
@@ -190,14 +196,20 @@ function App() {
           try {
             const qrData = await getLotQRData(lot.id);
             return {
-              title: `${lot.brand} ${lot.model ?? ''}`.trim(),
+              lotId: lot.id,
+              brand: lot.brand,
+              stock: lot.current_quantity,
+              title: `${lot.model ?? ''}`.trim() || lot.brand,
               price: formatSellPrice(lot.sell_price),
               qr: qrData.dataUrl,
               ...buildPriceTagDetails(lot),
             };
           } catch {
             return {
-              title: `${lot.brand} ${lot.model ?? ''}`.trim(),
+              lotId: lot.id,
+              brand: lot.brand,
+              stock: lot.current_quantity,
+              title: `${lot.model ?? ''}`.trim() || lot.brand,
               price: formatSellPrice(lot.sell_price),
               qr: '',
               ...buildPriceTagDetails(lot),
@@ -207,7 +219,7 @@ function App() {
       );
 
       const payload = encodePriceTagBatch(printItems);
-      const printUrl = `${window.location.origin}/print/price-tag#payload=${payload}`;
+      const printUrl = `${window.location.origin}/print/price-tag?format=${DEFAULT_PRICE_TAG_FORMAT}#payload=${payload}`;
       openPriceTagPrintUrl(printUrl);
     } finally {
       setIsBulkPrinting(false);

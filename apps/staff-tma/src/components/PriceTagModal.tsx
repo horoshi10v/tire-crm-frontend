@@ -1,7 +1,13 @@
 import { useMemo } from 'react';
 import { useLotQR } from '../api/staffLots';
 import type { LotInternalResponse } from '../types/lot';
-import { buildPriceTagDetails, formatSellPrice, openPriceTagPrintUrl } from '../utils/priceTagPrint';
+import {
+  buildPriceTagDetails,
+  DEFAULT_PRICE_TAG_FORMAT,
+  formatSellPrice,
+  openPriceTagPrintUrl,
+  type PriceTagPrintFormat,
+} from '../utils/priceTagPrint';
 
 type PriceTagModalProps = {
   lot: LotInternalResponse | null;
@@ -15,16 +21,20 @@ export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
 
   const lotTitle = useMemo(() => {
     if (!lot) return '';
-    return `${lot.brand} ${lot.model ?? ''}`.trim();
+    return `${lot.model ?? ''}`.trim() || lot.brand;
   }, [lot]);
 
-  const handlePrint = () => {
+  const handlePrint = (format: PriceTagPrintFormat = DEFAULT_PRICE_TAG_FORMAT) => {
     if (!lot) {
       return;
     }
 
     const details = buildPriceTagDetails(lot);
     const printUrl = new URL('/print/price-tag', window.location.origin);
+    printUrl.searchParams.set('format', format);
+    printUrl.searchParams.set('lot_id', lot.id);
+    printUrl.searchParams.set('brand', lot.brand);
+    printUrl.searchParams.set('stock', String(lot.current_quantity));
     printUrl.searchParams.set('title', lotTitle);
     printUrl.searchParams.set('price', formatSellPrice(lot.sell_price));
     if (qrData?.dataUrl) {
@@ -35,6 +45,15 @@ export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
     }
     if (details.meta && details.meta.length > 0) {
       printUrl.searchParams.set('meta', JSON.stringify(details.meta));
+    }
+    if (details.kind) {
+      printUrl.searchParams.set('kind', details.kind);
+    }
+    if (details.conditionLabel) {
+      printUrl.searchParams.set('condition_label', details.conditionLabel);
+    }
+    if (details.technicalLine) {
+      printUrl.searchParams.set('technical_line', details.technicalLine);
     }
     openPriceTagPrintUrl(printUrl.toString());
   };
@@ -90,13 +109,20 @@ export default function PriceTagModal({ lot, onClose }: PriceTagModalProps) {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={handlePrint}
+              onClick={() => handlePrint('thermal')}
               className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
             >
-              Друк цінника
+              Термо 100×100
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePrint('a4')}
+              className="rounded-lg border border-blue-500/40 bg-blue-500/10 px-3 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-500/20"
+            >
+              A4
             </button>
             <button
               type="button"
