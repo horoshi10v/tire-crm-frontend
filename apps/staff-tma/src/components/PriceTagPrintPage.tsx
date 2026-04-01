@@ -226,7 +226,7 @@ export default function PriceTagPrintPage() {
                       </div>
 
                       {item.subtitle ? (
-                        <div className="border-b-[0.4mm] border-black py-[1.3mm]">
+                        <div className="border-b-[0.4mm] border-black py-[1.2mm]">
                           <p className="text-[2.1mm] font-bold uppercase tracking-[0.12em] text-black/60">
                             {item.kind === 'rim' ? 'Параметри диска' : item.kind === 'tire' ? 'Розмір шини' : 'Позиція'}
                           </p>
@@ -234,87 +234,80 @@ export default function PriceTagPrintPage() {
                         </div>
                       ) : null}
 
-                      {item.kind === 'rim' && (item.technicalLine || (item.meta && item.meta.length > 0)) ? (
-                        <div className="border-b-[0.4mm] border-black py-[1.3mm]">
-                          <p className="text-[2.1mm] font-bold uppercase tracking-[0.12em] text-black/60">Технічні дані</p>
-                          {item.technicalLine ? (
-                            <div className="mt-[0.7mm] border-[0.45mm] border-black px-[1.1mm] py-[1.1mm] text-center">
-                              <p className="text-[3.3mm] font-black leading-tight">{item.technicalLine}</p>
-                            </div>
-                          ) : null}
-                          <div className="mt-[0.8mm] grid grid-cols-2 gap-[0.8mm]">
-                            {(item.meta ?? []).slice(0, 4).map((metaRow) => (
-                              <div
-                                key={metaRow}
-                                className="min-h-[5.8mm] border border-black/20 px-[1mm] py-[0.6mm] text-center text-[2.1mm] font-medium leading-tight text-black/70"
-                              >
-                                {metaRow}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {item.kind !== 'rim' && item.meta && item.meta.length > 0 ? (
-                        <div className="border-b-[0.4mm] border-black py-[1.3mm]">
-                          <p className="text-[2.1mm] font-bold uppercase tracking-[0.12em] text-black/60">
-                            {item.kind === 'tire' ? 'Сезон / Рік / Країна' : 'Характеристики'}
-                          </p>
-                          {item.kind === 'tire' ? (
-                            <div className="mt-[0.7mm] border-[0.4mm] border-black px-[1.1mm] py-[1mm] text-center">
-                              <p className="text-[3mm] font-black leading-tight">{item.meta.slice(0, 3).join(' / ')}</p>
-                            </div>
-                          ) : (
-                            <div className="mt-[0.8mm] grid grid-cols-2 gap-[0.8mm]">
-                              {item.meta.slice(0, 4).map((metaRow) => (
-                                <div
-                                  key={metaRow}
-                                  className="min-h-[6.2mm] border border-black/20 px-[1mm] py-[0.7mm] text-center text-[2.2mm] font-semibold leading-tight"
-                                >
-                                  {metaRow}
+                      <div className="mt-auto grid min-h-[39mm] grid-cols-[1fr_31mm] gap-[1.6mm] pt-[1.2mm]">
+                        <div className="border-t-[0.6mm] border-black pt-[1.1mm]">
+                          {item.kind === 'rim' ? (
+                            <>
+                              {item.technicalLine ? (
+                                <div>
+                                  <p className="text-[2mm] font-bold uppercase tracking-[0.12em] text-black/60">Технічні дані</p>
+                                  <p className="mt-[0.6mm] text-[3mm] font-black leading-tight">{item.technicalLine}</p>
                                 </div>
-                              ))}
-                            </div>
+                              ) : null}
+                              {item.meta && item.meta.length > 0 ? (
+                                <div className="mt-[1mm] space-y-[0.5mm]">
+                                  {item.meta.slice(0, 3).map((metaRow) => (
+                                    <p key={metaRow} className="text-[2.2mm] font-medium leading-tight text-black/75">
+                                      {metaRow}
+                                    </p>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </>
+                          ) : item.kind === 'tire' ? (
+                            <>
+                              {item.meta && item.meta.length > 0 ? (
+                                <div>
+                                  <p className="text-[2mm] font-bold uppercase tracking-[0.12em] text-black/60">Сезон / Рік / Країна</p>
+                                  <p className="mt-[0.6mm] text-[2.9mm] font-black leading-tight">{item.meta.slice(0, 3).join(' / ')}</p>
+                                </div>
+                              ) : null}
+                              {item.technicalLine ? (
+                                <div className="mt-[1mm]">
+                                  <p className="text-[2mm] font-bold uppercase tracking-[0.12em] text-black/60">Опції шини</p>
+                                  <p className="mt-[0.6mm] text-[2.8mm] font-black leading-tight">{item.technicalLine}</p>
+                                </div>
+                              ) : null}
+                            </>
+                          ) : (
+                            <>
+                              {item.meta && item.meta.length > 0 ? (
+                                <div>
+                                  <p className="text-[2mm] font-bold uppercase tracking-[0.12em] text-black/60">Характеристики</p>
+                                  <div className="mt-[0.6mm] space-y-[0.4mm]">
+                                    {item.meta.slice(0, 3).map((metaRow) => (
+                                      <p key={metaRow} className="text-[2.2mm] font-medium leading-tight text-black/75">
+                                        {metaRow}
+                                      </p>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
+                              {item.technicalLine ? (
+                                <p className="mt-[0.8mm] text-[2.3mm] font-bold leading-tight">{item.technicalLine}</p>
+                              ) : null}
+                            </>
                           )}
-                          {item.technicalLine ? (
-                            <p className="mt-[0.8mm] text-center text-[2.3mm] font-bold leading-tight">{item.technicalLine}</p>
-                          ) : null}
-                        </div>
-                      ) : null}
 
-                      {item.kind === 'tire' && item.technicalLine ? (
-                        <div className="border-b-[0.4mm] border-black py-[1.3mm]">
-                          <p className="text-[2.1mm] font-bold uppercase tracking-[0.12em] text-black/60">Опції шини</p>
-                          <div className="mt-[0.7mm] border-[0.45mm] border-black px-[1.1mm] py-[1mm] text-center">
-                            <p className="text-[3.1mm] font-black leading-tight">{item.technicalLine}</p>
+                          <div className="mt-[1.5mm]">
+                            <p className="text-[2mm] font-bold uppercase tracking-[0.12em] text-black/60">Ціна</p>
+                            <p className="mt-[0.5mm] text-[6.8mm] font-black leading-none">{item.price}</p>
                           </div>
                         </div>
-                      ) : null}
 
-                      <div className="mt-auto pt-[1.5mm]">
-                        <div className="grid grid-cols-[1fr_28mm] items-end gap-[1.8mm]">
-                          <div className="border-y-[0.6mm] border-black py-[1.4mm]">
-                            <p className="text-[2.1mm] font-bold uppercase tracking-[0.12em] text-black/60">Ціна</p>
-                            <p className="mt-[0.6mm] text-[7.1mm] font-black leading-none">{item.price}</p>
-                          </div>
-                          <div className="flex flex-col items-center">
+                        <div className="flex h-full flex-col border-t-[0.6mm] border-black pt-[1.1mm]">
+                          <div className="flex flex-1 items-center justify-center">
                             {item.qr ? (
-                              <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-[26mm] w-[26mm] object-contain" />
+                              <img src={item.qr} alt={`QR-код для ${item.title}`} className="h-full w-full object-contain" />
                             ) : (
-                              <div className="flex h-[26mm] w-[26mm] items-center justify-center border border-black text-center text-[2.2mm]">
+                              <div className="flex h-full w-full items-center justify-center border border-black text-center text-[2.2mm]">
                                 QR
                               </div>
                             )}
                           </div>
-                        </div>
-
-                        <div className="mt-[1mm] border-t-[0.4mm] border-dashed border-black pt-[0.8mm] text-center">
-                          <p className="text-[2.1mm] font-bold uppercase tracking-[0.12em] text-black/60">Скануй QR</p>
-                          <div className="mt-[0.7mm] rounded border border-black px-[1mm] py-[0.7mm]">
-                            <p className="font-mono text-[2.5mm] font-black uppercase tracking-[0.28em] leading-none">
-                              {buildLotCode(item.lotId)}
-                            </p>
-                          </div>
+                          <p className="mt-[0.6mm] text-center text-[1.9mm] font-bold uppercase tracking-[0.12em] text-black/60">
+                            QR-код
+                          </p>
                         </div>
                       </div>
                     </>
