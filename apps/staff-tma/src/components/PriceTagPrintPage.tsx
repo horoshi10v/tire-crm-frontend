@@ -1,4 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import {
   DEFAULT_PRICE_TAG_FORMAT,
   decodePriceTagBatch,
@@ -57,6 +59,7 @@ const buildLotCode = (lotId?: string): string => {
 };
 
 export default function PriceTagPrintPage() {
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const hashParams = useMemo(() => new URLSearchParams(window.location.hash.replace(/^#/, '')), []);
   const payload = hashParams.get('payload');
@@ -117,9 +120,53 @@ export default function PriceTagPrintPage() {
     };
   }, []);
 
+  const handleDownloadPdf = async () => {
+    const pageElements = Array.from(document.querySelectorAll<HTMLElement>('[data-print-page]'));
+    if (pageElements.length === 0 || isDownloadingPdf) {
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+
+    try {
+      const pdf = new jsPDF({
+        orientation: format === 'a4' ? 'portrait' : 'portrait',
+        unit: 'mm',
+        format: format === 'a4' ? 'a4' : [100, 100],
+        compress: true,
+      });
+
+      for (const [index, element] of pageElements.entries()) {
+        const canvas = await html2canvas(element, {
+          backgroundColor: '#ffffff',
+          scale: Math.min(window.devicePixelRatio || 2, 3),
+          useCORS: true,
+        });
+        const imageData = canvas.toDataURL('image/png');
+        const pageWidth = format === 'a4' ? 210 : 100;
+        const pageHeight = format === 'a4' ? 297 : 100;
+
+        if (index > 0) {
+          pdf.addPage(format === 'a4' ? 'a4' : [100, 100], 'portrait');
+        }
+
+        pdf.addImage(imageData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+      }
+
+      pdf.save(`price-tags-${format}.pdf`);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   return (
-    <div className={`min-h-screen text-black print:bg-white print:p-0 ${format === 'a4' ? 'bg-[#f5f5f5] p-4' : 'bg-[#ececec] p-3'}`}>
+    <div className={`text-black print:bg-white print:p-0 ${format === 'a4' ? 'bg-[#f5f5f5] p-4' : 'bg-[#ececec] p-3'}`}>
       <style>{`
+        html, body {
+          margin: 0;
+          padding: 0;
+          background: #ffffff;
+        }
         @page {
           size: ${format === 'a4' ? 'A4 portrait' : '100mm 100mm'};
           margin: 0;
@@ -153,6 +200,14 @@ export default function PriceTagPrintPage() {
         </button>
         <button
           type="button"
+          onClick={() => void handleDownloadPdf()}
+          disabled={isDownloadingPdf}
+          className="rounded-lg border border-black bg-white px-4 py-2 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isDownloadingPdf ? 'PDF...' : 'Скачати PDF'}
+        </button>
+        <button
+          type="button"
           onClick={() => {
             if (window.history.length > 1) {
               window.history.back();
@@ -175,6 +230,11 @@ export default function PriceTagPrintPage() {
         {pages.map((page, pageIndex) => (
           <section
             key={`page-${pageIndex}`}
+            data-print-page
+            style={{
+              breakAfter: pageIndex < pages.length - 1 ? 'page' : 'auto',
+              pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto',
+            }}
             className={`bg-white print:rounded-none print:shadow-none ${
               format === 'a4' ? 'rounded-xl p-[8mm] shadow-sm print:p-[8mm]' : 'overflow-hidden rounded-xl p-0 shadow-sm print:p-0'
             }`}
