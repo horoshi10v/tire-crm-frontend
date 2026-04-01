@@ -14,6 +14,7 @@ import OrdersView from './views/OrdersView';
 import WarehouseView from './views/WarehouseView';
 import TransfersView from './views/TransfersView';
 import AdminReportsView from './views/AdminReportsView';
+import AdminLotAnalyticsView from './views/AdminLotAnalyticsView';
 import AdminUsersView from './views/AdminUsersView';
 import AdminAuditLogView from './views/AdminAuditLogView';
 import AdminNotificationsView from './views/AdminNotificationsView';
@@ -40,7 +41,7 @@ type SellLotState = {
   lot: LotInternalResponse;
 } | null;
 
-type StaffTab = 'inventory' | 'orders' | 'warehouses' | 'transfers' | 'admin' | 'admin-users' | 'audit-log' | 'notifications';
+type StaffTab = 'inventory' | 'orders' | 'warehouses' | 'transfers' | 'admin' | 'admin-analytics' | 'admin-users' | 'audit-log' | 'notifications';
 
 function App() {
   const isPrintRoute = window.location.pathname === '/print/price-tag';
@@ -267,11 +268,13 @@ function App() {
           ? 'Трансфери'
           : activeTab === 'orders'
             ? 'Замовлення'
-            : activeTab === 'admin-users'
-              ? 'Персонал'
-              : activeTab === 'audit-log'
-                ? 'Журнал дій'
-                : activeTab === 'notifications'
+              : activeTab === 'admin-users'
+                ? 'Персонал'
+                : activeTab === 'admin-analytics'
+                  ? 'Статистика'
+                : activeTab === 'audit-log'
+                  ? 'Журнал дій'
+                  : activeTab === 'notifications'
                   ? 'Сповіщення'
               : 'Адмін-звіти';
   const headerUserName = user.firstName || user.username || 'Користувач';
@@ -284,6 +287,7 @@ function App() {
   if (isAdmin) {
     navigationItems.push({ key: 'notifications', label: 'Сповіщення', icon: '🔔' });
     navigationItems.push({ key: 'admin', label: 'Звіти', icon: '📊' });
+    navigationItems.push({ key: 'admin-analytics', label: 'Статистика', icon: '📈' });
     navigationItems.push({ key: 'admin-users', label: 'Персонал', icon: '👥' });
     navigationItems.push({ key: 'audit-log', label: 'Журнал дій', icon: '🧾' });
   }
@@ -341,6 +345,8 @@ function App() {
               <AdminAuditLogView />
             ) : activeTab === 'admin' && isAdmin ? (
               <AdminReportsView />
+            ) : activeTab === 'admin-analytics' && isAdmin ? (
+              <AdminLotAnalyticsView />
             ) : (
               <OrdersView />
             )}
