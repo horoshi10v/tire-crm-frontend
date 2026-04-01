@@ -23,11 +23,54 @@ export interface PnLReport {
   by_channel: ChannelPnL[];
 }
 
+export interface LotAnalyticsTotals {
+  views: number;
+  favorites_added: number;
+  orders_created: number;
+  conversion_rate: number;
+}
+
+export interface LotAnalyticsDailyPoint {
+  date: string;
+  views: number;
+  favorites_added: number;
+  orders_created: number;
+}
+
+export interface LotAnalyticsLotRow {
+  lot_id: string;
+  brand: string;
+  model: string;
+  type: string;
+  condition: string;
+  views: number;
+  favorites_added: number;
+  orders_created: number;
+  conversion_rate: number;
+}
+
+export interface LotAnalyticsReport {
+  totals: LotAnalyticsTotals;
+  daily: LotAnalyticsDailyPoint[];
+  top_viewed: LotAnalyticsLotRow[];
+  top_favorited: LotAnalyticsLotRow[];
+  top_converting: LotAnalyticsLotRow[];
+}
+
 export interface PnLReportFilters {
   start_date?: string;
   end_date?: string;
   warehouse_id?: string;
   channel?: 'ONLINE' | 'OFFLINE';
+}
+
+export interface LotAnalyticsReportFilters {
+  start_date?: string;
+  end_date?: string;
+  warehouse_id?: string;
+  lot_id?: string;
+  type?: 'TIRE' | 'RIM' | 'ACCESSORY';
+  source?: 'WEB' | 'TMA' | 'STAFF';
 }
 
 export interface InventoryExportFilters {

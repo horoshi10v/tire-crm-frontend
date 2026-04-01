@@ -13,6 +13,7 @@ import {
     useAuthStore,
 } from '@tire-crm/shared';
 import { useLotSuggestions, useLots, useTrackLotSuggestionSelection } from './api/useLots';
+import { shouldTrackLotView, trackLotAnalyticsEvent } from './api/lotAnalytics';
 import type { LotsSortParams } from './api/useLots';
 import { useFilterStore } from './store/useFilterStore';
 import { useFavoritesStore } from './store/useFavoritesStore';
@@ -621,6 +622,16 @@ function App() {
                         description: `Для "${lot.brand} ${lot.model}" доступно лише ${lot.current_quantity} шт.`,
                         variant: 'error',
                     });
+                }}
+                onView={(lot) => {
+                    if (!shouldTrackLotView(lot.id)) {
+                        return;
+                    }
+
+                    void trackLotAnalyticsEvent({
+                        lot_id: lot.id,
+                        event_type: 'VIEW',
+                    }).catch(() => undefined);
                 }}
             />
 

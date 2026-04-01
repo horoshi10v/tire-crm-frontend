@@ -14,6 +14,7 @@ interface LotDetailsModalProps {
     onAddToCartLimitReached?: (lot: LotPublicResponse, result: AddItemResult) => void;
     onCopyLink?: (lot: LotPublicResponse) => void | Promise<void>;
     onFavoriteChange?: (lot: LotPublicResponse, nextFavoriteState: boolean) => void;
+    onView?: (lot: LotPublicResponse) => void;
 }
 
 // Хелпери для перекладу (стійкі до регістру)
@@ -62,7 +63,7 @@ type SpecRow = {
     accent?: boolean;
 };
 
-export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached, onCopyLink, onFavoriteChange }: LotDetailsModalProps) => {
+export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitReached, onCopyLink, onFavoriteChange, onView }: LotDetailsModalProps) => {
     const addItem = useCartStore((state) => state.addItem);
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
     const isFavorite = useFavoritesStore((state) => (lot ? state.isFavorite(lot.id) : false));
@@ -97,6 +98,12 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
             setActivePhotoIndex(0);
         }
     }, [lot]);
+
+    useEffect(() => {
+        if (lot) {
+            onView?.(lot);
+        }
+    }, [lot, onView]);
 
     if (!lot && !isOpen) return null;
 

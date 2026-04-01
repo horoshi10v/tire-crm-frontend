@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { isAxiosError } from 'axios';
-import { useAdminPnLReport, useExportInventory, useExportPnL } from '../api/adminReports';
+import { useAdminLotAnalyticsReport, useAdminPnLReport, useExportInventory, useExportPnL } from '../api/adminReports';
 import { useStaffLots } from '../api/staffLots';
 import { useStaffOrders } from '../api/staffOrders';
 import { useStaffWarehouses } from '../api/staffWarehouses';
-import type { InventoryExportFilters, PnLReportFilters } from '../types/adminReports';
+import type { InventoryExportFilters, LotAnalyticsLotRow, LotAnalyticsReportFilters, PnLReportFilters } from '../types/adminReports';
 
 type PnLFiltersState = {
   startDate: string;
@@ -39,6 +39,15 @@ const createInitialPnLState = (): PnLFiltersState => ({
   channel: '',
 });
 
+const createInitialLotAnalyticsFilters = (): LotAnalyticsReportFilters => ({
+  start_date: undefined,
+  end_date: undefined,
+  warehouse_id: undefined,
+  lot_id: undefined,
+  type: undefined,
+  source: undefined,
+});
+
 const createInitialInventoryExportState = (): InventoryExportFormState => ({
   search: '',
   brand: '',
@@ -64,6 +73,11 @@ const formatNumber = (value: number): string => {
     maximumFractionDigits: 2,
   }).format(value);
 };
+
+const formatPercent = (value: number): string => `${formatNumber(value * 100)}%`;
+
+const buildLotLabel = (row: LotAnalyticsLotRow): string =>
+  [row.brand, row.model].filter(Boolean).join(' · ') || row.lot_id;
 
 const extractApiErrorMessage = (error: unknown): string => {
   if (!isAxiosError(error)) {
@@ -104,10 +118,14 @@ export default function AdminReportsView() {
   const [pnlFilters, setPnlFilters] = useState<PnLFiltersState>(createInitialPnLState());
   const [appliedPnlFilters, setAppliedPnlFilters] = useState<PnLReportFilters>({});
   const [reportRequested, setReportRequested] = useState(false);
+  const [lotAnalyticsFilters, setLotAnalyticsFilters] = useState<LotAnalyticsReportFilters>(createInitialLotAnalyticsFilters());
+  const [appliedLotAnalyticsFilters, setAppliedLotAnalyticsFilters] = useState<LotAnalyticsReportFilters>({});
+  const [lotAnalyticsRequested, setLotAnalyticsRequested] = useState(true);
 
   const [inventoryFilters, setInventoryFilters] = useState<InventoryExportFormState>(createInitialInventoryExportState());
 
   const [pnlError, setPnlError] = useState<string | null>(null);
+  const [lotAnalyticsError, setLotAnalyticsError] = useState<string | null>(null);
   const [pnlExportError, setPnlExportError] = useState<string | null>(null);
   const [inventoryExportError, setInventoryExportError] = useState<string | null>(null);
 
@@ -123,6 +141,12 @@ export default function AdminReportsView() {
     isError: isPnLError,
     error: pnlRequestError,
   } = useAdminPnLReport(appliedPnlFilters, reportRequested);
+  const {
+    data: lotAnalyticsReport,
+    isLoading: isLotAnalyticsLoading,
+    isError: isLotAnalyticsRequestError,
+    error: lotAnalyticsRequestError,
+  } = useAdminLotAnalyticsReport(appliedLotAnalyticsFilters, lotAnalyticsRequested);
   const exportPnlMutation = useExportPnL();
   const exportInventoryMutation = useExportInventory();
 
@@ -163,6 +187,30 @@ export default function AdminReportsView() {
     return pnlReport?.by_channel?.find((row) => row.channel === 'ONLINE') ?? null;
   }, [pnlReport]);
 
+  const analyticsLots = useMemo(() => {
+    return [...lots].sort((a, b) => {
+      const left = `${a.brand} ${a.model}`.trim().toLowerCase();
+      const right = `${b.brand} ${b.model}`.trim().toLowerCase();
+      return left.localeCompare(right, 'uk');
+    });
+  }, [lots]);
+
+  const lotAnalyticsChartMax = useMemo(() => {
+    return Math.max(
+      1,
+      ...(lotAnalyticsReport?.daily ?? []).flatMap((point) => [point.views, point.favorites_added, point.orders_created])
+    );
+  }, [lotAnalyticsReport]);
+
+  const preparedLotAnalyticsDailyRows = useMemo(() => {
+    return (lotAnalyticsReport?.daily ?? []).map((point) => ({
+      ...point,
+      viewWidth: `${(point.views / lotAnalyticsChartMax) * 100}%`,
+      favoriteWidth: `${(point.favorites_added / lotAnalyticsChartMax) * 100}%`,
+      orderWidth: `${(point.orders_created / lotAnalyticsChartMax) * 100}%`,
+    }));
+  }, [lotAnalyticsChartMax, lotAnalyticsReport]);
+
   const applyPnLFilters = () => {
     setPnlError(null);
     if (pnlFilters.startDate && pnlFilters.endDate && pnlFilters.startDate > pnlFilters.endDate) {
@@ -184,6 +232,37 @@ export default function AdminReportsView() {
     setAppliedPnlFilters({});
     setReportRequested(false);
     setPnlError(null);
+  };
+
+  const applyLotAnalyticsFilters = () => {
+    setLotAnalyticsError(null);
+
+    if (
+      lotAnalyticsFilters.start_date &&
+      lotAnalyticsFilters.end_date &&
+      lotAnalyticsFilters.start_date > lotAnalyticsFilters.end_date
+    ) {
+      setLotAnalyticsError('Дата початку не може бути пізніше за дату завершення.');
+      return;
+    }
+
+    setAppliedLotAnalyticsFilters({
+      start_date: lotAnalyticsFilters.start_date || undefined,
+      end_date: lotAnalyticsFilters.end_date || undefined,
+      warehouse_id: lotAnalyticsFilters.warehouse_id || undefined,
+      lot_id: lotAnalyticsFilters.lot_id || undefined,
+      type: lotAnalyticsFilters.type || undefined,
+      source: lotAnalyticsFilters.source || undefined,
+    });
+    setLotAnalyticsRequested(true);
+  };
+
+  const resetLotAnalyticsFilters = () => {
+    const nextFilters = createInitialLotAnalyticsFilters();
+    setLotAnalyticsFilters(nextFilters);
+    setAppliedLotAnalyticsFilters(nextFilters);
+    setLotAnalyticsRequested(true);
+    setLotAnalyticsError(null);
   };
 
   const handleExportPnL = async () => {
@@ -324,6 +403,260 @@ export default function AdminReportsView() {
             </div>
           </div>
         </div>
+      </article>
+
+      <article className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-white">Аналітика лотів</h3>
+            <p className="text-sm text-gray-400">Перегляди, збереження в обране та конверсія в оформлення.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Дата початку</span>
+            <input
+              type="date"
+              value={lotAnalyticsFilters.start_date ?? ''}
+              onChange={(event) => setLotAnalyticsFilters((prev) => ({ ...prev, start_date: event.target.value || undefined }))}
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Дата завершення</span>
+            <input
+              type="date"
+              value={lotAnalyticsFilters.end_date ?? ''}
+              onChange={(event) => setLotAnalyticsFilters((prev) => ({ ...prev, end_date: event.target.value || undefined }))}
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Склад</span>
+            <select
+              value={lotAnalyticsFilters.warehouse_id ?? ''}
+              onChange={(event) => setLotAnalyticsFilters((prev) => ({ ...prev, warehouse_id: event.target.value || undefined }))}
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            >
+              <option value="">Усі склади</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name} ({warehouse.location})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Тип товару</span>
+            <select
+              value={lotAnalyticsFilters.type ?? ''}
+              onChange={(event) =>
+                setLotAnalyticsFilters((prev) => ({
+                  ...prev,
+                  type: (event.target.value || undefined) as LotAnalyticsReportFilters['type'],
+                }))
+              }
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            >
+              <option value="">Усі типи</option>
+              <option value="TIRE">Шини</option>
+              <option value="RIM">Диски</option>
+              <option value="ACCESSORY">Супутні товари</option>
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Джерело</span>
+            <select
+              value={lotAnalyticsFilters.source ?? ''}
+              onChange={(event) =>
+                setLotAnalyticsFilters((prev) => ({
+                  ...prev,
+                  source: (event.target.value || undefined) as LotAnalyticsReportFilters['source'],
+                }))
+              }
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            >
+              <option value="">Усі джерела</option>
+              <option value="WEB">WEB</option>
+              <option value="TMA">TMA</option>
+              <option value="STAFF">STAFF</option>
+            </select>
+          </label>
+          <label className="space-y-1 xl:col-span-2">
+            <span className="text-sm text-gray-300">Конкретний лот</span>
+            <select
+              value={lotAnalyticsFilters.lot_id ?? ''}
+              onChange={(event) => setLotAnalyticsFilters((prev) => ({ ...prev, lot_id: event.target.value || undefined }))}
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            >
+              <option value="">Усі лоти</option>
+              {analyticsLots
+                .filter((lot) => !lotAnalyticsFilters.type || lot.type === lotAnalyticsFilters.type)
+                .map((lot) => (
+                  <option key={lot.id} value={lot.id}>
+                    {[lot.brand, lot.model].filter(Boolean).join(' · ') || lot.id}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={applyLotAnalyticsFilters}
+            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+          >
+            Застосувати фільтр
+          </button>
+          <button
+            type="button"
+            onClick={resetLotAnalyticsFilters}
+            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-200 transition hover:bg-gray-700"
+          >
+            Скинути
+          </button>
+        </div>
+
+        {lotAnalyticsError ? (
+          <div className="mt-3 rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">{lotAnalyticsError}</div>
+        ) : null}
+
+        {isLotAnalyticsLoading ? (
+          <div className="mt-3 rounded-xl border border-gray-800 bg-gray-950 p-4 text-sm text-gray-400">Завантаження аналітики...</div>
+        ) : null}
+
+        {isLotAnalyticsRequestError ? (
+          <div className="mt-3 rounded-xl border border-red-800/60 bg-red-950/30 p-4 text-sm text-red-300">
+            Не вдалося отримати аналітику: {extractApiErrorMessage(lotAnalyticsRequestError)}
+          </div>
+        ) : null}
+
+        {!isLotAnalyticsLoading && !isLotAnalyticsRequestError && lotAnalyticsReport ? (
+          <div className="mt-3 space-y-4">
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Перегляди</p>
+                <p className="mt-2 text-2xl font-bold text-white">{formatNumber(lotAnalyticsReport.totals.views)}</p>
+              </div>
+              <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Збереження</p>
+                <p className="mt-2 text-2xl font-bold text-white">{formatNumber(lotAnalyticsReport.totals.favorites_added)}</p>
+              </div>
+              <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Замовлення</p>
+                <p className="mt-2 text-2xl font-bold text-white">{formatNumber(lotAnalyticsReport.totals.orders_created)}</p>
+              </div>
+              <div className="rounded-xl border border-emerald-700/30 bg-emerald-500/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-emerald-200/80">Конверсія</p>
+                <p className="mt-2 text-2xl font-bold text-white">{formatPercent(lotAnalyticsReport.totals.conversion_rate)}</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+              <p className="mb-3 text-xs uppercase tracking-wider text-gray-400">Динаміка по днях</p>
+              {preparedLotAnalyticsDailyRows.length === 0 ? (
+                <p className="text-sm text-gray-400">Немає подій за вибраний період.</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {preparedLotAnalyticsDailyRows.map((point) => (
+                    <div key={point.date} className="grid grid-cols-[92px_1fr] items-center gap-3">
+                      <div className="text-xs text-gray-400">{point.date}</div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-16 text-[11px] text-gray-500">Перегляди</span>
+                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-800">
+                            <div
+                              className="h-full rounded-full bg-blue-500"
+                              style={{ width: point.viewWidth }}
+                            />
+                          </div>
+                          <span className="w-8 text-right text-xs text-white">{point.views}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-16 text-[11px] text-gray-500">Збереж.</span>
+                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-800">
+                            <div
+                              className="h-full rounded-full bg-amber-500"
+                              style={{ width: point.favoriteWidth }}
+                            />
+                          </div>
+                          <span className="w-8 text-right text-xs text-white">{point.favorites_added}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-16 text-[11px] text-gray-500">Замовл.</span>
+                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-800">
+                            <div
+                              className="h-full rounded-full bg-emerald-500"
+                              style={{ width: point.orderWidth }}
+                            />
+                          </div>
+                          <span className="w-8 text-right text-xs text-white">{point.orders_created}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {lotAnalyticsFilters.lot_id ? (
+              <div className="rounded-xl border border-blue-700/30 bg-blue-950/20 p-3">
+                <p className="mb-2 text-xs uppercase tracking-wider text-blue-200/80">Drill-down по вибраному лоту</p>
+                <p className="text-sm font-semibold text-white">
+                  {(() => {
+                    const selectedInventoryLot = analyticsLots.find((lot) => lot.id === lotAnalyticsFilters.lot_id);
+                    if (selectedInventoryLot) {
+                      return [selectedInventoryLot.brand, selectedInventoryLot.model].filter(Boolean).join(' · ') || selectedInventoryLot.id;
+                    }
+
+                    const selectedAnalyticsLot = lotAnalyticsReport.top_viewed.find((row) => row.lot_id === lotAnalyticsFilters.lot_id);
+                    if (selectedAnalyticsLot) {
+                      return [selectedAnalyticsLot.brand, selectedAnalyticsLot.model].filter(Boolean).join(' · ') || selectedAnalyticsLot.lot_id;
+                    }
+
+                    return lotAnalyticsFilters.lot_id;
+                  })()}
+                </p>
+                <p className="mt-1 text-xs text-blue-100/70">
+                  Окрема часова серія нижче вже показує лише цей лот, без домішування інших позицій.
+                </p>
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+              {[
+                { title: 'Топ переглядів', rows: lotAnalyticsReport.top_viewed, metricLabel: 'Перегляди', metricKey: 'views' as const },
+                { title: 'Топ збережень', rows: lotAnalyticsReport.top_favorited, metricLabel: 'Збереження', metricKey: 'favorites_added' as const },
+                { title: 'Топ конверсії', rows: lotAnalyticsReport.top_converting, metricLabel: 'Конверсія', metricKey: 'conversion_rate' as const },
+              ].map((section) => (
+                <div key={section.title} className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+                  <p className="mb-2 text-xs uppercase tracking-wider text-gray-400">{section.title}</p>
+                  <div className="space-y-2">
+                    {section.rows.length === 0 ? (
+                      <p className="text-sm text-gray-400">Немає даних.</p>
+                    ) : (
+                      section.rows.map((row) => (
+                        <div key={`${section.title}-${row.lot_id}`} className="rounded-lg border border-gray-800 bg-gray-900 p-2">
+                          <p className="text-sm font-semibold text-white">{buildLotLabel(row)}</p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {row.type} • {row.condition} • перегляди {row.views} • збереження {row.favorites_added} • замовлення {row.orders_created}
+                          </p>
+                          <p className="mt-1 text-xs font-semibold text-emerald-300">
+                            {section.metricKey === 'conversion_rate'
+                              ? `${section.metricLabel}: ${formatPercent(row.conversion_rate)}`
+                              : `${section.metricLabel}: ${formatNumber(row[section.metricKey])}`}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </article>
 
       <article className="rounded-2xl border border-gray-800 bg-gray-900 p-4">

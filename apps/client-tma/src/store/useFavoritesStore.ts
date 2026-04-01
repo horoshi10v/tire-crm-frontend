@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { trackLotAnalyticsEvent } from '../api/lotAnalytics';
 import type { LotPublicResponse } from '../types/lot';
 
 interface FavoritesState {
@@ -24,12 +25,26 @@ export const useFavoritesStore = create<FavoritesState>()(
                         ? state.items.filter((item) => item.id !== lot.id)
                         : [lot, ...state.items],
                 }));
+
+                void trackLotAnalyticsEvent({
+                    lot_id: lot.id,
+                    event_type: exists ? 'FAVORITE_REMOVE' : 'FAVORITE_ADD',
+                }).catch(() => undefined);
             },
 
             removeFavorite: (lotId) => {
+                const removedItem = get().items.find((item) => item.id === lotId);
+
                 set((state) => ({
                     items: state.items.filter((item) => item.id !== lotId),
                 }));
+
+                if (removedItem) {
+                    void trackLotAnalyticsEvent({
+                        lot_id: removedItem.id,
+                        event_type: 'FAVORITE_REMOVE',
+                    }).catch(() => undefined);
+                }
             },
 
             clearFavorites: () => {

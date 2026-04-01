@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiClient } from '@tire-crm/shared';
-import type { InventoryExportFilters, PnLReport, PnLReportFilters } from '../types/adminReports';
+import type { InventoryExportFilters, LotAnalyticsReport, LotAnalyticsReportFilters, PnLReport, PnLReportFilters } from '../types/adminReports';
 
 type ExportResponse = Record<string, string>;
 
@@ -47,6 +47,18 @@ export const useAdminPnLReport = (filters: PnLReportFilters, enabled = false) =>
         const { data } = await apiClient.get<PnLReport>('/reports/pnl', { params });
         return data;
       }
+    },
+    enabled,
+  });
+};
+
+export const useAdminLotAnalyticsReport = (filters: LotAnalyticsReportFilters, enabled = false) => {
+  return useQuery({
+    queryKey: ['admin-lot-analytics-report', filters],
+    queryFn: async () => {
+      const params = buildParams(filters);
+      const { data } = await apiClient.get<LotAnalyticsReport>('/admin/reports/lots/analytics', { params });
+      return data;
     },
     enabled,
   });
