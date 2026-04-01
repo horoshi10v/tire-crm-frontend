@@ -10,6 +10,7 @@ type PnLFiltersState = {
   startDate: string;
   endDate: string;
   warehouseId: string;
+  channel: '' | 'ONLINE' | 'OFFLINE';
 };
 
 type InventoryExportFormState = {
@@ -35,6 +36,7 @@ const createInitialPnLState = (): PnLFiltersState => ({
   startDate: '',
   endDate: '',
   warehouseId: '',
+  channel: '',
 });
 
 const createInitialInventoryExportState = (): InventoryExportFormState => ({
@@ -130,6 +132,10 @@ export default function AdminReportsView() {
     const newOrders = orders.filter((order) => order.status === 'NEW').length;
     const inProgressOrders = orders.filter((order) => order.status === 'PREPAYMENT').length;
     const doneOrders = orders.filter((order) => order.status === 'DONE').length;
+    const offlineOrders = orders.filter((order) => order.channel === 'OFFLINE').length;
+    const onlineOrders = orders.filter((order) => order.channel === 'ONLINE').length;
+    const doneOfflineOrders = orders.filter((order) => order.status === 'DONE' && order.channel === 'OFFLINE').length;
+    const doneOnlineOrders = orders.filter((order) => order.status === 'DONE' && order.channel === 'ONLINE').length;
     const totalRevenue = orders
       .filter((order) => order.status === 'DONE')
       .reduce((acc, order) => acc + order.total_amount, 0);
@@ -141,9 +147,21 @@ export default function AdminReportsView() {
       newOrders,
       inProgressOrders,
       doneOrders,
+      offlineOrders,
+      onlineOrders,
+      doneOfflineOrders,
+      doneOnlineOrders,
       totalRevenue,
     };
   }, [lots, orders, warehouses]);
+
+  const offlinePnL = useMemo(() => {
+    return pnlReport?.by_channel?.find((row) => row.channel === 'OFFLINE') ?? null;
+  }, [pnlReport]);
+
+  const onlinePnL = useMemo(() => {
+    return pnlReport?.by_channel?.find((row) => row.channel === 'ONLINE') ?? null;
+  }, [pnlReport]);
 
   const applyPnLFilters = () => {
     setPnlError(null);
@@ -156,6 +174,7 @@ export default function AdminReportsView() {
       start_date: pnlFilters.startDate || undefined,
       end_date: pnlFilters.endDate || undefined,
       warehouse_id: pnlFilters.warehouseId || undefined,
+      channel: pnlFilters.channel || undefined,
     });
     setReportRequested(true);
   };
@@ -180,6 +199,7 @@ export default function AdminReportsView() {
         start_date: pnlFilters.startDate || undefined,
         end_date: pnlFilters.endDate || undefined,
         warehouse_id: pnlFilters.warehouseId || undefined,
+        channel: pnlFilters.channel || undefined,
       });
       setPnlExportUrl(url);
     } catch (error) {
@@ -267,6 +287,25 @@ export default function AdminReportsView() {
                 <p className="mt-2 text-xl font-bold text-white">{dashboardStats.doneOrders}</p>
               </div>
             </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-xl border border-amber-700/30 bg-amber-500/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-amber-200/80">Офлайн</p>
+                <p className="mt-2 text-xl font-bold text-white">{dashboardStats.offlineOrders}</p>
+              </div>
+              <div className="rounded-xl border border-blue-700/30 bg-blue-500/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-blue-200/80">Онлайн</p>
+                <p className="mt-2 text-xl font-bold text-white">{dashboardStats.onlineOrders}</p>
+              </div>
+            </div>
+            <div className="mt-3 rounded-xl border border-gray-800 bg-gray-900 p-3 text-sm">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Частка офлайн-продажів</p>
+              <p className="mt-2 text-xl font-bold text-white">
+                {dashboardStats.doneOrders > 0 ? formatNumber((dashboardStats.doneOfflineOrders / (dashboardStats.doneOfflineOrders + dashboardStats.doneOnlineOrders || 1)) * 100) : '0'}%
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Від завершених продажів: {dashboardStats.doneOfflineOrders} офлайн / {dashboardStats.doneOnlineOrders} онлайн
+              </p>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-gray-800 bg-gray-950 p-4">
@@ -300,7 +339,7 @@ export default function AdminReportsView() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
           <label className="space-y-1">
             <span className="text-sm text-gray-300">Дата початку</span>
             <input
@@ -334,6 +373,19 @@ export default function AdminReportsView() {
                   {warehouse.name} ({warehouse.location})
                 </option>
               ))}
+            </select>
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-sm text-gray-300">Канал</span>
+            <select
+              value={pnlFilters.channel}
+              onChange={(event) => setPnlFilters((prev) => ({ ...prev, channel: event.target.value as '' | 'ONLINE' | 'OFFLINE' }))}
+              className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+            >
+              <option value="">Усі канали</option>
+              <option value="ONLINE">Онлайн</option>
+              <option value="OFFLINE">Офлайн</option>
             </select>
           </label>
         </div>
@@ -397,6 +449,23 @@ export default function AdminReportsView() {
               <div className="rounded-lg border border-gray-800 bg-gray-950 p-2">
                 <p className="text-xs text-gray-500">Продано шт.</p>
                 <p className="font-semibold text-white">{formatNumber(pnlReport.total_items_sold)}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+              <div className="rounded-xl border border-amber-700/30 bg-amber-500/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-amber-200/80">Офлайн виторг</p>
+                <p className="mt-2 text-xl font-bold text-white">{formatNumber(offlinePnL?.revenue ?? 0)}</p>
+                <p className="mt-1 text-xs text-amber-100/70">
+                  Прибуток: {formatNumber(offlinePnL?.profit ?? 0)} • Продано: {formatNumber(offlinePnL?.items_sold ?? 0)}
+                </p>
+              </div>
+              <div className="rounded-xl border border-blue-700/30 bg-blue-500/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-blue-200/80">Онлайн виторг</p>
+                <p className="mt-2 text-xl font-bold text-white">{formatNumber(onlinePnL?.revenue ?? 0)}</p>
+                <p className="mt-1 text-xs text-blue-100/70">
+                  Прибуток: {formatNumber(onlinePnL?.profit ?? 0)} • Продано: {formatNumber(onlinePnL?.items_sold ?? 0)}
+                </p>
               </div>
             </div>
 

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@tire-crm/shared';
 import type {
+  CreateOrderDTO,
+  OrderChannel,
   OrderMessageResponse,
   OrderResponse,
   OrderStatus,
@@ -12,6 +14,7 @@ type UseStaffOrdersOptions = {
   page?: number;
   pageSize?: number;
   status?: '' | OrderStatus;
+  channel?: '' | OrderChannel;
   customer?: string;
 };
 
@@ -19,10 +22,11 @@ export const useStaffOrders = ({
   page = 1,
   pageSize = 20,
   status = '',
+  channel = '',
   customer = '',
 }: UseStaffOrdersOptions = {}) => {
   return useQuery({
-    queryKey: ['staff-orders', page, pageSize, status, customer],
+    queryKey: ['staff-orders', page, pageSize, status, channel, customer],
     queryFn: async () => {
       const params: Record<string, string | number> = {
         page,
@@ -30,6 +34,7 @@ export const useStaffOrders = ({
       };
 
       if (status) params.status = status;
+      if (channel) params.channel = channel;
       if (customer.trim()) params.customer = customer.trim();
 
       const { data } = await apiClient.get<OrderResponse[]>('/staff/orders', { params });
@@ -48,6 +53,21 @@ export const useUpdateStaffOrderStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-orders'] });
+    },
+  });
+};
+
+export const useCreateStaffOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: CreateOrderDTO) => {
+      const { data } = await apiClient.post<OrderResponse>('/orders', payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-lots'] });
     },
   });
 };

@@ -9,6 +9,7 @@ import PriceTagModal from './components/PriceTagModal';
 import PriceTagPrintPage from './components/PriceTagPrintPage';
 import LotFormModal from './components/LotFormModal';
 import LotDetailsModal from './components/LotDetailsModal';
+import SellLotModal from './components/SellLotModal';
 import OrdersView from './views/OrdersView';
 import WarehouseView from './views/WarehouseView';
 import TransfersView from './views/TransfersView';
@@ -29,6 +30,10 @@ type LotDetailsState = {
   warehouseLabel: string;
 } | null;
 
+type SellLotState = {
+  lot: LotInternalResponse;
+} | null;
+
 type StaffTab = 'inventory' | 'orders' | 'warehouses' | 'transfers' | 'admin' | 'admin-users' | 'audit-log' | 'notifications';
 
 function App() {
@@ -40,6 +45,7 @@ function App() {
   const [isBulkPrinting, setIsBulkPrinting] = useState(false);
   const [lotFormState, setLotFormState] = useState<LotFormState>(null);
   const [lotDetails, setLotDetails] = useState<LotDetailsState>(null);
+  const [sellLotState, setSellLotState] = useState<SellLotState>(null);
 
   const { isAuthenticated, user } = useAuthStore();
   const { scanQR } = useTelegramQR();
@@ -386,6 +392,18 @@ function App() {
           onOpenPriceTag={(lot) => {
             setLotDetails(null);
             setPriceTagLot(lot);
+          }}
+          onSell={(lot) => {
+            setLotDetails(null);
+            setSellLotState({ lot });
+          }}
+        />
+        <SellLotModal
+          lot={sellLotState?.lot ?? null}
+          onClose={() => setSellLotState(null)}
+          onSuccess={() => {
+            setSellLotState(null);
+            setActiveTab('orders');
           }}
         />
         <PriceTagModal lot={priceTagLot} onClose={() => setPriceTagLot(null)} />

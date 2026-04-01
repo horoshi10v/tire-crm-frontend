@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStaffLots } from '../api/staffLots';
 import { useOrderMessages, useSendOrderBotMessage, useStaffOrders, useUpdateStaffOrderStatus } from '../api/staffOrders';
 import type { LotInternalResponse } from '../types/lot';
-import type { OrderMessageResponse, OrderResponse, OrderStatus } from '../types/order';
+import type { OrderChannel, OrderMessageResponse, OrderResponse, OrderStatus } from '../types/order';
 
 const orderStatusOptions: Array<{ value: OrderStatus; label: string }> = [
   { value: 'NEW', label: 'Нове' },
@@ -16,6 +16,11 @@ const orderStatusLabels: Record<OrderStatus, string> = {
   PREPAYMENT: 'Передплата',
   DONE: 'Завершене',
   CANCELLED: 'Скасоване',
+};
+
+const orderChannelLabels: Record<OrderChannel, string> = {
+  ONLINE: 'Онлайн',
+  OFFLINE: 'Офлайн',
 };
 
 const formatMoney = (value: number): string => {
@@ -145,6 +150,7 @@ export default function OrdersView() {
   const [customerInput, setCustomerInput] = useState('');
   const [debouncedCustomer, setDebouncedCustomer] = useState('');
   const [statusFilter, setStatusFilter] = useState<'' | OrderStatus>('');
+  const [channelFilter, setChannelFilter] = useState<'' | OrderChannel>('');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
   const [messageOrder, setMessageOrder] = useState<OrderResponse | null>(null);
@@ -164,6 +170,7 @@ export default function OrdersView() {
     page: 1,
     pageSize: 50,
     status: statusFilter,
+    channel: channelFilter,
     customer: debouncedCustomer,
   });
 
@@ -270,7 +277,7 @@ export default function OrdersView() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <label className="space-y-1">
           <span className="text-sm text-gray-300">Пошук клієнта</span>
           <input
@@ -295,6 +302,19 @@ export default function OrdersView() {
                 {option.label}
               </option>
             ))}
+          </select>
+        </label>
+
+        <label className="space-y-1">
+          <span className="text-sm text-gray-300">Канал продажу</span>
+          <select
+            value={channelFilter}
+            onChange={(event) => setChannelFilter(event.target.value as '' | OrderChannel)}
+            className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-white outline-none focus:border-blue-500"
+          >
+            <option value="">Усі канали</option>
+            <option value="ONLINE">Онлайн</option>
+            <option value="OFFLINE">Офлайн</option>
           </select>
         </label>
       </div>
@@ -336,7 +356,16 @@ export default function OrdersView() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h3 className="text-base font-semibold text-white">{order.customer_name}</h3>
-                      <p className="text-xs text-gray-400">{order.customer_phone}</p>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                        <p className="text-xs text-gray-400">{order.customer_phone || 'Телефон не вказано'}</p>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                          order.channel === 'OFFLINE'
+                            ? 'border-amber-700/40 bg-amber-900/20 text-amber-200'
+                            : 'border-blue-700/40 bg-blue-900/20 text-blue-200'
+                        }`}>
+                          {orderChannelLabels[order.channel]}
+                        </span>
+                      </div>
                       <p className="mt-0.5 text-xs text-gray-500">{formatOrderDate(order.created_at)}</p>
                     </div>
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
@@ -407,13 +436,15 @@ export default function OrdersView() {
                   </select>
                 </label>
 
-                <button
-                  type="button"
-                  onClick={() => openMessageModal(order)}
-                  className="mt-auto rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-900/45"
-                >
-                  Надіслати через бота
-                </button>
+                {order.customer_telegram_id ? (
+                  <button
+                    type="button"
+                    onClick={() => openMessageModal(order)}
+                    className="mt-auto rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-900/45"
+                  >
+                    Надіслати через бота
+                  </button>
+                ) : null}
               </div>
             </article>
           );
@@ -441,10 +472,13 @@ export default function OrdersView() {
                 Клієнт: <span className="font-semibold text-white">{selectedOrder.customer_name}</span>
               </p>
               <p>
-                Телефон: <span className="font-semibold text-white">{selectedOrder.customer_phone}</span>
+                Телефон: <span className="font-semibold text-white">{selectedOrder.customer_phone || 'Не вказано'}</span>
               </p>
               <p>
                 Статус: <span className="font-semibold text-white">{orderStatusLabels[selectedOrder.status]}</span>
+              </p>
+              <p>
+                Канал: <span className="font-semibold text-white">{orderChannelLabels[selectedOrder.channel]}</span>
               </p>
               <p>
                 Дата: <span className="font-semibold text-white">{formatOrderDate(selectedOrder.created_at)}</span>
@@ -509,13 +543,15 @@ export default function OrdersView() {
             <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-white">Переписка по замовленню</p>
-                <button
-                  type="button"
-                  onClick={() => openMessageModal(selectedOrder)}
-                  className="rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-900/45"
-                >
-                  Надіслати через бота
-                </button>
+                {selectedOrder.customer_telegram_id ? (
+                  <button
+                    type="button"
+                    onClick={() => openMessageModal(selectedOrder)}
+                    className="rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-900/45"
+                  >
+                    Надіслати через бота
+                  </button>
+                ) : null}
               </div>
 
               {isMessagesLoading ? (

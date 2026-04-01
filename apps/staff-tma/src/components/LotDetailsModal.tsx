@@ -7,6 +7,7 @@ type LotDetailsModalProps = {
   onClose: () => void;
   onEdit: (lot: LotInternalResponse) => void;
   onOpenPriceTag: (lot: LotInternalResponse) => void;
+  onSell: (lot: LotInternalResponse) => void;
 };
 
 const statusLabels: Record<string, string> = {
@@ -45,7 +46,7 @@ const getRimMaterialLabel = (value?: string) => {
   return '—';
 };
 
-export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, onOpenPriceTag }: LotDetailsModalProps) {
+export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, onOpenPriceTag, onSell }: LotDetailsModalProps) {
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
 
   if (!lot) {
@@ -172,7 +173,7 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
             </div>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-2 pt-2">
+          <div className="grid grid-cols-3 gap-2 pt-2">
             <button
               type="button"
               onClick={() => onEdit(lot)}
@@ -186,6 +187,14 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
               className="rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-semibold text-blue-200 transition hover:bg-blue-900/45"
             >
               Цінник
+            </button>
+            <button
+              type="button"
+              onClick={() => onSell(lot)}
+              disabled={lot.current_quantity <= 0}
+              className="rounded-lg border border-emerald-700/70 bg-emerald-900/30 px-3 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-900/45 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Продати
             </button>
           </div>
         </div>

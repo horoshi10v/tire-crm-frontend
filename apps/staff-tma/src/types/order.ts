@@ -1,4 +1,19 @@
 export type OrderStatus = 'NEW' | 'PREPAYMENT' | 'DONE' | 'CANCELLED';
+export type OrderChannel = 'ONLINE' | 'OFFLINE';
+
+export interface CreateOrderItemDTO {
+  lot_id: string;
+  quantity: number;
+}
+
+export interface CreateOrderDTO {
+  customer_name: string;
+  customer_phone?: string;
+  customer_username?: string;
+  customer_telegram_id?: number;
+  channel?: OrderChannel;
+  items: CreateOrderItemDTO[];
+}
 
 export interface OrderItemResponse {
   lot_id: string;
@@ -13,6 +28,7 @@ export interface OrderResponse {
   customer_phone: string;
   customer_username?: string;
   customer_telegram_id?: number;
+  channel: OrderChannel;
   status: OrderStatus;
   total_amount: number;
   created_at: string;
