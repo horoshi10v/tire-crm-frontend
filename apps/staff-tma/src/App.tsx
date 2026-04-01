@@ -188,11 +188,21 @@ function App() {
       return;
     }
 
+    const printableLots = lots.filter((lot) => lot.current_quantity > 0);
+    if (printableLots.length === 0) {
+      alert('Немає товарів у наявності для друку цінників.');
+      return;
+    }
+
+    if (printableLots.length < lots.length) {
+      alert(`Пропущено ${lots.length - printableLots.length} товарів без залишку. Цінники друкуються лише для товарів у наявності.`);
+    }
+
     setIsBulkPrinting(true);
 
     try {
       const printItems = await Promise.all(
-        lots.map(async (lot) => {
+        printableLots.map(async (lot) => {
           try {
             const qrData = await getLotQRData(lot.id);
             return {

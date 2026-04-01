@@ -354,6 +354,8 @@ export default function InventoryView({
     return filteredLots.filter((lot) => selectedSet.has(lot.id));
   }, [filteredLots, selectedIds]);
 
+  const printableSelectedLots = useMemo(() => selectedLots.filter((lot) => lot.current_quantity > 0), [selectedLots]);
+
   const lowStockCount = useMemo(() => lots.filter((lot) => lot.current_quantity <= LOW_STOCK_THRESHOLD).length, [lots]);
 
   const getWarehouseLabel = (warehouseId: string) => {
@@ -453,10 +455,10 @@ export default function InventoryView({
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-gray-800 bg-gray-900 p-3">
           <button
             type="button"
-            onClick={() => setSelectedIds(filteredLots.map((lot) => lot.id))}
+            onClick={() => setSelectedIds(filteredLots.filter((lot) => lot.current_quantity > 0).map((lot) => lot.id))}
             className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm font-medium text-gray-100 transition hover:bg-gray-700"
           >
-            Вибрати всі видимі
+            Вибрати всі в наявності
           </button>
           <button
             type="button"
@@ -467,8 +469,8 @@ export default function InventoryView({
           </button>
           <button
             type="button"
-            disabled={selectedLots.length === 0 || isBulkPrinting}
-            onClick={() => void onBulkPrintLots?.(selectedLots)}
+            disabled={printableSelectedLots.length === 0 || isBulkPrinting}
+            onClick={() => void onBulkPrintLots?.(printableSelectedLots)}
             className="rounded-lg border border-blue-700/70 bg-blue-900/30 px-3 py-2 text-sm font-medium text-blue-200 transition hover:bg-blue-900/45 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isBulkPrinting ? 'Підготовка цінників...' : 'Друк цінників'}
