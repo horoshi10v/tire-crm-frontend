@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
   DEFAULT_PRICE_TAG_FORMAT,
@@ -56,6 +55,240 @@ const buildLotCode = (lotId?: string): string => {
   }
 
   return lotId.replaceAll('-', '').slice(-8).toUpperCase();
+};
+
+const loadImage = (src: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Failed to load image: ${src.slice(0, 64)}`));
+    image.src = src;
+  });
+
+const splitTextToSize = (pdf: jsPDF, text: string, maxWidth: number): string[] => {
+  if (!text.trim()) {
+    return [];
+  }
+
+  return pdf
+    .splitTextToSize(text, maxWidth)
+    .filter((line: unknown): line is string => typeof line === 'string' && line.trim().length > 0);
+};
+
+const drawTextBlock = (
+  pdf: jsPDF,
+  lines: string[],
+  x: number,
+  y: number,
+  options: {
+    lineHeight: number;
+    align?: 'left' | 'center' | 'right';
+    fontSize?: number;
+    fontStyle?: 'normal' | 'bold';
+  },
+) => {
+  const align = options.align ?? 'left';
+  let cursorY = y;
+
+  if (options.fontSize) {
+    pdf.setFontSize(options.fontSize);
+  }
+  if (options.fontStyle) {
+    pdf.setFont('helvetica', options.fontStyle);
+  }
+
+  lines.forEach((line) => {
+    pdf.text(line, x, cursorY, { align });
+    cursorY += options.lineHeight;
+  });
+
+  return cursorY;
+};
+
+const drawThermalPriceTagPdf = async (pdf: jsPDF, item: PriceTagPrintItem) => {
+  const meta = item.meta ?? [];
+  const pageWidth = 100;
+  const pageHeight = 100;
+  const leftX = 6;
+  const rightBoxX = 74;
+  const leftWidth = 60;
+  const rightWidth = 20;
+  const qrSize = 43;
+  const qrX = 100 - 6 - qrSize;
+  const qrY = 49;
+  const priceY = 72;
+
+  pdf.setDrawColor(0, 0, 0);
+  pdf.setTextColor(0, 0, 0);
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(6);
+  pdf.text('SHINA DP', leftX, 8);
+
+  pdf.setFontSize(5);
+  pdf.text('АРТИКУЛ', leftX, 13);
+  pdf.setFontSize(11);
+  pdf.text(buildLotCode(item.lotId), leftX, 21);
+
+  const drawInfoBox = (title: string, value: string, y: number) => {
+    pdf.setLineWidth(0.25);
+    pdf.rect(rightBoxX, y, rightWidth, 11.5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(4.8);
+    pdf.text(title, rightBoxX + rightWidth / 2, y + 4, { align: 'center' });
+    pdf.setFontSize(8.5);
+    pdf.text(value, rightBoxX + rightWidth / 2, y + 8.8, { align: 'center' });
+  };
+
+  if (item.stock !== undefined) {
+    drawInfoBox('В НАЯВНОСТІ', `${item.stock} шт.`, 6);
+  }
+  if (item.conditionLabel) {
+    drawInfoBox('СТАН', item.conditionLabel, 19);
+  }
+
+  const titleLines = splitTextToSize(pdf, [item.brand, item.title].filter(Boolean).join(' - '), 74);
+  let titleY = 31;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(8.5);
+  titleY = drawTextBlock(pdf, titleLines.slice(0, 2), 50, titleY, {
+    align: 'center',
+    lineHeight: 7,
+    fontSize: 8.5,
+    fontStyle: 'bold',
+  });
+
+  let infoY = 53;
+  if (item.subtitle) {
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(4.8);
+    pdf.text(item.kind === 'rim' ? 'ПАРАМЕТРИ ДИСКА' : item.kind === 'tire' ? 'РОЗМІР ШИНИ' : 'ПОЗИЦІЯ', leftX, infoY);
+    pdf.setFontSize(9.5);
+    pdf.text(item.subtitle, leftX, infoY + 8);
+    infoY += 14;
+  }
+
+  if (item.kind === 'tire' && meta.length > 0) {
+    pdf.setFontSize(4.5);
+    pdf.text('СЕЗОН / РІК / КРАЇНА', leftX, infoY);
+    const metaLines = splitTextToSize(pdf, meta.slice(0, 3).join(' / '), leftWidth);
+    drawTextBlock(pdf, metaLines.slice(0, 2), leftX, infoY + 6.5, {
+      lineHeight: 5.2,
+      fontSize: 6.4,
+      fontStyle: 'bold',
+    });
+    infoY += metaLines.length > 1 ? 16 : 11;
+  } else if (item.kind === 'rim' && item.technicalLine) {
+    pdf.setFontSize(4.5);
+    pdf.text('ТЕХНІЧНІ ДАНІ', leftX, infoY);
+    const techLines = splitTextToSize(pdf, item.technicalLine, leftWidth);
+    drawTextBlock(pdf, techLines.slice(0, 2), leftX, infoY + 6.5, {
+      lineHeight: 5.2,
+      fontSize: 6.1,
+      fontStyle: 'bold',
+    });
+    infoY += techLines.length > 1 ? 16 : 11;
+  } else if (meta.length > 0) {
+    pdf.setFontSize(4.5);
+    pdf.text('ДОДАТКОВО', leftX, infoY);
+    const metaLines = splitTextToSize(pdf, meta.slice(0, 3).join(' / '), leftWidth);
+    drawTextBlock(pdf, metaLines.slice(0, 2), leftX, infoY + 6.5, {
+      lineHeight: 5.2,
+      fontSize: 5.8,
+      fontStyle: 'bold',
+    });
+    infoY += metaLines.length > 1 ? 16 : 11;
+  }
+
+  if (item.kind === 'tire' && item.technicalLine) {
+    pdf.setFontSize(4.5);
+    pdf.text('ОПЦІЇ ШИНИ', leftX, infoY);
+    const techLines = splitTextToSize(pdf, item.technicalLine, leftWidth);
+    drawTextBlock(pdf, techLines.slice(0, 2), leftX, infoY + 6.5, {
+      lineHeight: 5.2,
+      fontSize: 5.8,
+      fontStyle: 'bold',
+    });
+  }
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(4.8);
+  pdf.text('ЦІНА', leftX, priceY);
+  const priceLines = splitTextToSize(pdf, item.price, leftWidth);
+  drawTextBlock(pdf, priceLines.slice(0, 2), leftX, priceY + 9, {
+    lineHeight: 7.5,
+    fontSize: 12,
+    fontStyle: 'bold',
+  });
+
+  if (item.qr) {
+    const qrImage = await loadImage(item.qr);
+    pdf.addImage(qrImage, 'PNG', qrX, qrY, qrSize, qrSize, undefined, 'FAST');
+  } else {
+    pdf.setLineWidth(0.25);
+    pdf.rect(qrX, qrY, qrSize, qrSize);
+    pdf.setFontSize(8);
+    pdf.text('QR', qrX + qrSize / 2, qrY + qrSize / 2, { align: 'center' });
+  }
+
+  pdf.setLineWidth(0.15);
+  pdf.rect(0, 0, pageWidth, pageHeight);
+};
+
+const drawA4PriceTagPdf = async (
+  pdf: jsPDF,
+  item: PriceTagPrintItem,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) => {
+  const meta = item.meta ?? [];
+  pdf.setDrawColor(0, 0, 0);
+  pdf.setTextColor(0, 0, 0);
+  pdf.setLineWidth(0.35);
+  pdf.rect(x, y, width, height);
+
+  const qrSize = 28;
+  const qrX = x + width - qrSize - 6;
+  const qrY = y + height - qrSize - 6;
+  const textWidth = width - qrSize - 16;
+  const baseX = x + 5;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(9);
+  pdf.text([item.brand, item.title].filter(Boolean).join(' - '), x + width / 2, y + 10, { align: 'center' });
+
+  if (item.subtitle) {
+    pdf.setFontSize(7.5);
+    const subtitleLines = splitTextToSize(pdf, item.subtitle, textWidth);
+    drawTextBlock(pdf, subtitleLines.slice(0, 2), baseX, y + 20, {
+      lineHeight: 4.6,
+      fontSize: 7.5,
+      fontStyle: 'bold',
+    });
+  }
+
+  const metaText = item.kind === 'rim' && item.technicalLine ? item.technicalLine : meta.slice(0, 3).join(' / ');
+  if (metaText) {
+    const metaLines = splitTextToSize(pdf, metaText, textWidth);
+    drawTextBlock(pdf, metaLines.slice(0, 3), baseX, y + 31, {
+      lineHeight: 4.4,
+      fontSize: 6.2,
+      fontStyle: 'bold',
+    });
+  }
+
+  pdf.setFontSize(13);
+  pdf.text(item.price, baseX, y + height - 12);
+
+  if (item.qr) {
+    const qrImage = await loadImage(item.qr);
+    pdf.addImage(qrImage, 'PNG', qrX, qrY, qrSize, qrSize, undefined, 'FAST');
+  } else {
+    pdf.rect(qrX, qrY, qrSize, qrSize);
+  }
 };
 
 export default function PriceTagPrintPage() {
@@ -121,8 +354,7 @@ export default function PriceTagPrintPage() {
   }, []);
 
   const handleDownloadPdf = async () => {
-    const pageElements = Array.from(document.querySelectorAll<HTMLElement>('[data-print-page]'));
-    if (pageElements.length === 0 || isDownloadingPdf) {
+    if (items.length === 0 || isDownloadingPdf) {
       return;
     }
 
@@ -130,27 +362,44 @@ export default function PriceTagPrintPage() {
 
     try {
       const pdf = new jsPDF({
-        orientation: format === 'a4' ? 'portrait' : 'portrait',
+        orientation: 'portrait',
         unit: 'mm',
         format: format === 'a4' ? 'a4' : [100, 100],
         compress: true,
       });
 
-      for (const [index, element] of pageElements.entries()) {
-        const canvas = await html2canvas(element, {
-          backgroundColor: '#ffffff',
-          scale: Math.min(window.devicePixelRatio || 2, 3),
-          useCORS: true,
-        });
-        const imageData = canvas.toDataURL('image/png');
-        const pageWidth = format === 'a4' ? 210 : 100;
-        const pageHeight = format === 'a4' ? 297 : 100;
-
-        if (index > 0) {
-          pdf.addPage(format === 'a4' ? 'a4' : [100, 100], 'portrait');
+      if (format === 'thermal') {
+        for (const [index, item] of items.entries()) {
+          if (index > 0) {
+            pdf.addPage([100, 100], 'portrait');
+          }
+          await drawThermalPriceTagPdf(pdf, item);
         }
+      } else {
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const columns = 2;
+        const rows = 4;
+        const gutterX = 6;
+        const gutterY = 6;
+        const marginX = 8;
+        const marginY = 8;
+        const cardWidth = (pageWidth - marginX * 2 - gutterX) / columns;
+        const cardHeight = (pageHeight - marginY * 2 - gutterY * (rows - 1)) / rows;
 
-        pdf.addImage(imageData, 'PNG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+        for (const [index, item] of items.entries()) {
+          if (index > 0 && index % (columns * rows) === 0) {
+            pdf.addPage('a4', 'portrait');
+          }
+
+          const pageIndex = index % (columns * rows);
+          const column = pageIndex % columns;
+          const row = Math.floor(pageIndex / columns);
+          const x = marginX + column * (cardWidth + gutterX);
+          const y = marginY + row * (cardHeight + gutterY);
+
+          await drawA4PriceTagPdf(pdf, item, x, y, cardWidth, cardHeight);
+        }
       }
 
       pdf.save(`price-tags-${format}.pdf`);
