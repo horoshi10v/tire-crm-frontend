@@ -323,6 +323,7 @@ function App() {
                 onEditLot={(lot) => setLotFormState({ mode: 'edit', lot })}
                 onOpenDetails={(lot, warehouseLabel) => setLotDetails({ lot, warehouseLabel })}
                 onDeleteLot={handleDeleteLot}
+                onSellLot={(lot) => setSellLotState({ lot })}
                 onBulkDeleteLots={handleBulkDeleteLots}
                 onBulkPrintLots={handleBulkPrintLots}
                 isBulkPrinting={isBulkPrinting}

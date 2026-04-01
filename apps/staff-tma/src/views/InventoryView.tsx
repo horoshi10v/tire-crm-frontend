@@ -24,6 +24,7 @@ type InventoryViewProps = {
   onOpenDetails?: (lot: LotInternalResponse, warehouseLabel: string) => void;
   onEditLot?: (lot: LotInternalResponse) => void;
   onDeleteLot?: (lot: LotInternalResponse) => void;
+  onSellLot?: (lot: LotInternalResponse) => void;
   onBulkDeleteLots?: (lots: LotInternalResponse[]) => void;
   onBulkPrintLots?: (lots: LotInternalResponse[]) => void | Promise<void>;
   isBulkPrinting?: boolean;
@@ -213,6 +214,7 @@ export default function InventoryView({
   onOpenDetails,
   onEditLot,
   onDeleteLot,
+  onSellLot,
   onBulkDeleteLots,
   onBulkPrintLots,
   isBulkPrinting = false,
@@ -686,7 +688,7 @@ export default function InventoryView({
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4 grid grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={(event) => {
@@ -706,6 +708,17 @@ export default function InventoryView({
                 className="rounded-lg border border-red-700/70 bg-red-900/25 px-3 py-2 text-sm font-medium text-red-200 transition hover:bg-red-900/40"
               >
                 Видалити
+              </button>
+              <button
+                type="button"
+                disabled={lot.current_quantity <= 0}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSellLot?.(lot);
+                }}
+                className="rounded-lg border border-emerald-700/70 bg-emerald-900/25 px-3 py-2 text-sm font-medium text-emerald-200 transition hover:bg-emerald-900/40 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Продати
               </button>
               <button
                 type="button"
