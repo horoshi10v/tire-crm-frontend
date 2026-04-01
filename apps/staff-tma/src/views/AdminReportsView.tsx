@@ -147,6 +147,27 @@ export default function AdminReportsView() {
     isError: isLotAnalyticsRequestError,
     error: lotAnalyticsRequestError,
   } = useAdminLotAnalyticsReport(appliedLotAnalyticsFilters, lotAnalyticsRequested);
+  const {
+    data: webAnalyticsReport,
+    isLoading: isWebAnalyticsLoading,
+  } = useAdminLotAnalyticsReport(
+    { ...appliedLotAnalyticsFilters, source: 'WEB' },
+    lotAnalyticsRequested
+  );
+  const {
+    data: tmaAnalyticsReport,
+    isLoading: isTmaAnalyticsLoading,
+  } = useAdminLotAnalyticsReport(
+    { ...appliedLotAnalyticsFilters, source: 'TMA' },
+    lotAnalyticsRequested
+  );
+  const {
+    data: staffAnalyticsReport,
+    isLoading: isStaffAnalyticsLoading,
+  } = useAdminLotAnalyticsReport(
+    { ...appliedLotAnalyticsFilters, source: 'STAFF' },
+    lotAnalyticsRequested
+  );
   const exportPnlMutation = useExportPnL();
   const exportInventoryMutation = useExportInventory();
 
@@ -205,11 +226,56 @@ export default function AdminReportsView() {
   const preparedLotAnalyticsDailyRows = useMemo(() => {
     return (lotAnalyticsReport?.daily ?? []).map((point) => ({
       ...point,
+      total: point.views + point.favorites_added + point.orders_created,
       viewWidth: `${(point.views / lotAnalyticsChartMax) * 100}%`,
       favoriteWidth: `${(point.favorites_added / lotAnalyticsChartMax) * 100}%`,
       orderWidth: `${(point.orders_created / lotAnalyticsChartMax) * 100}%`,
     }));
   }, [lotAnalyticsChartMax, lotAnalyticsReport]);
+
+  const stackedLotAnalyticsDailyRows = useMemo(() => {
+    const maxTotal = Math.max(1, ...preparedLotAnalyticsDailyRows.map((point) => point.total));
+
+    return preparedLotAnalyticsDailyRows.map((point) => {
+      const totalWidth = (point.total / maxTotal) * 100;
+      const safeTotal = Math.max(point.total, 1);
+
+      return {
+        ...point,
+        totalWidth: `${totalWidth}%`,
+        stackedViewWidth: `${(point.views / safeTotal) * 100}%`,
+        stackedFavoriteWidth: `${(point.favorites_added / safeTotal) * 100}%`,
+        stackedOrderWidth: `${(point.orders_created / safeTotal) * 100}%`,
+      };
+    });
+  }, [preparedLotAnalyticsDailyRows]);
+
+  const sourceBreakdownCards = useMemo(
+    () => [
+      {
+        key: 'WEB',
+        title: 'WEB',
+        report: webAnalyticsReport,
+        accentClass: 'border-blue-700/30 bg-blue-500/10',
+        labelClass: 'text-blue-200/80',
+      },
+      {
+        key: 'TMA',
+        title: 'TMA',
+        report: tmaAnalyticsReport,
+        accentClass: 'border-emerald-700/30 bg-emerald-500/10',
+        labelClass: 'text-emerald-200/80',
+      },
+      {
+        key: 'STAFF',
+        title: 'STAFF',
+        report: staffAnalyticsReport,
+        accentClass: 'border-amber-700/30 bg-amber-500/10',
+        labelClass: 'text-amber-200/80',
+      },
+    ],
+    [staffAnalyticsReport, tmaAnalyticsReport, webAnalyticsReport]
+  );
 
   const applyPnLFilters = () => {
     setPnlError(null);
@@ -319,7 +385,7 @@ export default function AdminReportsView() {
   };
 
   return (
-    <section className="space-y-4 p-4 text-white">
+    <section className="min-h-full space-y-4 bg-gray-950 p-4 text-white">
       <h2 className="text-lg font-semibold text-white">Адмін-звіти</h2>
 
       <article className="rounded-2xl border border-gray-800 bg-gray-900 p-4">
@@ -554,45 +620,67 @@ export default function AdminReportsView() {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 gap-2 xl:grid-cols-3">
+              {sourceBreakdownCards.map((card) => (
+                <div key={card.key} className={`rounded-xl border p-3 ${card.accentClass}`}>
+                  <p className={`text-xs uppercase tracking-wide ${card.labelClass}`}>{card.title}</p>
+                  {((card.key === 'WEB' && isWebAnalyticsLoading) ||
+                    (card.key === 'TMA' && isTmaAnalyticsLoading) ||
+                    (card.key === 'STAFF' && isStaffAnalyticsLoading)) ? (
+                    <p className="mt-2 text-sm text-gray-300">Завантаження...</p>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-xl font-bold text-white">{formatNumber(card.report?.totals.views ?? 0)} переглядів</p>
+                      <p className="mt-1 text-xs text-gray-200/80">
+                        Збереження: {formatNumber(card.report?.totals.favorites_added ?? 0)} • Замовлення:{' '}
+                        {formatNumber(card.report?.totals.orders_created ?? 0)}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-white">
+                        Конверсія: {formatPercent(card.report?.totals.conversion_rate ?? 0)}
+                      </p>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
             <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-              <p className="mb-3 text-xs uppercase tracking-wider text-gray-400">Динаміка по днях</p>
-              {preparedLotAnalyticsDailyRows.length === 0 ? (
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-wider text-gray-400">Динаміка по днях</p>
+                <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-400">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                    Перегляди
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                    Збереження
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    Замовлення
+                  </span>
+                </div>
+              </div>
+              {stackedLotAnalyticsDailyRows.length === 0 ? (
                 <p className="text-sm text-gray-400">Немає подій за вибраний період.</p>
               ) : (
                 <div className="space-y-2.5">
-                  {preparedLotAnalyticsDailyRows.map((point) => (
+                  {stackedLotAnalyticsDailyRows.map((point) => (
                     <div key={point.date} className="grid grid-cols-[92px_1fr] items-center gap-3">
                       <div className="text-xs text-gray-400">{point.date}</div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="w-16 text-[11px] text-gray-500">Перегляди</span>
-                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-800">
-                            <div
-                              className="h-full rounded-full bg-blue-500"
-                              style={{ width: point.viewWidth }}
-                            />
+                      <div className="flex items-center gap-3">
+                        <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-800">
+                          <div className="flex h-full overflow-hidden rounded-full" style={{ width: point.totalWidth }}>
+                            <div className="h-full bg-blue-500" style={{ width: point.stackedViewWidth }} />
+                            <div className="h-full bg-amber-500" style={{ width: point.stackedFavoriteWidth }} />
+                            <div className="h-full bg-emerald-500" style={{ width: point.stackedOrderWidth }} />
                           </div>
-                          <span className="w-8 text-right text-xs text-white">{point.views}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-16 text-[11px] text-gray-500">Збереж.</span>
-                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-800">
-                            <div
-                              className="h-full rounded-full bg-amber-500"
-                              style={{ width: point.favoriteWidth }}
-                            />
-                          </div>
-                          <span className="w-8 text-right text-xs text-white">{point.favorites_added}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-16 text-[11px] text-gray-500">Замовл.</span>
-                          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-800">
-                            <div
-                              className="h-full rounded-full bg-emerald-500"
-                              style={{ width: point.orderWidth }}
-                            />
-                          </div>
-                          <span className="w-8 text-right text-xs text-white">{point.orders_created}</span>
+                        <div className="grid min-w-[108px] grid-cols-3 gap-2 text-right text-xs text-white">
+                          <span>{point.views}</span>
+                          <span>{point.favorites_added}</span>
+                          <span>{point.orders_created}</span>
                         </div>
                       </div>
                     </div>
