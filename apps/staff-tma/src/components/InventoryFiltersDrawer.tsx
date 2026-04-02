@@ -26,6 +26,11 @@ export default function InventoryFiltersDrawer({
     { value: 'STEEL', label: 'Металеві' },
     { value: 'ALLOY', label: 'Легкосплавні' },
   ] as const;
+  const tireTerrainOptions = [
+    { value: '', label: 'Будь-який тип' },
+    { value: 'AT', label: 'A/T' },
+    { value: 'MT', label: 'M/T' },
+  ] as const;
 
   return (
     <div
@@ -324,6 +329,17 @@ export default function InventoryFiltersDrawer({
               </div>
 
               <div className="mt-2 flex flex-col gap-4 rounded-xl border border-gray-800 bg-gray-800/50 p-4">
+                <select
+                  value={filters.tire_terrain}
+                  onChange={(event) => onSetFilter('tire_terrain', event.target.value as StaffLotFilters['tire_terrain'])}
+                  className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                >
+                  {tireTerrainOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
                 <label className="flex cursor-pointer items-center gap-3">
                   <input
                     type="checkbox"
@@ -341,6 +357,15 @@ export default function InventoryFiltersDrawer({
                     className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-blue-600"
                   />
                   <span className="text-sm font-medium text-gray-200">Шиповані</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={filters.is_c_type}
+                    onChange={(event) => onSetFilter('is_c_type', event.target.checked)}
+                    className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-blue-600"
+                  />
+                  <span className="text-sm font-medium text-gray-200">Вантажна C</span>
                 </label>
                 <label className="flex cursor-pointer items-center gap-3">
                   <input

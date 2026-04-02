@@ -10,6 +10,7 @@ import type {
   LotParams,
   RimMaterial,
   LotSeason,
+  TireTerrain,
   LotType,
   SpacerType,
   UpdateLotDTO,
@@ -62,6 +63,8 @@ type LotFormState = {
     season: '' | LotSeason;
     is_run_flat: boolean;
     is_spiked: boolean;
+    is_c_type: boolean;
+    tire_terrain: '' | TireTerrain;
     anti_puncture: boolean;
     accessory_category: '' | AccessoryCategory;
     fastener_type: '' | FastenerType;
@@ -112,6 +115,11 @@ const spacerTypeOptions: Array<{ label: string; value: SpacerType }> = [
 const rimMaterialOptions: Array<{ label: string; value: RimMaterial }> = [
   { value: 'STEEL', label: 'Металеві' },
   { value: 'ALLOY', label: 'Легкосплавні' },
+];
+
+const tireTerrainOptions: Array<{ label: string; value: TireTerrain }> = [
+  { value: 'AT', label: 'A/T' },
+  { value: 'MT', label: 'M/T' },
 ];
 
 const extractPhotoUrl = (payload: UploadPhotoResponse): string => {
@@ -176,6 +184,13 @@ const normalizeRimMaterial = (value: string | undefined): '' | RimMaterial => {
   return '';
 };
 
+const normalizeTireTerrain = (value: string | undefined): '' | TireTerrain => {
+  if (value === 'AT' || value === 'MT') {
+    return value;
+  }
+  return '';
+};
+
 const toInputNumber = (value: number | undefined): string => {
   if (value === undefined || Number.isNaN(value)) {
     return '';
@@ -207,6 +222,8 @@ const createInitialState = (lot: LotInternalResponse | null): LotFormState => ({
     season: normalizeSeason(lot?.params?.season),
     is_run_flat: Boolean(lot?.params?.is_run_flat),
     is_spiked: Boolean(lot?.params?.is_spiked),
+    is_c_type: Boolean(lot?.params?.is_c_type),
+    tire_terrain: normalizeTireTerrain(lot?.params?.tire_terrain),
     anti_puncture: Boolean(lot?.params?.anti_puncture),
     accessory_category: normalizeAccessoryCategory(lot?.params?.accessory_category),
     fastener_type: normalizeFastenerType(lot?.params?.fastener_type),
@@ -234,6 +251,8 @@ const hasMeaningfulParams = (params: LotFormState['params']): boolean => {
       params.season ||
       params.is_run_flat ||
       params.is_spiked ||
+      params.is_c_type ||
+      params.tire_terrain ||
       params.anti_puncture ||
       params.accessory_category ||
       params.fastener_type ||
@@ -262,6 +281,7 @@ const buildParamsPayload = (params: LotFormState['params']): LotParams => {
     anti_puncture: params.anti_puncture,
     is_run_flat: params.is_run_flat,
     is_spiked: params.is_spiked,
+    is_c_type: params.is_c_type,
   };
 
   if (params.width.trim()) payload.width = toDecimal(params.width);
@@ -274,6 +294,7 @@ const buildParamsPayload = (params: LotFormState['params']): LotParams => {
   if (params.production_year.trim()) payload.production_year = toInteger(params.production_year);
   if (params.country_of_origin.trim()) payload.country_of_origin = params.country_of_origin.trim();
   if (params.season) payload.season = params.season;
+  if (params.tire_terrain) payload.tire_terrain = params.tire_terrain;
   if (params.accessory_category) payload.accessory_category = params.accessory_category;
   if (params.fastener_type) payload.fastener_type = params.fastener_type;
   if (params.thread_size.trim()) payload.thread_size = params.thread_size.trim();
@@ -972,7 +993,27 @@ export default function LotFormModal(props: LotFormModalProps) {
                 </div>
 
                 {isTire ? (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <label className="space-y-1 sm:col-span-2">
+                      <span className="text-sm text-gray-300">Тип шини</span>
+                      <select
+                        value={form.params.tire_terrain}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, tire_terrain: event.target.value as '' | TireTerrain },
+                          }))
+                        }
+                        className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                      >
+                        <option value="">Не вказано</option>
+                        {tireTerrainOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
                       <input
                         type="checkbox"
@@ -999,6 +1040,20 @@ export default function LotFormModal(props: LotFormModalProps) {
                         }
                       />
                       Шипована
+                    </label>
+
+                    <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">
+                      <input
+                        type="checkbox"
+                        checked={form.params.is_c_type}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            params: { ...prev.params, is_c_type: event.target.checked },
+                          }))
+                        }
+                      />
+                      Вантажна C
                     </label>
 
                     <label className="flex items-center gap-2 rounded-lg border border-gray-800 bg-gray-950 px-3 py-2 text-sm text-gray-200">

@@ -81,6 +81,8 @@ export function useStaffLots(
             if (normalizedFilters.country_of_origin?.trim()) params.country_of_origin = normalizedFilters.country_of_origin.trim();
             if (normalizedFilters.is_run_flat) params.is_run_flat = 'true';
             if (normalizedFilters.is_spiked) params.is_spiked = 'true';
+            if (normalizedFilters.is_c_type) params.is_c_type = 'true';
+            if (normalizedFilters.tire_terrain) params.tire_terrain = normalizedFilters.tire_terrain;
             if (normalizedFilters.anti_puncture) params.anti_puncture = 'true';
             if (normalizedFilters.warehouse_id?.trim()) params.warehouse_id = normalizedFilters.warehouse_id.trim();
             if (normalizedFilters.accessory_category) params.accessory_category = normalizedFilters.accessory_category;
@@ -129,6 +131,8 @@ export function useStaffLotSuggestions(filters: Partial<StaffLotFilters>, limit 
             if (filters.country_of_origin?.trim()) params.country_of_origin = filters.country_of_origin.trim();
             if (filters.is_run_flat) params.is_run_flat = 'true';
             if (filters.is_spiked) params.is_spiked = 'true';
+            if (filters.is_c_type) params.is_c_type = 'true';
+            if (filters.tire_terrain) params.tire_terrain = filters.tire_terrain;
             if (filters.anti_puncture) params.anti_puncture = 'true';
             if (filters.warehouse_id?.trim()) params.warehouse_id = filters.warehouse_id.trim();
             if (filters.accessory_category) params.accessory_category = filters.accessory_category;

@@ -75,6 +75,15 @@ export const getSearchHighlightTokens = (query: string): string[] => {
   if (parsed.season === 'ALL_SEASON') {
     tokens.push('Всесезон', 'All-Season');
   }
+  if (parsed.tireTerrain === 'AT') {
+    tokens.push('A/T', 'AT');
+  }
+  if (parsed.tireTerrain === 'MT') {
+    tokens.push('M/T', 'MT');
+  }
+  if (parsed.isCType) {
+    tokens.push('C', 'Вантажна C', 'Cargo');
+  }
   if (parsed.freeText) {
     tokens.push(...splitTextTokens(parsed.freeText));
   }
@@ -105,6 +114,9 @@ const buildSuggestionCandidates = <T extends LotLike>(lots: T[]): string[] => {
     'Вживаний',
     'Зима',
     'Літо',
+    'A/T',
+    'M/T',
+    'Вантажна C',
     ...lotCandidates,
   ]);
 };
@@ -119,6 +131,8 @@ export const buildQuickSearchSuggestions = <T extends LotLike>(lots: T[]): strin
     ...brands.slice(0, 3),
     'Новий',
     'Зима',
+    'A/T',
+    'Вантажна C',
   ]).slice(0, 6);
 };
 

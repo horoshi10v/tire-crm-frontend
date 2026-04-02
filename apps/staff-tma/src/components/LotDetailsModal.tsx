@@ -153,6 +153,8 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
                         ? 'Всесезонний'
                         : '—'}
                 </p>
+                <p>Тип шини: {lot.params.tire_terrain === 'AT' ? 'A/T' : lot.params.tire_terrain === 'MT' ? 'M/T' : '—'}</p>
+                <p>Вантажна C: {lot.params.is_c_type ? 'Так' : 'Ні'}</p>
                 <p>Run Flat: {lot.params.is_run_flat ? 'Так' : 'Ні'}</p>
                 <p>Шипована: {lot.params.is_spiked ? 'Так' : 'Ні'}</p>
                 <p>Антипрокол: {lot.params.anti_puncture ? 'Так' : 'Ні'}</p>

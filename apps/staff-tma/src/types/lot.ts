@@ -9,6 +9,7 @@ export type AccessoryCategory = 'FASTENERS' | 'HUB_RINGS' | 'SPACERS' | 'TIRE_BA
 export type FastenerType = 'NUT' | 'BOLT';
 export type SpacerType = 'ADAPTER' | 'EXTENDER';
 export type RimMaterial = 'STEEL' | 'ALLOY';
+export type TireTerrain = 'AT' | 'MT';
 
 export interface LotParams {
     anti_puncture?: boolean;
@@ -20,6 +21,7 @@ export interface LotParams {
     fastener_type?: FastenerType;
     is_run_flat?: boolean;
     is_spiked?: boolean;
+    is_c_type?: boolean;
     package_quantity?: number;
     pcd?: string;
     profile?: number;
@@ -32,6 +34,7 @@ export interface LotParams {
     spacer_thickness?: number;
     spacer_type?: SpacerType;
     thread_size?: string;
+    tire_terrain?: TireTerrain;
     width?: number;
 }
 
@@ -89,6 +92,8 @@ export interface StaffLotFilters {
     country_of_origin: string;
     is_run_flat: boolean;
     is_spiked: boolean;
+    is_c_type: boolean;
+    tire_terrain: '' | TireTerrain;
     anti_puncture: boolean;
     warehouse_id: string;
     accessory_category: '' | AccessoryCategory;
@@ -120,6 +125,8 @@ export const defaultStaffLotFilters: StaffLotFilters = {
     country_of_origin: '',
     is_run_flat: false,
     is_spiked: false,
+    is_c_type: false,
+    tire_terrain: '',
     anti_puncture: false,
     warehouse_id: '',
     accessory_category: '',

@@ -106,6 +106,8 @@ const activeFiltersCount = (filters: StaffLotFilters): number => {
     filters.country_of_origin.trim() !== '',
     filters.is_run_flat,
     filters.is_spiked,
+    filters.is_c_type,
+    filters.tire_terrain !== '',
     filters.anti_puncture,
     filters.warehouse_id !== '',
     filters.accessory_category !== '',
@@ -174,6 +176,12 @@ const lotMatchesFilters = (lot: LotInternalResponse, search: string, filters: St
     return false;
   }
   if (filters.is_spiked && !lot.params?.is_spiked) {
+    return false;
+  }
+  if (filters.is_c_type && !lot.params?.is_c_type) {
+    return false;
+  }
+  if (filters.tire_terrain && lot.params?.tire_terrain !== filters.tire_terrain) {
     return false;
   }
   if (filters.anti_puncture && !lot.params?.anti_puncture) {

@@ -7,6 +7,8 @@ type ParsedSearchHint = {
   diameter?: string;
   condition?: 'NEW' | 'USED';
   season?: 'SUMMER' | 'WINTER' | 'ALL_SEASON';
+  tireTerrain?: 'AT' | 'MT';
+  isCType?: boolean;
   freeText?: string;
 };
 
@@ -49,6 +51,18 @@ export const parseCatalogSearchHint = (value: string): ParsedSearchHint => {
     }
     if (normalized === 'all-season' || normalized === 'allseason' || normalized === 'all' || normalized.startsWith('всесез')) {
       parsed.season = 'ALL_SEASON';
+      continue;
+    }
+    if (normalized === 'at' || normalized === 'a/t') {
+      parsed.tireTerrain = 'AT';
+      continue;
+    }
+    if (normalized === 'mt' || normalized === 'm/t') {
+      parsed.tireTerrain = 'MT';
+      continue;
+    }
+    if (normalized === 'c' || normalized === 'cargo' || normalized.startsWith('вантаж')) {
+      parsed.isCType = true;
       continue;
     }
     if (normalized.startsWith('r') && normalized.length > 1 && isDigits(normalized.slice(1))) {
@@ -101,6 +115,15 @@ export const buildCatalogSearchHintChips = (value: string): string[] => {
   }
   if (parsed.season === 'ALL_SEASON') {
     chips.push('Сезон: Всесезон');
+  }
+  if (parsed.tireTerrain === 'AT') {
+    chips.push('Тип шини: A/T');
+  }
+  if (parsed.tireTerrain === 'MT') {
+    chips.push('Тип шини: M/T');
+  }
+  if (parsed.isCType) {
+    chips.push('Вантажна: C');
   }
   if (parsed.freeText) {
     chips.push(`Текст: ${parsed.freeText}`);

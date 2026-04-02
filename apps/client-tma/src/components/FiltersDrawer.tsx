@@ -46,6 +46,11 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
         { value: 'STEEL', label: 'Металеві' },
         { value: 'ALLOY', label: 'Легкосплавні' },
     ];
+    const tireTerrainOptions = [
+        { value: '', label: 'Будь-який тип' },
+        { value: 'AT', label: 'A/T' },
+        { value: 'MT', label: 'M/T' },
+    ];
 
     return (
         // Загальний контейнер (Фон).
@@ -213,6 +218,11 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
 
                             {isTire ? (
                                 <div className="flex flex-col gap-4 mt-2 bg-gray-800/50 p-4 rounded-xl border border-gray-800">
+                                    <ResponsiveSelect
+                                        value={filters.tire_terrain}
+                                        onChange={(value) => setFilter('tire_terrain', value)}
+                                        options={tireTerrainOptions}
+                                    />
                                     <label className="flex items-center gap-3 cursor-pointer">
                                         <input type="checkbox" checked={filters.is_run_flat} onChange={(e) => setFilter('is_run_flat', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
                                         <span className="text-sm font-medium text-gray-200">Run Flat (Посилена боковина)</span>
@@ -220,6 +230,10 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                                     <label className="flex items-center gap-3 cursor-pointer">
                                         <input type="checkbox" checked={filters.is_spiked} onChange={(e) => setFilter('is_spiked', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
                                         <span className="text-sm font-medium text-gray-200">Шиповані</span>
+                                    </label>
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                        <input type="checkbox" checked={filters.is_c_type} onChange={(e) => setFilter('is_c_type', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />
+                                        <span className="text-sm font-medium text-gray-200">Вантажна C</span>
                                     </label>
                                     <label className="flex items-center gap-3 cursor-pointer">
                                         <input type="checkbox" checked={filters.anti_puncture} onChange={(e) => setFilter('anti_puncture', e.target.checked)} className="h-5 w-5 rounded border-gray-600 bg-gray-700 text-[#10AD0B] focus:ring-[#10AD0B]" />

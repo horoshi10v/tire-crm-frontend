@@ -17,6 +17,8 @@ export interface LotFilters {
     country_of_origin: string;
     is_run_flat: boolean;
     is_spiked: boolean;
+    is_c_type: boolean;
+    tire_terrain: string;
     anti_puncture: boolean;
     accessory_category: string;
     fastener_type: string;
@@ -52,6 +54,8 @@ const defaultFilters: LotFilters = {
     country_of_origin: '',
     is_run_flat: false,
     is_spiked: false,
+    is_c_type: false,
+    tire_terrain: '',
     anti_puncture: false,
     accessory_category: '',
     fastener_type: '',

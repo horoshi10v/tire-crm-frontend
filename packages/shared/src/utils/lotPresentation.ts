@@ -11,6 +11,7 @@ export type LotParams = {
   fastener_type?: 'NUT' | 'BOLT';
   is_run_flat?: boolean;
   is_spiked?: boolean;
+  is_c_type?: boolean;
   package_quantity?: number;
   pcd?: string;
   profile?: number;
@@ -23,6 +24,7 @@ export type LotParams = {
   spacer_thickness?: number;
   spacer_type?: 'ADAPTER' | 'EXTENDER';
   thread_size?: string;
+  tire_terrain?: 'AT' | 'MT' | string;
   width?: number;
 };
 
@@ -66,6 +68,11 @@ const spacerTypeLabelMap: Record<string, string> = {
 const rimMaterialLabelMap: Record<string, string> = {
   STEEL: 'Металеві',
   ALLOY: 'Легкосплавні',
+};
+
+const tireTerrainLabelMap: Record<string, string> = {
+  AT: 'A/T',
+  MT: 'M/T',
 };
 
 const typeLabelMap: Record<string, string> = {
@@ -173,6 +180,12 @@ export const getLotTagLabels = (lot: LotLike): string[] => {
   if (params?.anti_puncture) {
     tags.push('Антипрокол');
   }
+  if (params?.is_c_type) {
+    tags.push('Вантажна C');
+  }
+  if (params?.tire_terrain) {
+    tags.push(tireTerrainLabelMap[params.tire_terrain] ?? params.tire_terrain);
+  }
 
   return unique(tags);
 };
@@ -206,6 +219,9 @@ export const getLotSearchableText = (lot: LotLike): string => {
     conditionLabel,
     params?.season ?? '',
     seasonLabelMap[params?.season ?? ''] ?? '',
+    params?.is_c_type ? 'вантажна c' : '',
+    params?.tire_terrain ?? '',
+    tireTerrainLabelMap[params?.tire_terrain ?? ''] ?? '',
     params?.country_of_origin ?? '',
     params?.rim_material ?? '',
     rimMaterialLabelMap[params?.rim_material ?? ''] ?? '',

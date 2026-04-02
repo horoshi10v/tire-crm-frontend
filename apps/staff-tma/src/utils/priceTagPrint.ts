@@ -80,6 +80,9 @@ export const buildPriceTagDetails = (
         : 'Шина';
     const conditionLabel = getConditionLabel(lot.condition);
     const technicalLine = compactJoin(
+      lot.params?.tire_terrain === 'AT' ? 'A/T' : '',
+      lot.params?.tire_terrain === 'MT' ? 'M/T' : '',
+      lot.params?.is_c_type ? 'C' : '',
       lot.params?.is_run_flat ? 'Run Flat' : '',
       lot.params?.is_spiked ? 'Шип' : '',
       lot.params?.anti_puncture ? 'Антипрокол' : '',

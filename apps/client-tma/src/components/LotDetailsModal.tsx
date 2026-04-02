@@ -143,8 +143,10 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
         ...(currentLot.params?.season && translateSeason(currentLot.params.season)
             ? [{ label: 'Сезон', value: translateSeason(currentLot.params.season) }]
             : []),
+        ...(currentLot.params?.tire_terrain ? [{ label: 'Тип шини', value: currentLot.params.tire_terrain === 'AT' ? 'A/T' : currentLot.params.tire_terrain === 'MT' ? 'M/T' : currentLot.params.tire_terrain }] : []),
         ...(currentLot.params?.production_year ? [{ label: 'Рік випуску', value: `${currentLot.params.production_year}` }] : []),
         ...(currentLot.params?.country_of_origin ? [{ label: 'Країна виробник', value: currentLot.params.country_of_origin }] : []),
+        ...(currentLot.params?.is_c_type ? [{ label: 'Вантажна C', value: 'Так', accent: true }] : []),
         ...(currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category)
             ? [{ label: 'Категорія', value: translateAccessoryCategory(currentLot.params.accessory_category) }]
             : []),
