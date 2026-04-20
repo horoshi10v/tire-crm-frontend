@@ -1,6 +1,41 @@
 import type { LotInternalResponse, LotParams, LotType } from '../../types/lot';
 import type { LotCondition, LotFormState, UploadPhotoResponse } from './types';
 
+export const reorderItems = <T,>(items: T[], fromItem: T, toItem: T): T[] => {
+  if (fromItem === toItem) {
+    return items;
+  }
+
+  const fromIndex = items.indexOf(fromItem);
+  const toIndex = items.indexOf(toItem);
+
+  if (fromIndex < 0 || toIndex < 0) {
+    return items;
+  }
+
+  const nextItems = [...items];
+  const [movedItem] = nextItems.splice(fromIndex, 1);
+  nextItems.splice(toIndex, 0, movedItem);
+  return nextItems;
+};
+
+export const moveItemByOffset = <T,>(items: T[], item: T, offset: -1 | 1): T[] => {
+  const fromIndex = items.indexOf(item);
+  if (fromIndex < 0) {
+    return items;
+  }
+
+  const toIndex = fromIndex + offset;
+  if (toIndex < 0 || toIndex >= items.length) {
+    return items;
+  }
+
+  const nextItems = [...items];
+  const [movedItem] = nextItems.splice(fromIndex, 1);
+  nextItems.splice(toIndex, 0, movedItem);
+  return nextItems;
+};
+
 export const extractPhotoUrl = (payload: UploadPhotoResponse): string => {
   const prioritizedKeys = ['url', 'photo_url', 'photoUrl', 'public_url', 'publicUrl'];
   for (const key of prioritizedKeys) {

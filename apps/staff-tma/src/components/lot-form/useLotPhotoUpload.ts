@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@tire-crm/shared';
-import { extractPhotoUrl } from './helpers';
+import { extractPhotoUrl, moveItemByOffset, reorderItems } from './helpers';
 import type { LotFormState, PendingPhotoUpload, SetLotFormState, UploadPhotoResponse } from './types';
 
 type UseLotPhotoUploadArgs = {
@@ -75,14 +75,18 @@ export default function useLotPhotoUpload({ isSubmitting, setForm, setFormError 
       );
 
       const uploadedUrls = uploadResults.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
+      const currentPendingOrder = pendingPhotoUploadsRef.current.map((upload) => upload.id);
+      const orderedUploadedUrls = [...uploadedUrls].sort(
+        (left, right) => currentPendingOrder.indexOf(left.pendingId) - currentPendingOrder.indexOf(right.pendingId),
+      );
 
       setForm((prev: LotFormState) => {
-        if (uploadedUrls.length === 0) {
+        if (orderedUploadedUrls.length === 0) {
           return prev;
         }
 
         const nextPhotos = [...prev.photos];
-        for (const { uploadedUrl } of uploadedUrls) {
+        for (const { uploadedUrl } of orderedUploadedUrls) {
           if (!nextPhotos.includes(uploadedUrl)) {
             nextPhotos.push(uploadedUrl);
           }
@@ -155,6 +159,27 @@ export default function useLotPhotoUpload({ isSubmitting, setForm, setFormError 
     setIsDragOver(false);
   };
 
+  const handlePendingPhotoMove = (fromId: string, toId: string) => {
+    setPendingPhotoUploads((prev) => {
+      const fromItem = prev.find((item) => item.id === fromId);
+      const toItem = prev.find((item) => item.id === toId);
+      if (!fromItem || !toItem) {
+        return prev;
+      }
+      return reorderItems(prev, fromItem, toItem);
+    });
+  };
+
+  const handlePendingPhotoShift = (pendingId: string, direction: -1 | 1) => {
+    setPendingPhotoUploads((prev) => {
+      const pendingItem = prev.find((item) => item.id === pendingId);
+      if (!pendingItem) {
+        return prev;
+      }
+      return moveItemByOffset(prev, pendingItem, direction);
+    });
+  };
+
   return {
     uploadPhotoMutation,
     isUploadingPhotos,
@@ -167,5 +192,7 @@ export default function useLotPhotoUpload({ isSubmitting, setForm, setFormError 
     handleDropPhotos,
     handleDragOver,
     handleDragLeave,
+    handlePendingPhotoMove,
+    handlePendingPhotoShift,
   };
 }

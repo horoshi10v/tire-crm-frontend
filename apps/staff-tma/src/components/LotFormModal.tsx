@@ -5,7 +5,7 @@ import BasicInfoSection from './lot-form/BasicInfoSection';
 import InventorySection from './lot-form/InventorySection';
 import ParamsSection from './lot-form/ParamsSection';
 import PhotoUploadSection from './lot-form/PhotoUploadSection';
-import { buildParamsPayload, createInitialState, hasInitialParams, hasMeaningfulParams, toDecimal, toInteger } from './lot-form/helpers';
+import { buildParamsPayload, createInitialState, hasInitialParams, hasMeaningfulParams, moveItemByOffset, reorderItems, toDecimal, toInteger } from './lot-form/helpers';
 import type { LotFormModalProps, LotFormState } from './lot-form/types';
 import useLotPhotoUpload from './lot-form/useLotPhotoUpload';
 
@@ -33,6 +33,8 @@ export default function LotFormModal(props: LotFormModalProps) {
     handleDropPhotos,
     handleDragOver,
     handleDragLeave,
+    handlePendingPhotoMove,
+    handlePendingPhotoShift,
   } = useLotPhotoUpload({
     isSubmitting: props.isSubmitting,
     setForm,
@@ -175,6 +177,20 @@ export default function LotFormModal(props: LotFormModalProps) {
                 photos: prev.photos.filter((url) => url !== photoUrl),
               }))
             }
+            onReorderPhoto={(fromPhotoUrl, toPhotoUrl) =>
+              setForm((prev) => ({
+                ...prev,
+                photos: reorderItems(prev.photos, fromPhotoUrl, toPhotoUrl),
+              }))
+            }
+            onReorderPendingPhoto={handlePendingPhotoMove}
+            onShiftPhoto={(photoUrl, direction) =>
+              setForm((prev) => ({
+                ...prev,
+                photos: moveItemByOffset(prev.photos, photoUrl, direction),
+              }))
+            }
+            onShiftPendingPhoto={handlePendingPhotoShift}
           />
 
           {formError ? (
