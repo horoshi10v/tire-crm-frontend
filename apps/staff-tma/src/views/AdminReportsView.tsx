@@ -1,5 +1,15 @@
 import { useMemo, useState } from 'react';
 import { isAxiosError } from 'axios';
+import {
+  EmptyState,
+  ErrorState,
+  formatMoney,
+  getLotConditionLabel,
+  getLotInventoryStatusLabel,
+  getLotSeasonLabel,
+  getLotTypeLabel,
+  LoadingBlock,
+} from '@tire-crm/shared';
 import { useAdminPnLReport, useExportInventory, useExportPnL } from '../api/adminReports';
 import { useStaffLots } from '../api/staffLots';
 import { useStaffOrders } from '../api/staffOrders';
@@ -58,12 +68,7 @@ const createInitialInventoryExportState = (): InventoryExportFormState => ({
   antiPuncture: false,
 });
 
-const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('uk-UA', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
+const formatNumber = formatMoney;
 
 const extractApiErrorMessage = (error: unknown): string => {
   if (!isAxiosError(error)) {
@@ -292,7 +297,7 @@ export default function AdminReportsView() {
             <h4 className="text-sm font-semibold text-white">Проблемні залишки</h4>
             <div className="mt-3 space-y-2">
               {dashboardStats.lowStockLots.length === 0 ? (
-                <p className="text-sm text-gray-400">Усі товари мають достатній залишок.</p>
+              <EmptyState message="Усі товари мають достатній залишок." className="p-0 border-0 bg-transparent text-sm text-gray-400" />
               ) : (
                 dashboardStats.lowStockLots.slice(0, 5).map((lot) => (
                   <div key={lot.id} className="rounded-xl border border-gray-800 bg-gray-900 p-3">
@@ -327,8 +332,8 @@ export default function AdminReportsView() {
         {pnlError ? <div className="mt-3 rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">{pnlError}</div> : null}
         {pnlExportError ? <div className="mt-3 rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-sm text-red-300">{pnlExportError}</div> : null}
         {pnlExportUrl ? <a href={pnlExportUrl} target="_blank" rel="noreferrer" className="mt-3 block break-all text-sm text-blue-300 hover:text-blue-200">{pnlExportUrl}</a> : null}
-        {isPnLLoading ? <div className="mt-3 rounded-xl border border-gray-800 bg-gray-950 p-4 text-sm text-gray-400">Завантаження звіту...</div> : null}
-        {isPnLError ? <div className="mt-3 rounded-xl border border-red-800/60 bg-red-950/30 p-4 text-sm text-red-300">Не вдалося отримати P&L: {extractApiErrorMessage(pnlRequestError)}</div> : null}
+        {isPnLLoading ? <LoadingBlock className="mt-3 bg-gray-950" message="Завантаження звіту..." /> : null}
+        {isPnLError ? <ErrorState className="mt-3 bg-red-950/30" message={`Не вдалося отримати P&L: ${extractApiErrorMessage(pnlRequestError)}`} /> : null}
 
         {!isPnLLoading && !isPnLError && pnlReport ? (
           <div className="mt-3 space-y-3">
@@ -370,10 +375,10 @@ export default function AdminReportsView() {
           <input type="text" value={inventoryFilters.search} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, search: event.target.value }))} placeholder="Пошук" className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500" />
           <input type="text" value={inventoryFilters.brand} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, brand: event.target.value }))} placeholder="Бренд" className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500" />
           <input type="text" value={inventoryFilters.model} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, model: event.target.value }))} placeholder="Модель" className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500" />
-          <select value={inventoryFilters.status} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, status: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Статус лота</option><option value="ACTIVE">Активний</option><option value="IN_STOCK">На складі</option><option value="RESERVED">Резерв</option><option value="SOLD">Продано</option><option value="ARCHIVED">Архів</option></select>
-          <select value={inventoryFilters.type} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, type: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Тип</option><option value="TIRE">Шина</option><option value="RIM">Диск</option></select>
-          <select value={inventoryFilters.condition} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, condition: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Стан</option><option value="NEW">Новий</option><option value="USED">Вживаний</option></select>
-          <select value={inventoryFilters.season} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, season: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Сезон</option><option value="SUMMER">Літній</option><option value="WINTER">Зимовий</option><option value="ALL_SEASON">Всесезонний</option></select>
+          <select value={inventoryFilters.status} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, status: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Статус лота</option><option value="ACTIVE">{getLotInventoryStatusLabel('ACTIVE')}</option><option value="IN_STOCK">{getLotInventoryStatusLabel('IN_STOCK')}</option><option value="RESERVED">{getLotInventoryStatusLabel('RESERVED')}</option><option value="SOLD">{getLotInventoryStatusLabel('SOLD')}</option><option value="ARCHIVED">{getLotInventoryStatusLabel('ARCHIVED')}</option></select>
+          <select value={inventoryFilters.type} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, type: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Тип</option><option value="TIRE">{getLotTypeLabel('TIRE')}</option><option value="RIM">{getLotTypeLabel('RIM')}</option><option value="ACCESSORY">{getLotTypeLabel('ACCESSORY')}</option></select>
+          <select value={inventoryFilters.condition} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, condition: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Стан</option><option value="NEW">{getLotConditionLabel('NEW')}</option><option value="USED">{getLotConditionLabel('USED')}</option></select>
+          <select value={inventoryFilters.season} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, season: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Сезон</option><option value="SUMMER">{getLotSeasonLabel('SUMMER')}</option><option value="WINTER">{getLotSeasonLabel('WINTER')}</option><option value="ALL_SEASON">{getLotSeasonLabel('ALL_SEASON')}</option></select>
           <select value={inventoryFilters.warehouseId} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, warehouseId: event.target.value }))} className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"><option value="">Склад</option>{warehouses.map((warehouse) => (<option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>))}</select>
           <input type="number" value={inventoryFilters.width} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, width: event.target.value }))} placeholder="Ширина" className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500" />
           <input type="number" value={inventoryFilters.profile} onChange={(event) => setInventoryFilters((prev) => ({ ...prev, profile: event.target.value }))} placeholder="Профіль" className="rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500" />

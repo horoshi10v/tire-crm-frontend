@@ -1,6 +1,18 @@
 // apps/client-tma/src/components/LotDetailsModal.tsx
 import { useState, useEffect } from 'react';
-import { getLotPrimaryLabel } from '@tire-crm/shared';
+import {
+    formatMoney,
+    getLotConditionLabel,
+    getLotPrimaryLabel,
+    getLotSizeLabel,
+    getLotTypeLabel,
+    getLotSeasonLabel,
+    lotAccessoryCategoryLabels,
+    lotFastenerTypeLabels,
+    lotRimMaterialLabels,
+    lotSpacerTypeLabels,
+    lotTireTerrainLabels,
+} from '@tire-crm/shared';
 import type { LotPublicResponse } from '../types/lot';
 import type { AddItemResult } from '../store/useCartStore';
 import { useCartStore } from '../store/useCartStore';
@@ -16,46 +28,6 @@ interface LotDetailsModalProps {
     onFavoriteChange?: (lot: LotPublicResponse, nextFavoriteState: boolean) => void;
     onView?: (lot: LotPublicResponse) => void;
 }
-
-// Хелпери для перекладу (стійкі до регістру)
-const translateCondition = (c?: string) => {
-    const upper = c?.toUpperCase();
-    return upper === 'NEW' ? 'Нові' : upper === 'USED' ? 'Вживані' : c;
-};
-const translateType = (t?: string) => {
-    const upper = t?.toUpperCase();
-    return upper === 'TIRE' ? 'Шина' : upper === 'RIM' ? 'Диск' : upper === 'ACCESSORY' ? 'Супутній товар' : t;
-};
-const translateSeason = (s?: string) => {
-    const upper = s?.toUpperCase();
-    return upper === 'SUMMER' ? '☀️ Літо' : upper === 'WINTER' ? '❄️ Зима' : upper === 'ALL_SEASON' ? '🌤 Всесезонна' : '';
-};
-const translateAccessoryCategory = (value?: string) => {
-    const upper = value?.toUpperCase();
-    if (upper === 'FASTENERS') return 'Кріплення';
-    if (upper === 'HUB_RINGS') return 'Проставочні кільця';
-    if (upper === 'SPACERS') return 'Проставки';
-    if (upper === 'TIRE_BAGS') return 'Пакети для шин';
-    return '';
-};
-const translateFastenerType = (value?: string) => {
-    const upper = value?.toUpperCase();
-    if (upper === 'NUT') return 'Гайки';
-    if (upper === 'BOLT') return 'Болти';
-    return '';
-};
-const translateSpacerType = (value?: string) => {
-    const upper = value?.toUpperCase();
-    if (upper === 'ADAPTER') return 'Адаптер';
-    if (upper === 'EXTENDER') return 'Розширювальна';
-    return '';
-};
-const translateRimMaterial = (value?: string) => {
-    const upper = value?.toUpperCase();
-    if (upper === 'STEEL') return 'Металеві';
-    if (upper === 'ALLOY') return 'Легкосплавні';
-    return '';
-};
 
 type SpecRow = {
     label: string;
@@ -112,16 +84,8 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
     const hasPhotos = photos.length > 0;
     const activePhoto = hasPhotos ? photos[Math.min(activePhotoIndex, photos.length - 1)] : null;
     const isOutOfStock = currentLot.current_quantity === 0;
-    const sizeLabel =
-        currentLot.params?.width && currentLot.params?.profile && currentLot.params?.diameter
-            ? `${currentLot.params.width}/${currentLot.params.profile} R${currentLot.params.diameter}`
-            : currentLot.params?.diameter
-              ? `R${currentLot.params.diameter}`
-              : '';
-    const formattedSellPrice = `${new Intl.NumberFormat('uk-UA', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-    }).format(currentLot.sell_price ?? 0)} грн`;
+    const sizeLabel = getLotSizeLabel(currentLot);
+    const formattedSellPrice = `${formatMoney(currentLot.sell_price ?? 0)} грн`;
     const primaryLabel = getLotPrimaryLabel(currentLot) || [currentLot.brand, currentLot.model].filter(Boolean).join(' ');
     const headlineLabel = [
         sizeLabel,
@@ -133,36 +97,36 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
     const specRows: SpecRow[] = [
         ...(sizeLabel ? [{ label: currentLot.type === 'RIM' ? 'Радіус R' : 'Розмір', value: sizeLabel }] : []),
         ...(currentLot.type === 'RIM' && currentLot.params?.width ? [{ label: 'Ширина J', value: `${currentLot.params.width}` }] : []),
-        ...(currentLot.type === 'RIM' && currentLot.params?.rim_material && translateRimMaterial(currentLot.params.rim_material)
-            ? [{ label: 'Сплав', value: translateRimMaterial(currentLot.params.rim_material) }]
+        ...(currentLot.type === 'RIM' && currentLot.params?.rim_material
+            ? [{ label: 'Сплав', value: lotRimMaterialLabels[currentLot.params.rim_material] ?? currentLot.params.rim_material }]
             : []),
         ...(currentLot.params?.pcd ? [{ label: 'PCD', value: currentLot.params.pcd }] : []),
         ...(currentLot.params?.dia ? [{ label: 'DIA', value: `${currentLot.params.dia}` }] : []),
         ...(currentLot.params?.et || currentLot.params?.et === 0 ? [{ label: 'ET', value: `${currentLot.params.et}` }] : []),
         { label: 'В наявності', value: `${currentLot.current_quantity} шт.` },
-        ...(currentLot.params?.season && translateSeason(currentLot.params.season)
-            ? [{ label: 'Сезон', value: translateSeason(currentLot.params.season) }]
+        ...(currentLot.params?.season
+            ? [{ label: 'Сезон', value: getLotSeasonLabel(currentLot.params.season) }]
             : []),
-        ...(currentLot.params?.tire_terrain ? [{ label: 'Тип шини', value: currentLot.params.tire_terrain === 'AT' ? 'A/T' : currentLot.params.tire_terrain === 'MT' ? 'M/T' : currentLot.params.tire_terrain }] : []),
+        ...(currentLot.params?.tire_terrain ? [{ label: 'Тип шини', value: lotTireTerrainLabels[currentLot.params.tire_terrain] ?? currentLot.params.tire_terrain }] : []),
         ...(currentLot.params?.production_year ? [{ label: 'Рік випуску', value: `${currentLot.params.production_year}` }] : []),
         ...(currentLot.params?.country_of_origin ? [{ label: 'Країна виробник', value: currentLot.params.country_of_origin }] : []),
         ...(currentLot.params?.is_c_type ? [{ label: 'Вантажна C', value: 'Так', accent: true }] : []),
-        ...(currentLot.params?.accessory_category && translateAccessoryCategory(currentLot.params.accessory_category)
-            ? [{ label: 'Категорія', value: translateAccessoryCategory(currentLot.params.accessory_category) }]
+        ...(currentLot.params?.accessory_category
+            ? [{ label: 'Категорія', value: lotAccessoryCategoryLabels[currentLot.params.accessory_category] ?? currentLot.params.accessory_category }]
             : []),
         ...(currentLot.params?.is_run_flat ? [{ label: 'Run Flat', value: 'Так', accent: true }] : []),
         ...(currentLot.params?.is_spiked ? [{ label: 'Шипи', value: 'Так', accent: true }] : []),
         ...(currentLot.params?.anti_puncture ? [{ label: 'Антипрокол', value: 'Так', accent: true }] : []),
-        ...(currentLot.params?.fastener_type && translateFastenerType(currentLot.params.fastener_type)
-            ? [{ label: 'Тип кріплення', value: translateFastenerType(currentLot.params.fastener_type) }]
+        ...(currentLot.params?.fastener_type
+            ? [{ label: 'Тип кріплення', value: lotFastenerTypeLabels[currentLot.params.fastener_type] ?? currentLot.params.fastener_type }]
             : []),
         ...(currentLot.params?.thread_size ? [{ label: 'Різьба', value: currentLot.params.thread_size }] : []),
         ...(currentLot.params?.seat_type ? [{ label: 'Посадка', value: currentLot.params.seat_type }] : []),
         ...(currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter
             ? [{ label: 'Розмір кільця', value: `${currentLot.params.ring_inner_diameter}/${currentLot.params.ring_outer_diameter} мм` }]
             : []),
-        ...(currentLot.params?.spacer_type && translateSpacerType(currentLot.params.spacer_type)
-            ? [{ label: 'Тип проставки', value: translateSpacerType(currentLot.params.spacer_type) }]
+        ...(currentLot.params?.spacer_type
+            ? [{ label: 'Тип проставки', value: lotSpacerTypeLabels[currentLot.params.spacer_type] ?? currentLot.params.spacer_type }]
             : []),
         ...(currentLot.params?.spacer_thickness ? [{ label: 'Товщина', value: `${currentLot.params.spacer_thickness} мм` }] : []),
         ...(currentLot.params?.package_quantity ? [{ label: 'У комплекті', value: `${currentLot.params.package_quantity} шт.` }] : []),
@@ -324,7 +288,7 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                     <div className="flex flex-wrap gap-2">
                                         {currentLot.type && (
                                             <span className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-200">
-                                                {translateType(currentLot.type)}
+                                                {getLotTypeLabel(currentLot.type)}
                                             </span>
                                         )}
                                         {currentLot.condition && (
@@ -333,7 +297,7 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
                                                     ? 'border-green-800 bg-green-900/30 text-green-400'
                                                     : 'border-yellow-800 bg-yellow-900/30 text-yellow-400'
                                             }`}>
-                                                {translateCondition(currentLot.condition)}
+                                                {getLotConditionLabel(currentLot.condition)}
                                             </span>
                                         )}
                                     </div>

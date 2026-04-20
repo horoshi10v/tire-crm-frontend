@@ -1,36 +1,19 @@
+import {
+  createBuyerOrderMessage,
+  formatMediumDateTime,
+  formatMoney,
+  formatShortDateTime,
+  getLotLabel,
+  getOrderSummary,
+} from '@tire-crm/shared';
 import type { LotInternalResponse } from '../../types/lot';
 import type { OrderMessageResponse, OrderResponse, OrderStatus } from '../../types/order';
-import { orderStatusLabels } from './constants';
 
-export const formatMoney = (value: number): string => {
-  return new Intl.NumberFormat('uk-UA', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
+export { formatMoney, getLotLabel };
 
-export const formatOrderDate = (iso: string): string => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return iso;
-  }
-  return new Intl.DateTimeFormat('uk-UA', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
-};
+export const formatOrderDate = formatMediumDateTime;
 
-export const formatMessageDate = (iso: string): string => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return iso;
-  }
-
-  return new Intl.DateTimeFormat('uk-UA', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(date);
-};
+export const formatMessageDate = formatShortDateTime;
 
 export const getStatusBadgeClass = (status: OrderStatus): string => {
   switch (status) {
@@ -47,18 +30,7 @@ export const getStatusBadgeClass = (status: OrderStatus): string => {
   }
 };
 
-export const orderSummary = (order: OrderResponse): string => {
-  const itemsCount = order.items.reduce((acc, item) => acc + item.quantity, 0);
-  return `${itemsCount} шт., ${order.items.length} позицій`;
-};
-
-export const getLotLabel = (lot?: LotInternalResponse): string => {
-  if (!lot) {
-    return 'Лот';
-  }
-  const model = lot.model?.trim();
-  return model ? `${lot.brand} ${model}` : lot.brand;
-};
+export const orderSummary = getOrderSummary;
 
 export const createOrderItemsSummary = (order: OrderResponse, lotMap: Map<string, LotInternalResponse>): string => {
   const summary = order.items
@@ -73,39 +45,7 @@ export const createOrderItemsSummary = (order: OrderResponse, lotMap: Map<string
 };
 
 export const createBuyerMessage = (order: OrderResponse, lotMap: Map<string, LotInternalResponse>): string => {
-  const itemsSummary = createOrderItemsSummary(order, lotMap);
-  const statusLabel = orderStatusLabels[order.status];
-
-  switch (order.status) {
-    case 'PREPAYMENT':
-      return [
-        `Добрий день, ${order.customer_name}!`,
-        `Ваше замовлення (${itemsSummary}) підтверджено.`,
-        `Статус: ${statusLabel}. Сума до оплати: ${formatMoney(order.total_amount)} грн.`,
-        'Очікуємо передплату. Якщо потрібні реквізити або консультація, напишіть у відповідь.',
-      ].join('\n');
-    case 'DONE':
-      return [
-        `Добрий день, ${order.customer_name}!`,
-        `Ваше замовлення (${itemsSummary}) успішно завершено.`,
-        `Підсумкова сума: ${formatMoney(order.total_amount)} грн.`,
-        'Дякуємо за покупку. Якщо буде потрібна допомога або новий комплект, напишіть нам.',
-      ].join('\n');
-    case 'CANCELLED':
-      return [
-        `Добрий день, ${order.customer_name}!`,
-        `Ваше замовлення (${itemsSummary}) скасовано.`,
-        'Якщо хочете, ми можемо допомогти підібрати інший варіант.',
-      ].join('\n');
-    case 'NEW':
-    default:
-      return [
-        `Добрий день, ${order.customer_name}!`,
-        `Ваше замовлення (${itemsSummary}) зараз у статусі: ${statusLabel}.`,
-        `Сума замовлення: ${formatMoney(order.total_amount)} грн.`,
-        'Якщо є питання, напишіть у відповідь.',
-      ].join('\n');
-  }
+  return createBuyerOrderMessage(order, lotMap, formatMoney);
 };
 
 export const getOrderPhotoUrls = (order: OrderResponse, lotMap: Map<string, LotInternalResponse>): string[] => {

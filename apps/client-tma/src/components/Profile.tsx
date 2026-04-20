@@ -1,7 +1,16 @@
 // apps/client-tma/src/components/Profile.tsx
 import { useMemo, useState } from 'react';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
-import { useAuthStore } from '@tire-crm/shared';
+import {
+    EmptyState,
+    LoadingBlock,
+    StatusBadge,
+    formatMoney,
+    formatShortDateTime,
+    getOrderStatusLabel,
+    getOrderStatusTone,
+    useAuthStore,
+} from '@tire-crm/shared';
 import { OrderDetailsModal } from './OrderDetailsModal';
 import { useOrders, type OrderResponse } from '../api/useOrders';
 import type { PaginatedLotsResponse } from '../api/useLots';
@@ -12,20 +21,7 @@ interface ProfileProps {
     initialSelectedOrderId?: string | null;
 }
 
-const getStatusLabel = (status: string) => {
-    switch (status) {
-        case 'NEW':
-            return 'Нове';
-        case 'PREPAYMENT':
-            return 'Передплата';
-        case 'DONE':
-            return 'Завершене';
-        case 'CANCELLED':
-            return 'Скасоване';
-        default:
-            return status;
-    }
-};
+const formatOrderMoney = (value: number) => `${formatMoney(value)} грн`;
 
 export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps) => {
     const user = useAuthStore((state) => state.user);
@@ -33,12 +29,6 @@ export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps
     const queryClient = useQueryClient();
     const [isClosing, setIsClosing] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(initialSelectedOrderId);
-    const formatMoney = (value: number) =>
-        `${new Intl.NumberFormat('uk-UA', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-        }).format(value)} грн`;
-
     const selectedOrder = useMemo<OrderResponse | null>(
         () => orders?.find((order) => order.id === selectedOrderId) ?? null,
         [orders, selectedOrderId]
@@ -96,11 +86,9 @@ export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps
             <h3 className="text-xl font-bold text-white mb-4">Мої замовлення</h3>
 
             {isLoading ? (
-                <div className="text-gray-400 text-center py-4">Завантаження замовлень...</div>
+                <LoadingBlock message="Завантаження замовлень..." className="border-0 bg-transparent px-0 text-center" />
             ) : !orders || orders.length === 0 ? (
-                <div className="text-gray-500 text-center py-4 bg-gray-900 rounded-xl border border-gray-800">
-                    У вас ще немає замовлень.
-                </div>
+                <EmptyState message="У вас ще немає замовлень." className="text-center" />
             ) : (
                 <div className="flex-grow overflow-y-auto flex flex-col gap-3">
                     {orders.map((order) => (
@@ -111,14 +99,12 @@ export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps
                             className="bg-gray-900 p-4 rounded-xl border border-gray-800 text-left transition hover:border-[#10AD0B]/20 hover:bg-gray-900/80"
                         >
                             <div className="flex justify-between items-center border-b border-gray-800 pb-2">
-                                <span className="text-xs text-gray-400">{new Date(order.created_at).toLocaleDateString()}</span>
-                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${
-                                    order.status === 'DONE' ? 'bg-green-900 text-green-300' :
-                                        order.status === 'CANCELLED' ? 'bg-red-900 text-red-300' :
-                                            'bg-[#10AD0B]/15 text-[#56e052]'
-                                }`}>
-                  {getStatusLabel(order.status)}
-                </span>
+                                <span className="text-xs text-gray-400">{formatShortDateTime(order.created_at)}</span>
+                                <StatusBadge
+                                    label={getOrderStatusLabel(order.status)}
+                                    tone={getOrderStatusTone(order.status)}
+                                    className="text-xs font-bold"
+                                />
                             </div>
                             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 pt-3">
                                 <div className="min-w-0">
@@ -127,7 +113,7 @@ export const Profile = ({ onClose, initialSelectedOrderId = null }: ProfileProps
                                 </div>
                                 <div className="text-right">
                                     <span className="block text-[11px] uppercase tracking-[0.18em] text-gray-500">Сума</span>
-                                    <span className="mt-1 block text-lg font-bold text-white">{formatMoney(order.total_amount)}</span>
+                                    <span className="mt-1 block text-lg font-bold text-white">{formatOrderMoney(order.total_amount)}</span>
                                 </div>
                             </div>
                         </button>

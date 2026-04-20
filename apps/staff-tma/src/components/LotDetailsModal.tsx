@@ -1,4 +1,16 @@
 import { useState } from 'react';
+import {
+  formatMoney,
+  lotAccessoryCategoryLabels,
+  getLotConditionLabel,
+  getLotInventoryStatusLabel,
+  getLotTypeLabel,
+  lotFastenerTypeLabels,
+  lotRimMaterialLabels,
+  lotSeasonLabels,
+  lotSpacerTypeLabels,
+  lotTireTerrainLabels,
+} from '@tire-crm/shared';
 import type { LotInternalResponse } from '../types/lot';
 import LotActionPanel from './LotActionPanel';
 
@@ -12,40 +24,12 @@ type LotDetailsModalProps = {
   onSell: (lot: LotInternalResponse) => void;
 };
 
-const statusLabels: Record<string, string> = {
-  ACTIVE: 'Активний',
-  IN_STOCK: 'На складі',
-  RESERVED: 'Зарезервовано',
-  SOLD: 'Продано',
-  ARCHIVED: 'Архів',
-};
-
-const formatMoney = (value: number): string => {
-  return new Intl.NumberFormat('uk-UA', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
-
-const getTypeLabel = (type: string) => {
-  if (type === 'TIRE') return 'Шина';
-  if (type === 'RIM') return 'Диск';
-  if (type === 'ACCESSORY') return 'Супутній товар';
-  return type;
-};
-
 const getAccessoryCategoryLabel = (value?: string) => {
-  if (value === 'FASTENERS') return 'Кріплення';
-  if (value === 'HUB_RINGS') return 'Проставочні кільця';
-  if (value === 'SPACERS') return 'Проставки';
-  if (value === 'TIRE_BAGS') return 'Пакети для шин';
-  return '—';
+  return value ? lotAccessoryCategoryLabels[value] ?? value : '—';
 };
 
 const getRimMaterialLabel = (value?: string) => {
-  if (value === 'STEEL') return 'Металеві';
-  if (value === 'ALLOY') return 'Легкосплавні';
-  return '—';
+  return value ? lotRimMaterialLabels[value] ?? value : '—';
 };
 
 export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, onDelete, onOpenPriceTag, onSell }: LotDetailsModalProps) {
@@ -105,7 +89,7 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
               <p className="mt-1 text-xs text-gray-400">ID: {lot.id}</p>
             </div>
             <span className="rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-200">
-              {statusLabels[lot.status] ?? lot.status}
+              {getLotInventoryStatusLabel(lot.status)}
             </span>
           </div>
 
@@ -117,10 +101,10 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
               Кількість: <span className="font-semibold text-white">{lot.current_quantity}</span>
             </p>
             <p>
-              Тип: <span className="font-semibold text-white">{getTypeLabel(lot.type)}</span>
+              Тип: <span className="font-semibold text-white">{getLotTypeLabel(lot.type)}</span>
             </p>
             <p>
-              Стан: <span className="font-semibold text-white">{lot.condition === 'NEW' ? 'Новий' : 'Вживаний'}</span>
+              Стан: <span className="font-semibold text-white">{getLotConditionLabel(lot.condition)}</span>
             </p>
             <p>
               Закупівля: <span className="font-semibold text-white">{formatMoney(lot.purchase_price)}</span>
@@ -144,26 +128,19 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
                 <p>Рік випуску: {lot.params.production_year ?? '—'}</p>
                 <p>Країна виробник: {lot.params.country_of_origin ?? '—'}</p>
                 <p>
-                  Сезон:{' '}
-                  {lot.params.season === 'SUMMER'
-                    ? 'Літній'
-                    : lot.params.season === 'WINTER'
-                      ? 'Зимовий'
-                      : lot.params.season === 'ALL_SEASON'
-                        ? 'Всесезонний'
-                        : '—'}
+                  Сезон: {lot.params.season ? lotSeasonLabels[lot.params.season] ?? lot.params.season : '—'}
                 </p>
-                <p>Тип шини: {lot.params.tire_terrain === 'AT' ? 'A/T' : lot.params.tire_terrain === 'MT' ? 'M/T' : '—'}</p>
+                <p>Тип шини: {lot.params.tire_terrain ? lotTireTerrainLabels[lot.params.tire_terrain] ?? lot.params.tire_terrain : '—'}</p>
                 <p>Вантажна C: {lot.params.is_c_type ? 'Так' : 'Ні'}</p>
                 <p>Run Flat: {lot.params.is_run_flat ? 'Так' : 'Ні'}</p>
                 <p>Шипована: {lot.params.is_spiked ? 'Так' : 'Ні'}</p>
                 <p>Антипрокол: {lot.params.anti_puncture ? 'Так' : 'Ні'}</p>
                 <p>Категорія: {getAccessoryCategoryLabel(lot.params.accessory_category)}</p>
-                <p>Тип кріплення: {lot.params.fastener_type === 'NUT' ? 'Гайки' : lot.params.fastener_type === 'BOLT' ? 'Болти' : '—'}</p>
+                <p>Тип кріплення: {lot.params.fastener_type ? lotFastenerTypeLabels[lot.params.fastener_type] ?? lot.params.fastener_type : '—'}</p>
                 <p>Різьба: {lot.params.thread_size ?? '—'}</p>
                 <p>Посадка: {lot.params.seat_type ?? '—'}</p>
                 <p>Кільце внутр./зовн.: {lot.params.ring_inner_diameter && lot.params.ring_outer_diameter ? `${lot.params.ring_inner_diameter}/${lot.params.ring_outer_diameter} мм` : '—'}</p>
-                <p>Тип проставки: {lot.params.spacer_type === 'ADAPTER' ? 'Адаптер' : lot.params.spacer_type === 'EXTENDER' ? 'Розширювальна' : '—'}</p>
+                <p>Тип проставки: {lot.params.spacer_type ? lotSpacerTypeLabels[lot.params.spacer_type] ?? lot.params.spacer_type : '—'}</p>
                 <p>Товщина проставки: {lot.params.spacer_thickness ? `${lot.params.spacer_thickness} мм` : '—'}</p>
                 <p>Кількість у комплекті: {lot.params.package_quantity ?? '—'}</p>
               </div>

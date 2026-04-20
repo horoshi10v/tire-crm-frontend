@@ -206,18 +206,19 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                                 </div>
                             ) : null}
 
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="relative z-20 grid grid-cols-2 gap-2">
                                 <input type="number" placeholder="Рік випуску" value={filters.production_year} onChange={(e) => setFilter('production_year', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-[#10AD0B]" />
                                 <CountrySearchSelect
                                     value={filters.country_of_origin}
                                     onChange={(value) => setFilter('country_of_origin', value)}
                                     emptyLabel="Усі країни"
                                     placeholder="Країна виробник"
+                                    className="z-[140]"
                                 />
                             </div>
 
                             {isTire ? (
-                                <div className="flex flex-col gap-4 mt-2 bg-gray-800/50 p-4 rounded-xl border border-gray-800">
+                                <div className="relative z-0 mt-2 flex flex-col gap-4 rounded-xl border border-gray-800 bg-gray-800/50 p-4">
                                     <ResponsiveSelect
                                         value={filters.tire_terrain}
                                         onChange={(value) => setFilter('tire_terrain', value)}

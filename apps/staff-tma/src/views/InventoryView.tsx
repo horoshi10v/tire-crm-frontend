@@ -4,12 +4,17 @@ import {
   buildSuggestionSections,
   clearRecentSearches,
   createDefaultSearchSuggestionSectionsConfig,
+  formatMoney,
   getLotPrimaryLabel,
   getLotSearchableText,
   getLotTagLabels,
+  getLotTypeLabel,
+  getLotInventoryCompactStatusLabel,
+  getLotInventoryStatusTone,
   loadRecentSearches,
   saveRecentSearch,
   getSearchHighlightTokens,
+  StatusBadge,
   SearchSuggestionsDropdown,
   SearchHighlightedText,
 } from '@tire-crm/shared';
@@ -34,58 +39,8 @@ type InventoryViewProps = {
 
 const LOW_STOCK_THRESHOLD = 4;
 
-const statusLabels: Record<string, string> = {
-  ACTIVE: 'Активний',
-  IN_STOCK: 'На складі',
-  RESERVED: 'Зарезервовано',
-  SOLD: 'Продано',
-  ARCHIVED: 'Архів',
-};
-
-const compactStatusLabels: Record<string, string> = {
-  ACTIVE: 'Актив.',
-  IN_STOCK: 'Склад',
-  RESERVED: 'Резерв',
-  SOLD: 'Продано',
-  ARCHIVED: 'Архів',
-};
-
-const formatMoney = (value: number): string => {
-  return new Intl.NumberFormat('uk-UA', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
-
-const getStatusLabel = (status: string): string => {
-  return statusLabels[status] ?? status;
-};
-
-const getCompactStatusLabel = (status: string): string => {
-  return compactStatusLabels[status] ?? getStatusLabel(status);
-};
-
-const getStatusClassName = (status: string): string => {
-  switch (status) {
-    case 'ACTIVE':
-    case 'IN_STOCK':
-      return 'bg-emerald-500/15 text-emerald-300 border border-emerald-600/40';
-    case 'RESERVED':
-      return 'bg-amber-500/15 text-amber-300 border border-amber-600/40';
-    case 'SOLD':
-      return 'bg-slate-500/20 text-slate-300 border border-slate-500/40';
-    case 'ARCHIVED':
-      return 'bg-zinc-500/20 text-zinc-300 border border-zinc-500/40';
-    default:
-      return 'bg-blue-500/15 text-blue-300 border border-blue-600/40';
-  }
-};
-
-const getTypeLabel = (type: string): string => {
-  if (type === 'TIRE') return 'Шина';
-  if (type === 'RIM') return 'Диск';
-  if (type === 'ACCESSORY') return 'Супутній';
-  return type;
+const getInventoryTypeLabel = (type: string): string => {
+  return type === 'ACCESSORY' ? 'Супутній' : getLotTypeLabel(type);
 };
 
 const activeFiltersCount = (filters: StaffLotFilters): number => {
@@ -656,7 +611,7 @@ export default function InventoryView({
                     </p>
                   ) : null}
                   <p className="rounded-md bg-gray-950 px-2 py-1">
-                    {getTypeLabel(lot.type)}
+                    {getInventoryTypeLabel(lot.type)}
                   </p>
                 </div>
               </div>
@@ -671,11 +626,11 @@ export default function InventoryView({
                   </div>
 
                   <div className="flex w-[72px] shrink-0 flex-col items-end gap-1 text-right">
-                    <span
-                      className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${getStatusClassName(lot.status)}`}
-                    >
-                      {getCompactStatusLabel(lot.status)}
-                    </span>
+                    <StatusBadge
+                      label={getLotInventoryCompactStatusLabel(lot.status)}
+                      tone={getLotInventoryStatusTone(lot.status)}
+                      className="rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                    />
                     <div>
                       <p className="text-[10px] uppercase tracking-wide text-gray-500">Продаж</p>
                       <p className="text-base font-bold leading-5 text-white">{formatMoney(lot.sell_price)}</p>

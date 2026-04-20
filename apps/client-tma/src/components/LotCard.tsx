@@ -1,6 +1,6 @@
 // apps/client-tma/src/components/LotCard.tsx
 import { useEffect, useRef, useState } from 'react';
-import { getLotPrimaryLabel, getLotTagLabels, getSearchHighlightTokens, SearchHighlightedText } from '@tire-crm/shared';
+import { formatMoney, getLotPrimaryLabel, getLotTagLabels, getSearchHighlightTokens, SearchHighlightedText } from '@tire-crm/shared';
 import type { AddItemResult } from '../store/useCartStore';
 import type { LotPublicResponse } from '../types/lot';
 import { useCartStore } from '../store/useCartStore';
@@ -35,10 +35,7 @@ export const LotCard = ({
     const previousFavoriteRef = useRef(isFavorite);
     const [favoriteFx, setFavoriteFx] = useState<'adding' | 'removing' | null>(null);
     const isOutOfStock = lot.current_quantity === 0;
-    const formattedPrice = `${new Intl.NumberFormat('uk-UA', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-    }).format(lot.sell_price)} грн`;
+    const formattedPrice = `${formatMoney(lot.sell_price)} грн`;
     const primaryLabel = getLotPrimaryLabel(lot) || [lot.brand, lot.model].filter(Boolean).join(' ');
     const tags = getLotTagLabels(lot);
     const highlightTokens = getSearchHighlightTokens(searchQuery);

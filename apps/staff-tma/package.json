@@ -12,6 +12,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-query-devtools": "^5.91.3",
+    "@tire-crm/shared": "^1.0.0",
     "@twa-dev/sdk": "^8.0.2",
     "axios": "^1.13.6",
     "html2canvas": "^1.4.1",

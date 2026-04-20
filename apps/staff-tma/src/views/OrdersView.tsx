@@ -1,3 +1,4 @@
+import { EmptyState, ErrorState, LoadingBlock } from '@tire-crm/shared';
 import OrdersFilters from './orders-view/OrdersFilters';
 import OrderDetailsModal from './orders-view/OrderDetailsModal';
 import OrdersList from './orders-view/OrdersList';
@@ -54,19 +55,11 @@ export default function OrdersView() {
         statusCounts={statusCounts}
       />
 
-      {isLoading ? (
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-sm text-gray-400">Завантаження замовлень...</div>
-      ) : null}
+      {isLoading ? <LoadingBlock message="Завантаження замовлень..." /> : null}
 
-      {isError ? (
-        <div className="rounded-xl border border-red-800/60 bg-red-950/30 p-4 text-sm text-red-300">
-          Не вдалося завантажити список замовлень.
-        </div>
-      ) : null}
+      {isError ? <ErrorState message="Не вдалося завантажити список замовлень." /> : null}
 
-      {!isLoading && !isError && sortedOrders.length === 0 ? (
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-sm text-gray-400">Замовлення не знайдені.</div>
-      ) : null}
+      {!isLoading && !isError && sortedOrders.length === 0 ? <EmptyState message="Замовлення не знайдені." /> : null}
 
       <OrdersList
         orders={sortedOrders}

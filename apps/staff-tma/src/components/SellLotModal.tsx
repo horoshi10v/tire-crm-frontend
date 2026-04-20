@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { formatMoney } from '@tire-crm/shared';
 import { useCreateStaffOrder, useUpdateStaffOrderStatus } from '../api/staffOrders';
 import type { LotInternalResponse } from '../types/lot';
 import type { CreateOrderDTO, OrderStatus } from '../types/order';
@@ -214,10 +215,10 @@ export default function SellLotModal({ lot, onClose, onSuccess }: SellLotModalPr
               Залишок на складі: <span className="font-semibold text-white">{lot.current_quantity}</span>
             </p>
             <p>
-              Базова ціна: <span className="font-semibold text-white">{new Intl.NumberFormat('uk-UA').format(lot.sell_price)} грн</span>
+              Базова ціна: <span className="font-semibold text-white">{formatMoney(lot.sell_price)} грн</span>
             </p>
             <p>
-              Сума продажу: <span className="font-semibold text-white">{new Intl.NumberFormat('uk-UA').format(totalAmount)} грн</span>
+              Сума продажу: <span className="font-semibold text-white">{formatMoney(totalAmount)} грн</span>
             </p>
             {hasCustomPrice ? <p className="mt-1 text-xs text-amber-300">Застосовується ручна ціна для офлайн-продажу.</p> : null}
             <p className="mt-1 text-xs text-gray-500">

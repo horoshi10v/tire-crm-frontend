@@ -1,8 +1,8 @@
 // apps/client-tma/src/components/CartModal.tsx
 import { useEffect, useState } from 'react';
+import { formatMoney, useAuthStore } from '@tire-crm/shared';
 import { useCartStore } from '../store/useCartStore';
 import { useCreateOrder } from '../api/useCreateOrder';
-import { useAuthStore } from '@tire-crm/shared';
 
 interface CartModalProps {
     isOpen: boolean;
@@ -40,11 +40,7 @@ export const CartModal = ({ isOpen, onClose, onOpenServiceInfo, onOrderSuccess, 
     const [customerPhone, setCustomerPhone] = useState('');
     const [customerUsername, setCustomerUsername] = useState('');
     const [customerTelegramId, setCustomerTelegramId] = useState<number | undefined>(undefined);
-    const formatMoney = (value: number) =>
-        `${new Intl.NumberFormat('uk-UA', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-        }).format(value)} грн`;
+    const formatOrderMoney = (value: number) => `${formatMoney(value)} грн`;
 
     const tgUser = (window as {
         Telegram?: {
@@ -176,7 +172,7 @@ export const CartModal = ({ isOpen, onClose, onOpenServiceInfo, onOrderSuccess, 
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-sm font-medium text-gray-100 truncate">{item.lot.brand} {item.lot.model}</h3>
-                                    <p className="text-xs text-gray-400 mt-1">{formatMoney(item.lot.sell_price)} x {item.quantity}</p>
+                                    <p className="text-xs text-gray-400 mt-1">{formatOrderMoney(item.lot.sell_price)} x {item.quantity}</p>
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
                                     <button onClick={() => removeItem(item.lot.id)} className="w-8 h-8 rounded-full bg-gray-800 text-gray-300 flex items-center justify-center hover:bg-gray-700">-</button>
@@ -202,7 +198,7 @@ export const CartModal = ({ isOpen, onClose, onOpenServiceInfo, onOrderSuccess, 
                     <div className="flex flex-col overflow-y-auto md:h-full pr-1">
                         <div className="flex justify-between items-center py-4 border-t border-gray-800 mt-auto md:mt-0 md:border-t-0 md:bg-gray-900/40 md:p-4 md:rounded-t-xl mb-4">
                             <span className="text-gray-400">Сума:</span>
-                            <span className="text-xl font-bold text-[#10AD0B]">{formatMoney(getTotalPrice())}</span>
+                            <span className="text-xl font-bold text-[#10AD0B]">{formatOrderMoney(getTotalPrice())}</span>
                         </div>
 
                         <form onSubmit={handleCheckout} className="flex flex-col gap-3 md:bg-gray-900/20 md:p-4 md:rounded-b-xl md:-mt-4">

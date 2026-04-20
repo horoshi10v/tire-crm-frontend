@@ -1,3 +1,4 @@
+import { formatMoney } from '@tire-crm/shared';
 import type { OrderResponse } from '../api/useOrders';
 
 type CheckoutSuccessModalProps = {
@@ -6,11 +7,7 @@ type CheckoutSuccessModalProps = {
     onOpenOrder: (orderId: string) => void;
 };
 
-const formatMoney = (value: number) =>
-    `${new Intl.NumberFormat('uk-UA', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-    }).format(value)} грн`;
+const formatOrderMoney = (value: number) => `${formatMoney(value)} грн`;
 
 export const CheckoutSuccessModal = ({ order, onClose, onOpenOrder }: CheckoutSuccessModalProps) => {
     if (!order) {
@@ -34,7 +31,7 @@ export const CheckoutSuccessModal = ({ order, onClose, onOpenOrder }: CheckoutSu
                         <p className="text-xs uppercase tracking-[0.18em] text-gray-500">Номер замовлення</p>
                         <p className="mt-2 font-semibold text-white">#{order.id.slice(0, 8)}</p>
                         <p className="mt-3 text-xs uppercase tracking-[0.18em] text-gray-500">Сума</p>
-                        <p className="mt-2 font-semibold text-white">{formatMoney(order.total_amount)}</p>
+                        <p className="mt-2 font-semibold text-white">{formatOrderMoney(order.total_amount)}</p>
                     </div>
                 </div>
 

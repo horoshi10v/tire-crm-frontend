@@ -1,3 +1,4 @@
+import { formatMediumDateTime, formatMoney, getOrderStatusLabel } from '@tire-crm/shared';
 import type { LotPublicResponse } from '../types/lot';
 import type { OrderResponse } from '../api/useOrders';
 
@@ -7,26 +8,7 @@ type OrderDetailsModalProps = {
     onClose: () => void;
 };
 
-const formatMoney = (value: number) =>
-    `${new Intl.NumberFormat('uk-UA', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-    }).format(value)} грн`;
-
-const getStatusLabel = (status: string) => {
-    switch (status) {
-        case 'NEW':
-            return 'Нове';
-        case 'PREPAYMENT':
-            return 'Передплата';
-        case 'DONE':
-            return 'Завершене';
-        case 'CANCELLED':
-            return 'Скасоване';
-        default:
-            return status;
-    }
-};
+const formatOrderMoney = (value: number) => `${formatMoney(value)} грн`;
 
 const getStatusClassName = (status: string) => {
     switch (status) {
@@ -70,12 +52,12 @@ export const OrderDetailsModal = ({ order, lotLookup, onClose }: OrderDetailsMod
                     <div>
                         <p className="text-xs uppercase tracking-[0.18em] text-gray-500">Статус</p>
                         <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusClassName(order.status)}`}>
-                            {getStatusLabel(order.status)}
+                            {getOrderStatusLabel(order.status)}
                         </span>
                     </div>
                     <div className="text-right">
                         <p className="text-xs uppercase tracking-[0.18em] text-gray-500">Сума</p>
-                        <p className="mt-2 text-lg font-bold text-white">{formatMoney(order.total_amount)}</p>
+                        <p className="mt-2 text-lg font-bold text-white">{formatOrderMoney(order.total_amount)}</p>
                     </div>
                 </div>
 
@@ -83,13 +65,7 @@ export const OrderDetailsModal = ({ order, lotLookup, onClose }: OrderDetailsMod
                     <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
                         <p className="text-xs uppercase tracking-[0.18em] text-gray-500">Дата</p>
                         <p className="mt-2 font-medium text-white">
-                            {new Date(order.created_at).toLocaleString('uk-UA', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })}
+                            {formatMediumDateTime(order.created_at)}
                         </p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
@@ -119,9 +95,9 @@ export const OrderDetailsModal = ({ order, lotLookup, onClose }: OrderDetailsMod
                                     <div className="min-w-0 flex-1">
                                         <p className="font-medium text-white">{lotTitle}</p>
                                         <p className="mt-1 text-sm text-gray-400">
-                                            {formatMoney(item.price)} x {item.quantity} шт.
+                                            {formatOrderMoney(item.price)} x {item.quantity} шт.
                                         </p>
-                                        <p className="mt-1 text-sm font-semibold text-[#10AD0B]">{formatMoney(item.total)}</p>
+                                        <p className="mt-1 text-sm font-semibold text-[#10AD0B]">{formatOrderMoney(item.total)}</p>
                                     </div>
                                 </div>
                             );

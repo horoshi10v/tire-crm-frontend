@@ -312,7 +312,7 @@ export default function InventoryFiltersDrawer({
                 </div>
               ) : null}
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="relative z-20 grid grid-cols-2 gap-2">
                 <input
                   type="number"
                   placeholder="Рік випуску"
@@ -325,10 +325,11 @@ export default function InventoryFiltersDrawer({
                   onChange={(value) => onSetFilter('country_of_origin', value)}
                   emptyLabel="Усі країни"
                   placeholder="Країна виробник"
+                  className="z-[140]"
                 />
               </div>
 
-              <div className="mt-2 flex flex-col gap-4 rounded-xl border border-gray-800 bg-gray-800/50 p-4">
+              <div className="relative z-0 mt-2 flex flex-col gap-4 rounded-xl border border-gray-800 bg-gray-800/50 p-4">
                 <select
                   value={filters.tire_terrain}
                   onChange={(event) => onSetFilter('tire_terrain', event.target.value as StaffLotFilters['tire_terrain'])}
