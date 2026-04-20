@@ -4,6 +4,7 @@ export type OrderChannel = 'ONLINE' | 'OFFLINE';
 export interface CreateOrderItemDTO {
   lot_id: string;
   quantity: number;
+  final_price?: number;
 }
 
 export interface CreateOrderDTO {
@@ -16,7 +17,11 @@ export interface CreateOrderDTO {
 }
 
 export interface OrderItemResponse {
+  id: string;
   lot_id: string;
+  brand?: string;
+  model?: string;
+  photo?: string;
   price: number;
   quantity: number;
   total: number;
@@ -37,6 +42,11 @@ export interface OrderResponse {
 
 export interface UpdateOrderStatusDTO {
   status: OrderStatus;
+  comment?: string;
+}
+
+export interface UpdateOrderItemPriceDTO {
+  price: number;
   comment?: string;
 }
 

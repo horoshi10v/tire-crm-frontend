@@ -7,6 +7,7 @@ import type {
   OrderResponse,
   OrderStatus,
   SendOrderMessageDTO,
+  UpdateOrderItemPriceDTO,
   UpdateOrderStatusDTO,
 } from '../types/order';
 
@@ -68,6 +69,29 @@ export const useCreateStaffOrder = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-orders'] });
       queryClient.invalidateQueries({ queryKey: ['staff-lots'] });
+    },
+  });
+};
+
+export const useUpdateStaffOrderItemPrice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      itemId,
+      payload,
+    }: {
+      orderId: string;
+      itemId: string;
+      payload: UpdateOrderItemPriceDTO;
+    }) => {
+      const { data } = await apiClient.patch<OrderResponse>(`/staff/orders/${orderId}/items/${itemId}/price`, payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
     },
   });
 };

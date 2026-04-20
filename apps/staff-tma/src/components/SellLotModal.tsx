@@ -24,6 +24,7 @@ export default function SellLotModal({ lot, onClose, onSuccess }: SellLotModalPr
   const [customerName, setCustomerName] = useState(defaultCustomerName);
   const [customerPhone, setCustomerPhone] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [finalPriceInput, setFinalPriceInput] = useState('');
   const [status, setStatus] = useState<OrderStatus>('DONE');
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
@@ -36,6 +37,7 @@ export default function SellLotModal({ lot, onClose, onSuccess }: SellLotModalPr
     setCustomerName(defaultCustomerName);
     setCustomerPhone('');
     setQuantity(lot.current_quantity > 0 ? 1 : 0);
+    setFinalPriceInput(String(lot.sell_price));
     setStatus('DONE');
     setComment('');
     setError('');
@@ -53,6 +55,9 @@ export default function SellLotModal({ lot, onClose, onSuccess }: SellLotModalPr
   }
 
   const isSubmitting = createOrderMutation.isPending || updateOrderStatusMutation.isPending;
+  const parsedFinalPrice = Number(finalPriceInput);
+  const hasCustomPrice = finalPriceInput.trim() !== '' && parsedFinalPrice !== lot.sell_price;
+  const totalAmount = (Number.isFinite(parsedFinalPrice) ? parsedFinalPrice : 0) * quantity;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -67,6 +72,11 @@ export default function SellLotModal({ lot, onClose, onSuccess }: SellLotModalPr
       return;
     }
 
+    if (!Number.isFinite(parsedFinalPrice) || parsedFinalPrice <= 0) {
+      setError('Вкажіть коректну фінальну ціну.');
+      return;
+    }
+
     const payload: CreateOrderDTO = {
       customer_name: customerName.trim() || defaultCustomerName,
       customer_phone: customerPhone.trim() || undefined,
@@ -75,6 +85,7 @@ export default function SellLotModal({ lot, onClose, onSuccess }: SellLotModalPr
         {
           lot_id: lot.id,
           quantity,
+          final_price: parsedFinalPrice,
         },
       ],
     };
@@ -172,6 +183,19 @@ export default function SellLotModal({ lot, onClose, onSuccess }: SellLotModalPr
                 ))}
               </select>
             </label>
+
+            <label className="space-y-1 sm:col-span-2">
+              <span className="text-sm text-gray-300">Фінальна ціна за 1 шт.</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={finalPriceInput}
+                onChange={(event) => setFinalPriceInput(event.target.value)}
+                className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                placeholder={String(lot.sell_price)}
+              />
+            </label>
           </div>
 
           <label className="block space-y-1">
@@ -190,8 +214,12 @@ export default function SellLotModal({ lot, onClose, onSuccess }: SellLotModalPr
               Залишок на складі: <span className="font-semibold text-white">{lot.current_quantity}</span>
             </p>
             <p>
-              Сума продажу: <span className="font-semibold text-white">{new Intl.NumberFormat('uk-UA').format(lot.sell_price * quantity)} грн</span>
+              Базова ціна: <span className="font-semibold text-white">{new Intl.NumberFormat('uk-UA').format(lot.sell_price)} грн</span>
             </p>
+            <p>
+              Сума продажу: <span className="font-semibold text-white">{new Intl.NumberFormat('uk-UA').format(totalAmount)} грн</span>
+            </p>
+            {hasCustomPrice ? <p className="mt-1 text-xs text-amber-300">Застосовується ручна ціна для офлайн-продажу.</p> : null}
             <p className="mt-1 text-xs text-gray-500">
               Якщо телефон не вказано, замовлення буде створено як офлайн-продаж без контакту покупця.
             </p>

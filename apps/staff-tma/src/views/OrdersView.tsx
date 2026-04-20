@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStaffLots } from '../api/staffLots';
-import { useOrderMessages, useSendOrderBotMessage, useStaffOrders, useUpdateStaffOrderStatus } from '../api/staffOrders';
+import {
+  useOrderMessages,
+  useSendOrderBotMessage,
+  useStaffOrders,
+  useUpdateStaffOrderItemPrice,
+  useUpdateStaffOrderStatus,
+} from '../api/staffOrders';
 import type { LotInternalResponse } from '../types/lot';
 import type { OrderChannel, OrderMessageResponse, OrderResponse, OrderStatus } from '../types/order';
 
@@ -146,6 +152,21 @@ const getLotLabel = (lot?: LotInternalResponse): string => {
   return model ? `${lot.brand} ${model}` : lot.brand;
 };
 
+const getItemBasePrice = (lot?: LotInternalResponse): number | null => {
+  if (!lot || typeof lot.sell_price !== 'number' || Number.isNaN(lot.sell_price)) {
+    return null;
+  }
+  return lot.sell_price;
+};
+
+const getItemDiscountAmount = (item: OrderResponse['items'][number], lot?: LotInternalResponse): number => {
+  const basePrice = getItemBasePrice(lot);
+  if (basePrice === null || item.price >= basePrice) {
+    return 0;
+  }
+  return (basePrice - item.price) * item.quantity;
+};
+
 export default function OrdersView() {
   const [customerInput, setCustomerInput] = useState('');
   const [debouncedCustomer, setDebouncedCustomer] = useState('');
@@ -155,6 +176,8 @@ export default function OrdersView() {
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
   const [messageOrder, setMessageOrder] = useState<OrderResponse | null>(null);
   const [messageText, setMessageText] = useState('');
+  const [editingPriceItemId, setEditingPriceItemId] = useState<string | null>(null);
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -182,6 +205,7 @@ export default function OrdersView() {
   } = useOrderMessages(selectedOrder?.id ?? null);
 
   const updateStatusMutation = useUpdateStaffOrderStatus();
+  const updateOrderItemPriceMutation = useUpdateStaffOrderItemPrice();
   const sendOrderBotMessageMutation = useSendOrderBotMessage();
 
   const sortedOrders = useMemo(() => {
@@ -210,6 +234,33 @@ export default function OrdersView() {
     return [...orderMessages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   }, [orderMessages]);
 
+  useEffect(() => {
+    if (!selectedOrder) {
+      return;
+    }
+
+    const nextSelectedOrder = orders.find((order) => order.id === selectedOrder.id) ?? null;
+    if (nextSelectedOrder) {
+      setSelectedOrder(nextSelectedOrder);
+    }
+  }, [orders, selectedOrder]);
+
+  useEffect(() => {
+    if (!selectedOrder) {
+      setPriceDrafts({});
+      setEditingPriceItemId(null);
+      return;
+    }
+
+    setPriceDrafts((prev) => {
+      const nextDrafts: Record<string, string> = {};
+      for (const item of selectedOrder.items) {
+        nextDrafts[item.id] = prev[item.id] ?? String(item.price);
+      }
+      return nextDrafts;
+    });
+  }, [selectedOrder]);
+
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
     try {
       setUpdatingOrderId(orderId);
@@ -221,6 +272,33 @@ export default function OrdersView() {
       alert('Не вдалося змінити статус замовлення.');
     } finally {
       setUpdatingOrderId(null);
+    }
+  };
+
+  const handleItemPriceSave = async (order: OrderResponse, itemId: string) => {
+    const draftValue = priceDrafts[itemId] ?? '';
+    const nextPrice = Number(draftValue);
+
+    if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
+      alert('Вкажіть коректну ціну.');
+      return;
+    }
+
+    try {
+      setEditingPriceItemId(itemId);
+      const updatedOrder = await updateOrderItemPriceMutation.mutateAsync({
+        orderId: order.id,
+        itemId,
+        payload: {
+          price: nextPrice,
+          comment: 'Ручне коригування фактичної ціни офлайн-продажу',
+        },
+      });
+      setSelectedOrder(updatedOrder);
+    } catch {
+      alert('Не вдалося оновити ціну позиції.');
+    } finally {
+      setEditingPriceItemId(null);
     }
   };
 
@@ -507,14 +585,30 @@ export default function OrdersView() {
                 ))}
               </div>
 
-              <p className="text-sm font-semibold text-white">Позиції</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-white">Позиції</p>
+                {selectedOrder.channel === 'OFFLINE' ? (
+                  <p className="text-xs text-amber-300">Для офлайн-замовлень можна змінювати фактичну ціну продажу.</p>
+                ) : null}
+              </div>
               <div className="max-h-[45vh] space-y-2 overflow-y-auto pr-1">
                 {selectedOrder.items.map((item) => {
                   const lot = lotMap.get(item.lot_id);
                   const lotPhoto = lot?.photos?.[0];
+                  const isOfflineOrder = selectedOrder.channel === 'OFFLINE';
+                  const isPriceUpdating = editingPriceItemId === item.id;
+                  const currentDraftPrice = priceDrafts[item.id] ?? String(item.price);
+                  const basePrice = getItemBasePrice(lot);
+                  const hasDiscount = basePrice !== null && item.price < basePrice;
+                  const discountAmount = getItemDiscountAmount(item, lot);
 
                   return (
-                    <div key={`${selectedOrder.id}-${item.lot_id}`} className="rounded-xl border border-gray-800 bg-gray-950 p-3">
+                    <div
+                      key={item.id}
+                      className={`rounded-xl border p-3 ${
+                        hasDiscount ? 'border-amber-700/50 bg-amber-950/10' : 'border-gray-800 bg-gray-950'
+                      }`}
+                    >
                       <div className="flex items-start gap-3">
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-800 bg-gray-900">
                           {lotPhoto ? (
@@ -525,13 +619,72 @@ export default function OrdersView() {
                         </div>
 
                         <div className="min-w-0 flex-1 text-sm text-gray-300">
-                          <p className="font-semibold text-white">{getLotLabel(lot)}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-white">{getLotLabel(lot)}</p>
+                            {hasDiscount ? (
+                              <span className="rounded-full border border-amber-700/60 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+                                Знижка
+                              </span>
+                            ) : null}
+                          </div>
                           <p className="text-xs text-gray-500 break-all">Lot ID: {item.lot_id}</p>
                           <div className="mt-1 grid grid-cols-1 gap-1 sm:grid-cols-3">
                             <p>К-сть: <span className="font-semibold text-white">{item.quantity}</span></p>
                             <p>Ціна: <span className="font-semibold text-white">{formatMoney(item.price)}</span></p>
                             <p>Разом: <span className="font-semibold text-white">{formatMoney(item.total)}</span></p>
                           </div>
+
+                          {hasDiscount ? (
+                            <div className="mt-2 rounded-lg border border-amber-700/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                <p>
+                                  Стара ціна:{' '}
+                                  <span className="font-semibold line-through decoration-amber-300/70">
+                                    {formatMoney(basePrice)}
+                                  </span>
+                                </p>
+                                <p>
+                                  Нова ціна: <span className="font-semibold text-white">{formatMoney(item.price)}</span>
+                                </p>
+                                <p>
+                                  Знижка по позиції: <span className="font-semibold text-amber-200">{formatMoney(discountAmount)}</span>
+                                </p>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {isOfflineOrder ? (
+                            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,220px)_auto]">
+                              <label className="space-y-1">
+                                <span className="text-xs text-gray-400">Фактична ціна за 1 шт.</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  value={currentDraftPrice}
+                                  onChange={(event) =>
+                                    setPriceDrafts((prev) => ({
+                                      ...prev,
+                                      [item.id]: event.target.value,
+                                    }))
+                                  }
+                                  disabled={isPriceUpdating}
+                                  className="w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                />
+                              </label>
+
+                              <div className="flex items-end">
+                                <button
+                                  type="button"
+                                  disabled={isPriceUpdating || Number(currentDraftPrice) === item.price}
+                                  onClick={() => void handleItemPriceSave(selectedOrder, item.id)}
+                                  className="w-full rounded-lg border border-amber-700/70 bg-amber-900/30 px-3 py-2 text-sm font-semibold text-amber-200 transition hover:bg-amber-900/45 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {isPriceUpdating ? 'Збереження...' : 'Зберегти ціну'}
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     </div>
