@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@tire-crm/shared';
-import { extractPhotoUrl, moveItemByOffset, reorderItems } from './helpers';
+import { extractPhotoUrl, reorderItems } from './helpers';
 import type { LotFormState, PendingPhotoUpload, SetLotFormState, UploadPhotoResponse } from './types';
 
 type UseLotPhotoUploadArgs = {
@@ -170,16 +170,6 @@ export default function useLotPhotoUpload({ isSubmitting, setForm, setFormError 
     });
   };
 
-  const handlePendingPhotoShift = (pendingId: string, direction: -1 | 1) => {
-    setPendingPhotoUploads((prev) => {
-      const pendingItem = prev.find((item) => item.id === pendingId);
-      if (!pendingItem) {
-        return prev;
-      }
-      return moveItemByOffset(prev, pendingItem, direction);
-    });
-  };
-
   return {
     uploadPhotoMutation,
     isUploadingPhotos,
@@ -193,6 +183,5 @@ export default function useLotPhotoUpload({ isSubmitting, setForm, setFormError 
     handleDragOver,
     handleDragLeave,
     handlePendingPhotoMove,
-    handlePendingPhotoShift,
   };
 }
