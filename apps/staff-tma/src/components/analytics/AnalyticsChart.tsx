@@ -43,7 +43,7 @@ export default function AnalyticsChart({ data, hasPreviousPeriod }: AnalyticsCha
             stacked: false,
             reverse: false,
           }}
-          yFormat=" >-.2f"
+          yFormat="d"
           axisTop={null}
           axisRight={null}
           axisBottom={{
@@ -91,18 +91,18 @@ export default function AnalyticsChart({ data, hasPreviousPeriod }: AnalyticsCha
           pointBorderColor={{ from: 'serieColor' }}
           useMesh={true}
           tooltip={({ point }) => (
-            <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-white shadow-xl">
-              <div className="mb-1.5 font-semibold" style={{ color: point.seriesColor }}>
+            <div className="min-w-[140px] rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-white shadow-xl">
+              <div className="mb-1.5 border-b border-zinc-800 pb-1.5 font-semibold" style={{ color: point.seriesColor }}>
                 {point.seriesId}
               </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-4">
                   <span className="text-zinc-400">Дата:</span>
-                  <span>{point.data.xFormatted}</span>
+                  <span className="whitespace-nowrap font-medium">{point.data.xFormatted}</span>
                 </div>
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-4">
                   <span className="text-zinc-400">Кількість:</span>
-                  <span className="font-medium">{point.data.yFormatted}</span>
+                  <span className="whitespace-nowrap font-bold">{Number(point.data.y)}</span>
                 </div>
               </div>
             </div>
