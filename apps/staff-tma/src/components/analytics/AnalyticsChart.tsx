@@ -34,7 +34,7 @@ export default function AnalyticsChart({ data, hasPreviousPeriod }: AnalyticsCha
       <div style={{ height: '400px' }}>
         <ResponsiveLine
           data={data}
-          margin={{ top: 50, right: 20, bottom: 50, left: 50 }}
+          margin={{ top: 50, right: 20, bottom: 70, left: 50 }}
           xScale={{ type: 'point' }}
           yScale={{
             type: 'linear',
@@ -49,9 +49,16 @@ export default function AnalyticsChart({ data, hasPreviousPeriod }: AnalyticsCha
           axisBottom={{
             tickSize: 5,
             tickPadding: 5,
-            tickRotation: 0,
+            tickRotation: -45,
+            format: (value) => {
+              if (typeof value === 'string' && value.includes('-')) {
+                const parts = value.split('-');
+                if (parts.length === 3) return `${parts[2]}.${parts[1]}`;
+              }
+              return value;
+            },
             legend: 'Дата',
-            legendOffset: 36,
+            legendOffset: 55,
             legendPosition: 'middle',
           }}
           axisLeft={{
@@ -83,6 +90,23 @@ export default function AnalyticsChart({ data, hasPreviousPeriod }: AnalyticsCha
           pointBorderWidth={2}
           pointBorderColor={{ from: 'serieColor' }}
           useMesh={true}
+          tooltip={({ point }) => (
+            <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-white shadow-xl">
+              <div className="mb-1.5 font-semibold" style={{ color: point.seriesColor }}>
+                {point.seriesId}
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-zinc-400">Дата:</span>
+                  <span>{point.data.xFormatted}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-zinc-400">Кількість:</span>
+                  <span className="font-medium">{point.data.yFormatted}</span>
+                </div>
+              </div>
+            </div>
+          )}
           legends={
             hasPreviousPeriod
               ? [

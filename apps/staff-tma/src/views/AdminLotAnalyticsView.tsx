@@ -19,6 +19,7 @@ import {
 } from '../utils/adminLotAnalytics';
 import LotAnalyticsFilters from '../components/analytics/LotAnalyticsFilters';
 import AnalyticsChart from '../components/analytics/AnalyticsChart';
+import ConversionSection from '../components/analytics/ConversionSection';
 import TopLotsSection from '../components/analytics/TopLotsSection';
 
 export default function AdminLotAnalyticsView() {
@@ -360,36 +361,10 @@ export default function AdminLotAnalyticsView() {
 
             <AnalyticsChart data={nivoData} hasPreviousPeriod={Boolean(previousPeriodFilters)} />
 
-            <div className="rounded-xl border border-gray-800 bg-gray-950 p-3">
-              <div className="mb-3 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-                <p className="text-xs uppercase tracking-wider text-gray-400">
-                  Конверсія по {lotAnalyticsPeriodLabel}
-                </p>
-                <p className="text-[11px] text-gray-500">Замовлення / перегляди</p>
-              </div>
-              {preparedConversionRows.length === 0 ? (
-                <p className="text-sm text-gray-400">Немає подій за вибраний період.</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {preparedConversionRows.map((point) => (
-                    <div key={`conversion-${point.date}`} className="grid grid-cols-[92px_1fr] items-center gap-3">
-                      <div className="text-xs text-gray-400">{point.date}</div>
-                      <div className="flex items-center gap-3">
-                        <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-800">
-                          <div
-                            className="h-full rounded-full bg-fuchsia-500"
-                            style={{ width: point.conversionWidth }}
-                          />
-                        </div>
-                        <span className="min-w-[56px] text-right text-xs font-semibold text-white">
-                          {formatPercent(point.conversionRate)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ConversionSection
+              periodLabel={lotAnalyticsPeriodLabel}
+              rows={preparedConversionRows}
+            />
 
             <TopLotsSection
               activeTopSection={activeTopSection}
