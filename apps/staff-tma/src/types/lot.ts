@@ -18,6 +18,8 @@ export interface LotParams {
     dia?: number;
     diameter?: number;
     et?: number;
+    fastener_color?: string;
+    fastener_length?: string;
     fastener_type?: FastenerType;
     is_run_flat?: boolean;
     is_spiked?: boolean;
@@ -33,9 +35,11 @@ export interface LotParams {
     season?: LotSeason;
     spacer_thickness?: number;
     spacer_type?: SpacerType;
+    thread_pitch?: string;
     thread_size?: string;
     tire_terrain?: TireTerrain;
     width?: number;
+    wrench_size?: string;
 }
 
 // Расширенная модель для персонала (включает себестоимость и склад)
@@ -99,7 +103,11 @@ export interface StaffLotFilters {
     accessory_category: '' | AccessoryCategory;
     fastener_type: '' | FastenerType;
     thread_size: string;
+    thread_pitch: string;
+    fastener_length: string;
     seat_type: string;
+    fastener_color: string;
+    wrench_size: string;
     ring_inner_diameter: number | '';
     ring_outer_diameter: number | '';
     spacer_type: '' | SpacerType;
@@ -132,7 +140,11 @@ export const defaultStaffLotFilters: StaffLotFilters = {
     accessory_category: '',
     fastener_type: '',
     thread_size: '',
+    thread_pitch: '',
+    fastener_length: '',
     seat_type: '',
+    fastener_color: '',
+    wrench_size: '',
     ring_inner_diameter: '',
     ring_outer_diameter: '',
     spacer_type: '',

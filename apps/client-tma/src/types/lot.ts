@@ -16,6 +16,8 @@ export interface LotParams {
     dia?: number;
     diameter?: number;
     et?: number;
+    fastener_color?: string;
+    fastener_length?: string;
     fastener_type?: FastenerType;
     is_run_flat?: boolean;
     is_spiked?: boolean;
@@ -31,9 +33,11 @@ export interface LotParams {
     season?: string; // SUMMER, WINTER, ALL_SEASON
     spacer_thickness?: number;
     spacer_type?: SpacerType;
+    thread_pitch?: string;
     thread_size?: string;
     tire_terrain?: TireTerrain;
     width?: number;
+    wrench_size?: string;
 }
 
 export interface LotPublicResponse {

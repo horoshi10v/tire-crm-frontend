@@ -114,8 +114,12 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                                         onChange={(value) => setFilter('fastener_type', value)}
                                         options={fastenerTypeOptions}
                                     />
-                                    <input type="text" placeholder="Різьба, напр. M12x1.5" value={filters.thread_size} onChange={(e) => setFilter('thread_size', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
-                                    <input type="text" placeholder="Тип посадки" value={filters.seat_type} onChange={(e) => setFilter('seat_type', e.target.value)} className="col-span-2 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="text" placeholder="Розмір, напр. M12" value={filters.thread_size} onChange={(e) => setFilter('thread_size', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="text" placeholder="Крок різьби, напр. 1.25" value={filters.thread_pitch} onChange={(e) => setFilter('thread_pitch', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="text" placeholder="Довжина, напр. 35 мм" value={filters.fastener_length} onChange={(e) => setFilter('fastener_length', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="text" placeholder="Тип посадки" value={filters.seat_type} onChange={(e) => setFilter('seat_type', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="text" placeholder="Колір, напр. чорний" value={filters.fastener_color} onChange={(e) => setFilter('fastener_color', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="text" placeholder="Ключ, напр. 17" value={filters.wrench_size} onChange={(e) => setFilter('wrench_size', e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
                                 </div>
                             ) : null}
 

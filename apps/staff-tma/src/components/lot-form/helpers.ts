@@ -142,7 +142,11 @@ export const createInitialState = (lot: LotInternalResponse | null): LotFormStat
     accessory_category: normalizeAccessoryCategory(lot?.params?.accessory_category),
     fastener_type: normalizeFastenerType(lot?.params?.fastener_type),
     thread_size: lot?.params?.thread_size ?? '',
+    thread_pitch: lot?.params?.thread_pitch ?? '',
+    fastener_length: lot?.params?.fastener_length ?? '',
     seat_type: lot?.params?.seat_type ?? '',
+    fastener_color: lot?.params?.fastener_color ?? '',
+    wrench_size: lot?.params?.wrench_size ?? '',
     ring_inner_diameter: toInputNumber(lot?.params?.ring_inner_diameter),
     ring_outer_diameter: toInputNumber(lot?.params?.ring_outer_diameter),
     spacer_type: normalizeSpacerType(lot?.params?.spacer_type),
@@ -171,7 +175,11 @@ export const hasMeaningfulParams = (params: LotFormState['params']): boolean => 
       params.accessory_category ||
       params.fastener_type ||
       params.thread_size.trim() ||
+      params.thread_pitch.trim() ||
+      params.fastener_length.trim() ||
       params.seat_type.trim() ||
+      params.fastener_color.trim() ||
+      params.wrench_size.trim() ||
       params.ring_inner_diameter.trim() ||
       params.ring_outer_diameter.trim() ||
       params.spacer_type ||
@@ -212,7 +220,11 @@ export const buildParamsPayload = (params: LotFormState['params']): LotParams =>
   if (params.accessory_category) payload.accessory_category = params.accessory_category;
   if (params.fastener_type) payload.fastener_type = params.fastener_type;
   if (params.thread_size.trim()) payload.thread_size = params.thread_size.trim();
+  if (params.thread_pitch.trim()) payload.thread_pitch = params.thread_pitch.trim();
+  if (params.fastener_length.trim()) payload.fastener_length = params.fastener_length.trim();
   if (params.seat_type.trim()) payload.seat_type = params.seat_type.trim();
+  if (params.fastener_color.trim()) payload.fastener_color = params.fastener_color.trim();
+  if (params.wrench_size.trim()) payload.wrench_size = params.wrench_size.trim();
   if (params.ring_inner_diameter.trim()) payload.ring_inner_diameter = toDecimal(params.ring_inner_diameter);
   if (params.ring_outer_diameter.trim()) payload.ring_outer_diameter = toDecimal(params.ring_outer_diameter);
   if (params.spacer_type) payload.spacer_type = params.spacer_type;

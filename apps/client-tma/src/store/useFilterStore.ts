@@ -23,7 +23,11 @@ export interface LotFilters {
     accessory_category: string;
     fastener_type: string;
     thread_size: string;
+    thread_pitch: string;
+    fastener_length: string;
     seat_type: string;
+    fastener_color: string;
+    wrench_size: string;
     ring_inner_diameter: number | '';
     ring_outer_diameter: number | '';
     spacer_type: string;
@@ -60,7 +64,11 @@ const defaultFilters: LotFilters = {
     accessory_category: '',
     fastener_type: '',
     thread_size: '',
+    thread_pitch: '',
+    fastener_length: '',
     seat_type: '',
+    fastener_color: '',
+    wrench_size: '',
     ring_inner_diameter: '',
     ring_outer_diameter: '',
     spacer_type: '',

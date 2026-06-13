@@ -88,7 +88,11 @@ export function useStaffLots(
             if (normalizedFilters.accessory_category) params.accessory_category = normalizedFilters.accessory_category;
             if (normalizedFilters.fastener_type) params.fastener_type = normalizedFilters.fastener_type;
             if (normalizedFilters.thread_size?.trim()) params.thread_size = normalizedFilters.thread_size.trim();
+            if (normalizedFilters.thread_pitch?.trim()) params.thread_pitch = normalizedFilters.thread_pitch.trim();
+            if (normalizedFilters.fastener_length?.trim()) params.fastener_length = normalizedFilters.fastener_length.trim();
             if (normalizedFilters.seat_type?.trim()) params.seat_type = normalizedFilters.seat_type.trim();
+            if (normalizedFilters.fastener_color?.trim()) params.fastener_color = normalizedFilters.fastener_color.trim();
+            if (normalizedFilters.wrench_size?.trim()) params.wrench_size = normalizedFilters.wrench_size.trim();
             if (normalizedFilters.ring_inner_diameter !== '' && normalizedFilters.ring_inner_diameter !== undefined) {
                 params.ring_inner_diameter = normalizedFilters.ring_inner_diameter;
             }
@@ -138,7 +142,11 @@ export function useStaffLotSuggestions(filters: Partial<StaffLotFilters>, limit 
             if (filters.accessory_category) params.accessory_category = filters.accessory_category;
             if (filters.fastener_type) params.fastener_type = filters.fastener_type;
             if (filters.thread_size?.trim()) params.thread_size = filters.thread_size.trim();
+            if (filters.thread_pitch?.trim()) params.thread_pitch = filters.thread_pitch.trim();
+            if (filters.fastener_length?.trim()) params.fastener_length = filters.fastener_length.trim();
             if (filters.seat_type?.trim()) params.seat_type = filters.seat_type.trim();
+            if (filters.fastener_color?.trim()) params.fastener_color = filters.fastener_color.trim();
+            if (filters.wrench_size?.trim()) params.wrench_size = filters.wrench_size.trim();
             if (filters.ring_inner_diameter !== '' && filters.ring_inner_diameter !== undefined) params.ring_inner_diameter = filters.ring_inner_diameter;
             if (filters.ring_outer_diameter !== '' && filters.ring_outer_diameter !== undefined) params.ring_outer_diameter = filters.ring_outer_diameter;
             if (filters.spacer_type) params.spacer_type = filters.spacer_type;

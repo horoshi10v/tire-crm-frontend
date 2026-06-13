@@ -131,7 +131,11 @@ export const buildPriceTagDetails = (
       subtitle: getFastenerTypeLabel(lot.params?.fastener_type) || 'Кріплення',
       meta: [
         lot.params?.thread_size ?? '',
+        lot.params?.thread_pitch ?? '',
+        lot.params?.fastener_length ?? '',
         lot.params?.seat_type ?? '',
+        lot.params?.fastener_color ?? '',
+        lot.params?.wrench_size ?? '',
         lot.params?.country_of_origin ?? '',
         lot.params?.package_quantity ? `Комплект ${lot.params.package_quantity} шт.` : '',
       ].filter(Boolean),

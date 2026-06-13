@@ -65,7 +65,11 @@ export type LotFormState = {
     accessory_category: '' | AccessoryCategory;
     fastener_type: '' | FastenerType;
     thread_size: string;
+    thread_pitch: string;
+    fastener_length: string;
     seat_type: string;
+    fastener_color: string;
+    wrench_size: string;
     ring_inner_diameter: string;
     ring_outer_diameter: string;
     spacer_type: '' | SpacerType;

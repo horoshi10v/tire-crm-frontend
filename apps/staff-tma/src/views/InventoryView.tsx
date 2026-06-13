@@ -68,7 +68,11 @@ const activeFiltersCount = (filters: StaffLotFilters): number => {
     filters.accessory_category !== '',
     filters.fastener_type !== '',
     filters.thread_size.trim() !== '',
+    filters.thread_pitch.trim() !== '',
+    filters.fastener_length.trim() !== '',
     filters.seat_type.trim() !== '',
+    filters.fastener_color.trim() !== '',
+    filters.wrench_size.trim() !== '',
     filters.ring_inner_diameter !== '',
     filters.ring_outer_diameter !== '',
     filters.spacer_type !== '',
@@ -151,7 +155,19 @@ const lotMatchesFilters = (lot: LotInternalResponse, search: string, filters: St
   if (filters.thread_size && !(lot.params?.thread_size ?? '').toLowerCase().includes(filters.thread_size.toLowerCase())) {
     return false;
   }
+  if (filters.thread_pitch && !(lot.params?.thread_pitch ?? '').toLowerCase().includes(filters.thread_pitch.toLowerCase())) {
+    return false;
+  }
+  if (filters.fastener_length && !(lot.params?.fastener_length ?? '').toLowerCase().includes(filters.fastener_length.toLowerCase())) {
+    return false;
+  }
   if (filters.seat_type && !(lot.params?.seat_type ?? '').toLowerCase().includes(filters.seat_type.toLowerCase())) {
+    return false;
+  }
+  if (filters.fastener_color && !(lot.params?.fastener_color ?? '').toLowerCase().includes(filters.fastener_color.toLowerCase())) {
+    return false;
+  }
+  if (filters.wrench_size && !(lot.params?.wrench_size ?? '').toLowerCase().includes(filters.wrench_size.toLowerCase())) {
     return false;
   }
   if (filters.ring_inner_diameter !== '' && lot.params?.ring_inner_diameter !== filters.ring_inner_diameter) {

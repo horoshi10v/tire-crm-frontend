@@ -140,8 +140,12 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
                 <p>Антипрокол: {lot.params.anti_puncture ? 'Так' : 'Ні'}</p>
                 <p>Категорія: {getAccessoryCategoryLabel(lot.params.accessory_category)}</p>
                 <p>Тип кріплення: {lot.params.fastener_type ? lotFastenerTypeLabels[lot.params.fastener_type] ?? lot.params.fastener_type : '—'}</p>
-                <p>Різьба: {lot.params.thread_size ?? '—'}</p>
+                <p>Розмір: {lot.params.thread_size ?? '—'}</p>
+                <p>Крок різьби: {lot.params.thread_pitch ?? '—'}</p>
+                <p>Довжина: {lot.params.fastener_length ?? '—'}</p>
                 <p>Посадка: {lot.params.seat_type ?? '—'}</p>
+                <p>Колір: {lot.params.fastener_color ?? '—'}</p>
+                <p>Ключ: {lot.params.wrench_size ?? '—'}</p>
                 <p>Кільце внутр./зовн.: {formatLotRingSizeLabel(lot.params.ring_inner_diameter, lot.params.ring_outer_diameter) || '—'}</p>
                 <p>Тип проставки: {lot.params.spacer_type ? lotSpacerTypeLabels[lot.params.spacer_type] ?? lot.params.spacer_type : '—'}</p>
                 <p>Товщина проставки: {formatLotMillimeterValue(lot.params.spacer_thickness) || '—'}</p>

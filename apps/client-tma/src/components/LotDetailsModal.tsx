@@ -123,8 +123,12 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
         ...(currentLot.params?.fastener_type
             ? [{ label: 'Тип кріплення', value: lotFastenerTypeLabels[currentLot.params.fastener_type] ?? currentLot.params.fastener_type }]
             : []),
-        ...(currentLot.params?.thread_size ? [{ label: 'Різьба', value: currentLot.params.thread_size }] : []),
+        ...(currentLot.params?.thread_size ? [{ label: 'Розмір', value: currentLot.params.thread_size }] : []),
+        ...(currentLot.params?.thread_pitch ? [{ label: 'Крок різьби', value: currentLot.params.thread_pitch }] : []),
+        ...(currentLot.params?.fastener_length ? [{ label: 'Довжина', value: currentLot.params.fastener_length }] : []),
         ...(currentLot.params?.seat_type ? [{ label: 'Посадка', value: currentLot.params.seat_type }] : []),
+        ...(currentLot.params?.fastener_color ? [{ label: 'Колір', value: currentLot.params.fastener_color }] : []),
+        ...(currentLot.params?.wrench_size ? [{ label: 'Ключ', value: currentLot.params.wrench_size }] : []),
         ...(currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter
             ? [{ label: 'Розмір кільця', value: formatLotRingSizeLabel(currentLot.params.ring_inner_diameter, currentLot.params.ring_outer_diameter) }]
             : []),

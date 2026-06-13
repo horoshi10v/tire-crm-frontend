@@ -146,9 +146,23 @@ export default function InventoryFiltersDrawer({
                   </select>
                   <input
                     type="text"
-                    placeholder="Різьба"
+                    placeholder="Розмір, напр. M12"
                     value={filters.thread_size}
                     onChange={(event) => onSetFilter('thread_size', event.target.value)}
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Крок різьби, напр. 1.25"
+                    value={filters.thread_pitch}
+                    onChange={(event) => onSetFilter('thread_pitch', event.target.value)}
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Довжина, напр. 35 мм"
+                    value={filters.fastener_length}
+                    onChange={(event) => onSetFilter('fastener_length', event.target.value)}
                     className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
                   />
                   <input
@@ -156,7 +170,21 @@ export default function InventoryFiltersDrawer({
                     placeholder="Тип посадки"
                     value={filters.seat_type}
                     onChange={(event) => onSetFilter('seat_type', event.target.value)}
-                    className="col-span-2 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Колір, напр. чорний"
+                    value={filters.fastener_color}
+                    onChange={(event) => onSetFilter('fastener_color', event.target.value)}
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Ключ, напр. 17"
+                    value={filters.wrench_size}
+                    onChange={(event) => onSetFilter('wrench_size', event.target.value)}
+                    className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-blue-500"
                   />
                 </div>
               ) : null}

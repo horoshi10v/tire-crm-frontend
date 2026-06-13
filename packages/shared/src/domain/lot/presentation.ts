@@ -13,6 +13,8 @@ export type LotParams = {
   is_run_flat?: boolean;
   is_spiked?: boolean;
   is_c_type?: boolean;
+  fastener_color?: string;
+  fastener_length?: string;
   package_quantity?: number;
   pcd?: string;
   profile?: number;
@@ -24,9 +26,11 @@ export type LotParams = {
   season?: 'SUMMER' | 'WINTER' | 'ALL_SEASON' | string;
   spacer_thickness?: number;
   spacer_type?: 'ADAPTER' | 'EXTENDER';
+  thread_pitch?: string;
   thread_size?: string;
   tire_terrain?: 'AT' | 'MT' | string;
   width?: number;
+  wrench_size?: string;
 };
 
 export type LotLike = {
@@ -277,6 +281,18 @@ export const getLotTagLabels = (lot: LotLike): string[] => {
   if (params?.seat_type) {
     tags.push(params.seat_type);
   }
+  if (params?.thread_pitch) {
+    tags.push(params.thread_pitch);
+  }
+  if (params?.fastener_length) {
+    tags.push(params.fastener_length);
+  }
+  if (params?.fastener_color) {
+    tags.push(params.fastener_color);
+  }
+  if (params?.wrench_size) {
+    tags.push(params.wrench_size);
+  }
   if (params?.spacer_thickness) {
     tags.push(formatLotMillimeterValue(params.spacer_thickness));
   }
@@ -344,7 +360,11 @@ export const getLotSearchableText = (lot: LotLike): string => {
     lotFastenerTypeLabels[params?.fastener_type ?? ''] ?? '',
     lotSpacerTypeLabels[params?.spacer_type ?? ''] ?? '',
     params?.thread_size ?? '',
+    params?.thread_pitch ?? '',
+    params?.fastener_length ?? '',
     params?.seat_type ?? '',
+    params?.fastener_color ?? '',
+    params?.wrench_size ?? '',
     params?.ring_inner_diameter ? String(params.ring_inner_diameter) : '',
     params?.ring_outer_diameter ? String(params.ring_outer_diameter) : '',
     params?.spacer_thickness ? String(params.spacer_thickness) : '',

@@ -57,7 +57,7 @@ export default function ParamsSection({ form, setForm }: Props) {
           </div>
 
           {form.params.accessory_category === 'FASTENERS' ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="space-y-1">
                 <span className="text-sm text-gray-300">Тип кріплення</span>
                 <select
@@ -80,12 +80,39 @@ export default function ParamsSection({ form, setForm }: Props) {
               </label>
 
               <label className="space-y-1">
-                <span className="text-sm text-gray-300">Розмір різьби</span>
+                <span className="text-sm text-gray-300">Розмір</span>
                 <input
                   type="text"
                   value={form.params.thread_size}
+                  placeholder="Напр. M12 / M14"
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, params: { ...prev.params, thread_size: event.target.value } }))
+                  }
+                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-sm text-gray-300">Крок різьби</span>
+                <input
+                  type="text"
+                  value={form.params.thread_pitch}
+                  placeholder="Напр. 1.5 / 1.25"
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, params: { ...prev.params, thread_pitch: event.target.value } }))
+                  }
+                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-sm text-gray-300">Довжина</span>
+                <input
+                  type="text"
+                  value={form.params.fastener_length}
+                  placeholder="Напр. 35 мм"
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, params: { ...prev.params, fastener_length: event.target.value } }))
                   }
                   className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
                 />
@@ -96,8 +123,35 @@ export default function ParamsSection({ form, setForm }: Props) {
                 <input
                   type="text"
                   value={form.params.seat_type}
+                  placeholder="Напр. сфера / конус"
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, params: { ...prev.params, seat_type: event.target.value } }))
+                  }
+                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-sm text-gray-300">Колір</span>
+                <input
+                  type="text"
+                  value={form.params.fastener_color}
+                  placeholder="Напр. хром / сірий / чорний"
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, params: { ...prev.params, fastener_color: event.target.value } }))
+                  }
+                  className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
+                />
+              </label>
+
+              <label className="space-y-1">
+                <span className="text-sm text-gray-300">Ключ</span>
+                <input
+                  type="text"
+                  value={form.params.wrench_size}
+                  placeholder="Напр. 17 / 19 / 21 / 22"
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, params: { ...prev.params, wrench_size: event.target.value } }))
                   }
                   className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-blue-500"
                 />
