@@ -1,3 +1,9 @@
+import {
+  formatLotMillimeterValue,
+  formatLotNumericValue,
+  formatLotRingSizeLabel,
+  getLotSizeLabel,
+} from '@tire-crm/shared';
 import type { LotInternalResponse } from '../types/lot';
 
 export type PriceTagPrintItem = {
@@ -76,7 +82,7 @@ export const buildPriceTagDetails = (
   if (lot.type === 'TIRE') {
     const subtitle =
       lot.params?.width && lot.params?.profile && lot.params?.diameter
-        ? `${lot.params.width}/${lot.params.profile} R${lot.params.diameter}`
+        ? getLotSizeLabel(lot)
         : 'Шина';
     const conditionLabel = getConditionLabel(lot.condition);
     const technicalLine = compactJoin(
@@ -99,15 +105,15 @@ export const buildPriceTagDetails = (
 
   if (lot.type === 'RIM') {
     const subtitle = compactJoin(
-      lot.params?.width ? `${lot.params.width}J` : '',
-      lot.params?.diameter ? `R${lot.params.diameter}` : '',
+      lot.params?.width ? `${formatLotNumericValue(lot.params.width)}J` : '',
+      lot.params?.diameter ? `R${formatLotNumericValue(lot.params.diameter)}` : '',
     ) || 'Диск';
     const technicalLine = slashJoin(
-      lot.params?.diameter ? `R${lot.params.diameter}` : '',
-      lot.params?.width ? `${lot.params.width}J` : '',
+      lot.params?.diameter ? `R${formatLotNumericValue(lot.params.diameter)}` : '',
+      lot.params?.width ? `${formatLotNumericValue(lot.params.width)}J` : '',
       lot.params?.pcd ? `PCD ${lot.params.pcd}` : '',
-      lot.params?.et || lot.params?.et === 0 ? `ET ${lot.params.et}` : '',
-      lot.params?.dia !== undefined ? `DIA ${lot.params.dia}` : '',
+      lot.params?.et || lot.params?.et === 0 ? `ET ${formatLotNumericValue(lot.params.et)}` : '',
+      lot.params?.dia !== undefined ? `DIA ${formatLotNumericValue(lot.params.dia)}` : '',
     );
     const conditionLabel = getConditionLabel(lot.condition);
     const meta = [
@@ -137,7 +143,7 @@ export const buildPriceTagDetails = (
       kind: 'accessory',
       subtitle:
         lot.params?.ring_inner_diameter && lot.params?.ring_outer_diameter
-          ? `${lot.params.ring_inner_diameter}/${lot.params.ring_outer_diameter} мм`
+          ? formatLotRingSizeLabel(lot.params.ring_inner_diameter, lot.params.ring_outer_diameter)
           : getAccessoryCategoryLabel(accessoryCategory),
       meta: [lot.params?.country_of_origin ?? ''].filter(Boolean),
     };
@@ -148,7 +154,7 @@ export const buildPriceTagDetails = (
       kind: 'accessory',
       subtitle: compactJoin(
         getSpacerTypeLabel(lot.params?.spacer_type),
-        lot.params?.spacer_thickness ? `${lot.params.spacer_thickness} мм` : '',
+        formatLotMillimeterValue(lot.params?.spacer_thickness),
       ) || 'Проставки',
       meta: [lot.params?.country_of_origin ?? ''].filter(Boolean),
     };

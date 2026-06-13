@@ -165,6 +165,7 @@ export default function InventoryFiltersDrawer({
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
+                    step="0.1"
                     placeholder="Внутр. діаметр"
                     value={filters.ring_inner_diameter}
                     onChange={(event) => onSetFilter('ring_inner_diameter', event.target.value ? Number(event.target.value) : '')}
@@ -172,6 +173,7 @@ export default function InventoryFiltersDrawer({
                   />
                   <input
                     type="number"
+                    step="0.1"
                     placeholder="Зовн. діаметр"
                     value={filters.ring_outer_diameter}
                     onChange={(event) => onSetFilter('ring_outer_diameter', event.target.value ? Number(event.target.value) : '')}
@@ -193,6 +195,7 @@ export default function InventoryFiltersDrawer({
                   </select>
                   <input
                     type="number"
+                    step="0.1"
                     placeholder="Товщина, мм"
                     value={filters.spacer_thickness}
                     onChange={(event) => onSetFilter('spacer_thickness', event.target.value ? Number(event.target.value) : '')}
@@ -248,6 +251,7 @@ export default function InventoryFiltersDrawer({
                 <div className="grid grid-cols-3 gap-2">
                   <input
                     type="number"
+                    step="0.1"
                     placeholder="Шир"
                     value={filters.width}
                     onChange={(event) => onSetFilter('width', event.target.value ? Number(event.target.value) : '')}
@@ -255,6 +259,7 @@ export default function InventoryFiltersDrawer({
                   />
                   <input
                     type="number"
+                    step="0.1"
                     placeholder="Проф"
                     value={filters.profile}
                     onChange={(event) => onSetFilter('profile', event.target.value ? Number(event.target.value) : '')}
@@ -262,6 +267,7 @@ export default function InventoryFiltersDrawer({
                   />
                   <input
                     type="number"
+                    step="0.1"
                     placeholder="Радіус"
                     value={filters.diameter}
                     onChange={(event) => onSetFilter('diameter', event.target.value ? Number(event.target.value) : '')}

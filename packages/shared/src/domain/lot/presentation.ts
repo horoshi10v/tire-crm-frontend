@@ -106,19 +106,43 @@ export const lotInventoryCompactStatusLabels: Record<string, string> = {
 
 const unique = (items: string[]) => [...new Set(items.filter(Boolean))];
 
+export const formatLotNumericValue = (value?: number | null): string => {
+  if (value === undefined || value === null || Number.isNaN(value)) {
+    return '';
+  }
+
+  return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, '');
+};
+
+export const formatLotMillimeterValue = (value?: number | null): string => {
+  const formattedValue = formatLotNumericValue(value);
+  return formattedValue ? `${formattedValue} мм` : '';
+};
+
+export const formatLotRingSizeLabel = (inner?: number | null, outer?: number | null): string => {
+  const formattedInner = formatLotNumericValue(inner);
+  const formattedOuter = formatLotNumericValue(outer);
+
+  if (!formattedInner || !formattedOuter) {
+    return '';
+  }
+
+  return `${formattedInner}/${formattedOuter} мм`;
+};
+
 export const getLotSizeLabel = (lot: LotLike): string => {
   const params = lot.params;
 
   if (params?.width && params.profile && params.diameter) {
-    return `${params.width}/${params.profile} R${params.diameter}`;
+    return `${formatLotNumericValue(params.width)}/${formatLotNumericValue(params.profile)} R${formatLotNumericValue(params.diameter)}`;
   }
 
   if (lot.type === 'RIM' && params?.diameter) {
-    return `R${params.diameter}`;
+    return `R${formatLotNumericValue(params.diameter)}`;
   }
 
   if (params?.ring_inner_diameter && params.ring_outer_diameter) {
-    return `${params.ring_inner_diameter}/${params.ring_outer_diameter} мм`;
+    return formatLotRingSizeLabel(params.ring_inner_diameter, params.ring_outer_diameter);
   }
 
   if (params?.thread_size) {
@@ -196,10 +220,10 @@ export const getLotLabel = (lot?: Pick<LotLike, 'brand' | 'model'>): string => {
 export const getLotPrimaryLabel = (lot: LotLike): string => {
   if (lot.type === 'RIM') {
     const parts = [
-      lot.params?.width ? `${lot.params.width}J` : '',
-      lot.params?.diameter ? `R${lot.params.diameter}` : '',
+      lot.params?.width ? `${formatLotNumericValue(lot.params.width)}J` : '',
+      lot.params?.diameter ? `R${formatLotNumericValue(lot.params.diameter)}` : '',
       lot.params?.pcd ? `PCD ${lot.params.pcd}` : '',
-      lot.params?.et !== undefined ? `ET ${lot.params.et}` : '',
+      lot.params?.et !== undefined ? `ET ${formatLotNumericValue(lot.params.et)}` : '',
       lot.brand?.trim(),
       lot.model?.trim(),
       lot.params?.production_year ? String(lot.params.production_year) : '',
@@ -236,7 +260,7 @@ export const getLotTagLabels = (lot: LotLike): string[] => {
     tags.push(params.country_of_origin);
   }
   if (lot.type === 'RIM' && params?.dia !== undefined) {
-    tags.push(`DIA ${params.dia}`);
+    tags.push(`DIA ${formatLotNumericValue(params.dia)}`);
   }
   if (lot.type) {
     tags.push(lotTypeLabels[lot.type] ?? lot.type);
@@ -254,7 +278,7 @@ export const getLotTagLabels = (lot: LotLike): string[] => {
     tags.push(params.seat_type);
   }
   if (params?.spacer_thickness) {
-    tags.push(`${params.spacer_thickness} мм`);
+    tags.push(formatLotMillimeterValue(params.spacer_thickness));
   }
   if (params?.package_quantity) {
     tags.push(`Комплект ${params.package_quantity} шт.`);

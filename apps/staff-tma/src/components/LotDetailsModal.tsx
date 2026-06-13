@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import {
+  formatLotMillimeterValue,
+  formatLotNumericValue,
+  formatLotRingSizeLabel,
   formatMoney,
   lotAccessoryCategoryLabels,
   getLotConditionLabel,
@@ -118,13 +121,13 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
             <div className="rounded-xl border border-gray-800 bg-gray-950 p-3 text-sm">
               <p className="mb-2 text-xs uppercase tracking-wider text-gray-400">Параметри</p>
               <div className="grid grid-cols-2 gap-2 text-gray-200">
-                <p>{lot.type === 'RIM' ? 'Ширина J' : 'Ширина'}: {lot.params.width ?? '—'}</p>
-                <p>Профіль: {lot.params.profile ?? '—'}</p>
-                <p>Радіус R: {lot.params.diameter ?? '—'}</p>
+                <p>{lot.type === 'RIM' ? 'Ширина J' : 'Ширина'}: {formatLotNumericValue(lot.params.width) || '—'}</p>
+                <p>Профіль: {formatLotNumericValue(lot.params.profile) || '—'}</p>
+                <p>Радіус R: {formatLotNumericValue(lot.params.diameter) || '—'}</p>
                 <p>Сплав: {getRimMaterialLabel(lot.params.rim_material)}</p>
                 <p>PCD: {lot.params.pcd ?? '—'}</p>
-                <p>DIA: {lot.params.dia ?? '—'}</p>
-                <p>ET: {lot.params.et ?? '—'}</p>
+                <p>DIA: {formatLotNumericValue(lot.params.dia) || '—'}</p>
+                <p>ET: {formatLotNumericValue(lot.params.et) || '—'}</p>
                 <p>Рік випуску: {lot.params.production_year ?? '—'}</p>
                 <p>Країна виробник: {lot.params.country_of_origin ?? '—'}</p>
                 <p>
@@ -139,9 +142,9 @@ export default function LotDetailsModal({ lot, warehouseLabel, onClose, onEdit, 
                 <p>Тип кріплення: {lot.params.fastener_type ? lotFastenerTypeLabels[lot.params.fastener_type] ?? lot.params.fastener_type : '—'}</p>
                 <p>Різьба: {lot.params.thread_size ?? '—'}</p>
                 <p>Посадка: {lot.params.seat_type ?? '—'}</p>
-                <p>Кільце внутр./зовн.: {lot.params.ring_inner_diameter && lot.params.ring_outer_diameter ? `${lot.params.ring_inner_diameter}/${lot.params.ring_outer_diameter} мм` : '—'}</p>
+                <p>Кільце внутр./зовн.: {formatLotRingSizeLabel(lot.params.ring_inner_diameter, lot.params.ring_outer_diameter) || '—'}</p>
                 <p>Тип проставки: {lot.params.spacer_type ? lotSpacerTypeLabels[lot.params.spacer_type] ?? lot.params.spacer_type : '—'}</p>
-                <p>Товщина проставки: {lot.params.spacer_thickness ? `${lot.params.spacer_thickness} мм` : '—'}</p>
+                <p>Товщина проставки: {formatLotMillimeterValue(lot.params.spacer_thickness) || '—'}</p>
                 <p>Кількість у комплекті: {lot.params.package_quantity ?? '—'}</p>
               </div>
             </div>

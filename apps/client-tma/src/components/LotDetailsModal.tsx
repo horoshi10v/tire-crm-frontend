@@ -1,6 +1,9 @@
 // apps/client-tma/src/components/LotDetailsModal.tsx
 import { useState, useEffect } from 'react';
 import {
+    formatLotMillimeterValue,
+    formatLotNumericValue,
+    formatLotRingSizeLabel,
     formatMoney,
     getLotConditionLabel,
     getLotPrimaryLabel,
@@ -96,13 +99,13 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
         .join(' · ');
     const specRows: SpecRow[] = [
         ...(sizeLabel ? [{ label: currentLot.type === 'RIM' ? 'Радіус R' : 'Розмір', value: sizeLabel }] : []),
-        ...(currentLot.type === 'RIM' && currentLot.params?.width ? [{ label: 'Ширина J', value: `${currentLot.params.width}` }] : []),
+        ...(currentLot.type === 'RIM' && currentLot.params?.width ? [{ label: 'Ширина J', value: `${formatLotNumericValue(currentLot.params.width)}` }] : []),
         ...(currentLot.type === 'RIM' && currentLot.params?.rim_material
             ? [{ label: 'Сплав', value: lotRimMaterialLabels[currentLot.params.rim_material] ?? currentLot.params.rim_material }]
             : []),
         ...(currentLot.params?.pcd ? [{ label: 'PCD', value: currentLot.params.pcd }] : []),
-        ...(currentLot.params?.dia ? [{ label: 'DIA', value: `${currentLot.params.dia}` }] : []),
-        ...(currentLot.params?.et || currentLot.params?.et === 0 ? [{ label: 'ET', value: `${currentLot.params.et}` }] : []),
+        ...(currentLot.params?.dia ? [{ label: 'DIA', value: formatLotNumericValue(currentLot.params.dia) }] : []),
+        ...(currentLot.params?.et || currentLot.params?.et === 0 ? [{ label: 'ET', value: formatLotNumericValue(currentLot.params.et) }] : []),
         { label: 'В наявності', value: `${currentLot.current_quantity} шт.` },
         ...(currentLot.params?.season
             ? [{ label: 'Сезон', value: getLotSeasonLabel(currentLot.params.season) }]
@@ -123,12 +126,12 @@ export const LotDetailsModal = ({ lot, onClose, onAddedToCart, onAddToCartLimitR
         ...(currentLot.params?.thread_size ? [{ label: 'Різьба', value: currentLot.params.thread_size }] : []),
         ...(currentLot.params?.seat_type ? [{ label: 'Посадка', value: currentLot.params.seat_type }] : []),
         ...(currentLot.params?.ring_inner_diameter && currentLot.params?.ring_outer_diameter
-            ? [{ label: 'Розмір кільця', value: `${currentLot.params.ring_inner_diameter}/${currentLot.params.ring_outer_diameter} мм` }]
+            ? [{ label: 'Розмір кільця', value: formatLotRingSizeLabel(currentLot.params.ring_inner_diameter, currentLot.params.ring_outer_diameter) }]
             : []),
         ...(currentLot.params?.spacer_type
             ? [{ label: 'Тип проставки', value: lotSpacerTypeLabels[currentLot.params.spacer_type] ?? currentLot.params.spacer_type }]
             : []),
-        ...(currentLot.params?.spacer_thickness ? [{ label: 'Товщина', value: `${currentLot.params.spacer_thickness} мм` }] : []),
+        ...(currentLot.params?.spacer_thickness ? [{ label: 'Товщина', value: formatLotMillimeterValue(currentLot.params.spacer_thickness) }] : []),
         ...(currentLot.params?.package_quantity ? [{ label: 'У комплекті', value: `${currentLot.params.package_quantity} шт.` }] : []),
     ];
     const handleClose = () => {

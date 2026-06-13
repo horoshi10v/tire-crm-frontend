@@ -121,8 +121,8 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
 
                             {filters.accessory_category === 'HUB_RINGS' ? (
                                 <div className="grid grid-cols-2 gap-2">
-                                    <input type="number" placeholder="Внутр. діаметр" value={filters.ring_inner_diameter} onChange={(e) => setFilter('ring_inner_diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
-                                    <input type="number" placeholder="Зовн. діаметр" value={filters.ring_outer_diameter} onChange={(e) => setFilter('ring_outer_diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="number" step="0.1" placeholder="Внутр. діаметр" value={filters.ring_inner_diameter} onChange={(e) => setFilter('ring_inner_diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="number" step="0.1" placeholder="Зовн. діаметр" value={filters.ring_outer_diameter} onChange={(e) => setFilter('ring_outer_diameter', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
                                 </div>
                             ) : null}
 
@@ -133,7 +133,7 @@ export const FiltersDrawer = ({ isOpen, onClose }: FiltersDrawerProps) => {
                                         onChange={(value) => setFilter('spacer_type', value)}
                                         options={spacerTypeOptions}
                                     />
-                                    <input type="number" placeholder="Товщина, мм" value={filters.spacer_thickness} onChange={(e) => setFilter('spacer_thickness', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
+                                    <input type="number" step="0.1" placeholder="Товщина, мм" value={filters.spacer_thickness} onChange={(e) => setFilter('spacer_thickness', e.target.value ? Number(e.target.value) : '')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white outline-none focus:border-[#10AD0B]" />
                                 </div>
                             ) : null}
 

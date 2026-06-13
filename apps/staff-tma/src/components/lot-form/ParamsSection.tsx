@@ -112,7 +112,7 @@ export default function ParamsSection({ form, setForm }: Props) {
                 <input
                   type="number"
                   min={0}
-                  step={1}
+                  step="0.1"
                   value={form.params.ring_inner_diameter}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, params: { ...prev.params, ring_inner_diameter: event.target.value } }))
@@ -125,7 +125,7 @@ export default function ParamsSection({ form, setForm }: Props) {
                 <input
                   type="number"
                   min={0}
-                  step={1}
+                  step="0.1"
                   value={form.params.ring_outer_diameter}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, params: { ...prev.params, ring_outer_diameter: event.target.value } }))
@@ -163,7 +163,7 @@ export default function ParamsSection({ form, setForm }: Props) {
                 <input
                   type="number"
                   min={0}
-                  step={1}
+                  step="0.1"
                   value={form.params.spacer_thickness}
                   onChange={(event) =>
                     setForm((prev) => ({ ...prev, params: { ...prev.params, spacer_thickness: event.target.value } }))
